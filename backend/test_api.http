@@ -1,0 +1,40 @@
+### Health Check
+GET http://localhost:3001/health
+
+### Register User
+POST http://localhost:3001/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "username": "testuser",
+  "displayName": "Test User",
+  "password": "password123"
+}
+
+### Login
+POST http://localhost:3001/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+### Get User Info (требует Bearer токен)
+GET http://localhost:3001/api/auth/me
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Create Server (требует Bearer токен)
+POST http://localhost:3001/api/servers
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "name": "My Awesome Server",
+  "description": "This is a test server"
+}
+
+### Get User Servers (требует Bearer токен)
+GET http://localhost:3001/api/servers
+Authorization: Bearer YOUR_TOKEN_HERE 

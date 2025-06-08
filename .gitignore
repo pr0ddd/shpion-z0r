@@ -1,0 +1,146 @@
+# Dependencies
+node_modules/
+jspm_packages/
+bower_components/
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+.vuepress/dist/
+.docusaurus/
+.svelte-kit/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage and testing
+coverage/
+*.lcov
+.nyc_output/
+test-results/
+playwright-report/
+playwright/.cache/
+
+# TypeScript
+*.tsbuildinfo
+
+# Cache directories
+.cache/
+.parcel-cache/
+.npm/
+.eslintcache
+.stylelintcache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+.webpack/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+.dynamodb/
+
+# Prisma (optional - uncomment if using Prisma migrations)
+# prisma/migrations/
+
+# Docker
+docker-compose.override.yml
+
+# LiveKit
+livekit-server.log
+
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.vscode-test/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+.temp/
+
+# Package files
+*.tgz
+*.tar.gz
+
+# Yarn
+.yarn-integrity
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Optional REPL history
+.node_repl_history
+
+# Serverless
+.serverless/
+
+# FuseBox cache
+.fusebox/
+
+# TernJS port file
+.tern-port
+
+# Backup files
+*.backup.*
+*.back.*
+
+# Text editor files
+*.sublime*
+
+# Design files
+*.psd
+*.sketch
+thumb/
+
+# Diagnostic reports
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Directory for instrumented libs
+lib-cov/
+
+# Grunt intermediate storage
+.grunt/
+
+# Snowpack dependency directory
+web_modules/
+
+# End of https://www.toptal.com/developers/gitignore/api/react,node

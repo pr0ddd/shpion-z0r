@@ -1,0 +1,16 @@
+port: 7880
+
+keys:
+  devkey: secret
+
+rtc:
+  tcp_port: 7881
+  port_range_start: 50000
+  port_range_end: 60000
+
+room:
+  auto_create: true
+  empty_timeout: 300
+
+log_level: info
+development: true
