@@ -25,6 +25,18 @@ export class ServerController {
           }
         },
         include: {
+          members: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  avatar: true,
+                  status: true
+                }
+              }
+            }
+          },
           _count: {
             select: {
               members: true,
@@ -35,9 +47,27 @@ export class ServerController {
         }
       });
 
+      // Обогащаем данные серверов голосовой информацией
+      const enrichedServers = servers.map(server => {
+        const voiceMembers = server.members.filter(member => member.voiceConnectedAt !== null);
+        return {
+          ...server,
+          voiceParticipants: voiceMembers.map(member => ({
+            userId: member.user.id,
+            username: member.user.username,
+            avatar: member.user.avatar,
+            serverId: server.id,
+            isMuted: member.isMuted,
+            isDeafened: member.isDeafened,
+            connectedAt: member.voiceConnectedAt
+          })),
+          voiceParticipantCount: voiceMembers.length
+        };
+      });
+
       return res.json({
         success: true,
-        data: servers
+        data: enrichedServers
       });
     } catch (error) {
       console.error('Error fetching user servers:', error);
@@ -189,6 +219,83 @@ export class ServerController {
     }
   }
 
+  // Получить информацию о голосовом состоянии сервера
+  static async getServerVoiceState(req: AuthenticatedRequest, res: Response<ApiResponse>) {
+    try {
+      const userId = req.user?.id;
+      const serverId = req.params.serverId;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: 'User not authenticated'
+        });
+      }
+
+      // Проверяем, состоит ли пользователь в сервере
+      const member = await prisma.serverMember.findUnique({
+        where: {
+          userId_serverId: {
+            userId,
+            serverId
+          }
+        }
+      });
+
+      if (!member) {
+        return res.status(403).json({
+          success: false,
+          error: 'You are not a member of this server'
+        });
+      }
+
+      // Получаем всех участников в голосовом канале
+      const voiceMembers = await prisma.serverMember.findMany({
+        where: {
+          serverId,
+          voiceConnectedAt: {
+            not: null
+          }
+        },
+                  include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                avatar: true,
+                status: true
+              }
+            }
+          }
+      });
+
+      const voiceStates = voiceMembers.map(member => ({
+        userId: member.user.id,
+        username: member.user.username,
+        avatar: member.user.avatar,
+        serverId: serverId,
+        isMuted: member.isMuted,
+        isDeafened: member.isDeafened,
+        connectedAt: member.voiceConnectedAt
+      }));
+
+      return res.json({
+        success: true,
+        data: {
+          serverId,
+          voiceParticipants: voiceStates,
+          participantCount: voiceStates.length
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching server voice state:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
+  }
+
   // Покинуть сервер
   static async leaveServer(req: AuthenticatedRequest, res: Response<ApiResponse>) {
     try {
@@ -285,22 +392,36 @@ export class ServerController {
             select: {
               id: true,
               username: true,
-              displayName: true,
+              email: true,
               avatar: true,
-              status: true,
-              lastSeen: true
+              status: true
             }
           }
         },
         orderBy: [
           { roleType: 'desc' }, // OWNER, ADMIN, MODERATOR, MEMBER
-          { user: { displayName: 'asc' } }
+          { user: { username: 'asc' } }
         ]
       });
 
+              // Упрощаем структуру - только нужные данные для UI
+        const simplifiedMembers = members.map(member => ({
+          id: member.user.id,
+          username: member.user.username,
+          email: member.user.email,
+          avatar: member.user.avatar,
+          isOnline: member.user.status === 'ONLINE',
+          role: member.roleType,
+          // Голосовые статусы
+          inVoice: member.voiceConnectedAt !== null,
+          isMuted: member.isMuted,
+          isDeafened: member.isDeafened,
+          isSpeaking: member.isSpeaking
+        }));
+
       return res.json({
         success: true,
-        data: members
+        data: simplifiedMembers
       });
     } catch (error) {
       console.error('Error fetching server members:', error);

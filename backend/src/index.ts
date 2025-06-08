@@ -14,15 +14,18 @@ import serverRoutes from './routes/servers';
 import messageRoutes from './routes/messages';
 import livekitRoutes from './routes/livekit';
 import inviteRoutes from './routes/invites';
+import userRoutes from './routes/users';
 
 // Middleware
 import { authMiddleware } from './middleware/auth';
 
-// Types
-import { ServerToClientEvents, ClientToServerEvents } from './types';
+// Types and Services
+import { ServerToClientEvents, ClientToServerEvents, SocketData } from './types/socket';
+import { SocketService } from './services/SocketService';
 
 // Load environment variables
 dotenv.config();
+console.log('🔗 DATABASE_URL:', process.env.DATABASE_URL);
 
 const app = express();
 const httpServer = createServer(app);
@@ -31,7 +34,7 @@ const httpServer = createServer(app);
 export const prisma = new PrismaClient();
 
 // Initialize Socket.IO with CORS and types
-const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents>(httpServer, {
+const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents, any, SocketData>(httpServer, {
   cors: {
     origin: process.env.SOCKETIO_CORS_ORIGIN || "http://localhost:3000",
     methods: ["GET", "POST"],
@@ -76,6 +79,7 @@ app.use('/api/servers', authMiddleware, serverRoutes);
 app.use('/api/messages', authMiddleware, messageRoutes);
 app.use('/api/livekit', authMiddleware, livekitRoutes);
 app.use('/api/invites', authMiddleware, inviteRoutes);
+app.use('/api/users', authMiddleware, userRoutes);
 
 // Публичные роуты (без авторизации)
 app.use('/api/public/invites', inviteRoutes);
@@ -90,17 +94,33 @@ io.use(async (socket, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
     
-    // Get user info
+    // Get user info with status
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { id: true, username: true, displayName: true }
+      select: { 
+        id: true, 
+        username: true, 
+        avatar: true,
+        status: true 
+      }
     });
 
     if (!user) {
       return next(new Error('User not found'));
     }
 
-    socket.data.user = user;
+    // Update user status to online
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { status: 'ONLINE' }
+    });
+
+    socket.data.user = {
+      id: user.id,
+      username: user.username,
+      avatar: user.avatar,
+      status: 'ONLINE' as const
+    };
     next();
   } catch (error) {
     console.error('Socket authentication error:', error);
@@ -108,215 +128,11 @@ io.use(async (socket, next) => {
   }
 });
 
-// Enhanced Socket.IO connection handling with voice chat support
-io.on('connection', (socket) => {
-  const user = socket.data.user;
-  console.log(`Client connected: ${socket.id}, user: ${user?.username}`);
-  
-  // Voice chat events
-  socket.on('voice:join', async (serverId: string) => {
-    try {
-      console.log(`User ${user.username} joining voice in server ${serverId}`);
-      
-      // Update database
-      await prisma.serverMember.update({
-        where: {
-          userId_serverId: {
-            userId: user.id,
-            serverId: serverId
-          }
-        },
-        data: {
-          voiceConnectedAt: new Date(),
-          isMuted: true, // Default state
-          isDeafened: true, // Default state
-          isSpeaking: false
-        }
-      });
+// Initialize Socket Service
+const socketService = new SocketService(io, prisma);
 
-      // Join server room
-      await socket.join(`server:${serverId}`);
-      
-      // Notify other users in the server
-      socket.to(`server:${serverId}`).emit('voice:user_joined', user.id, serverId);
-      
-      console.log(`User ${user.username} joined voice in server ${serverId}`);
-    } catch (error) {
-      console.error('Error handling voice:join:', error);
-    }
-  });
-
-  socket.on('voice:leave', async (serverId: string) => {
-    try {
-      console.log(`User ${user.username} leaving voice in server ${serverId}`);
-      
-      // Update database
-      await prisma.serverMember.update({
-        where: {
-          userId_serverId: {
-            userId: user.id,
-            serverId: serverId
-          }
-        },
-        data: {
-          voiceConnectedAt: null,
-          isMuted: false,
-          isDeafened: false,
-          isSpeaking: false
-        }
-      });
-
-      // Leave server room
-      await socket.leave(`server:${serverId}`);
-      
-      // Notify other users in the server
-      socket.to(`server:${serverId}`).emit('voice:user_left', user.id, serverId);
-      
-      console.log(`User ${user.username} left voice in server ${serverId}`);
-    } catch (error) {
-      console.error('Error handling voice:leave:', error);
-    }
-  });
-
-  socket.on('voice:user_muted', async (data: { serverId: string, userId: string, username: string, isMuted: boolean }) => {
-    try {
-      console.log(`User ${data.username} ${data.isMuted ? 'muted' : 'unmuted'} in server ${data.serverId}`);
-      
-      // Verify user is connected to this server
-      const member = await prisma.serverMember.findFirst({
-        where: {
-          userId: user.id,
-          serverId: data.serverId,
-          voiceConnectedAt: { not: null }
-        }
-      });
-
-      if (member) {
-        // Update database
-        await prisma.serverMember.update({
-          where: {
-            userId_serverId: {
-              userId: user.id,
-              serverId: data.serverId
-            }
-          },
-          data: { isMuted: data.isMuted }
-        });
-
-        // Notify other users in the server (exclude sender)
-        socket.to(`server:${data.serverId}`).emit('voice:user_muted', {
-          userId: user.id,
-          username: data.username,
-          isMuted: data.isMuted,
-          serverId: data.serverId
-        });
-        
-        console.log(`📡 Broadcasted mute state for ${data.username}: ${data.isMuted}`);
-      }
-    } catch (error) {
-      console.error('Error handling voice:user_muted:', error);
-    }
-  });
-
-  socket.on('voice:user_deafened', async (data: { serverId: string, userId: string, username: string, isDeafened: boolean }) => {
-    try {
-      console.log(`User ${data.username} ${data.isDeafened ? 'deafened' : 'undeafened'} in server ${data.serverId}`);
-      
-      // Verify user is connected to this server
-      const member = await prisma.serverMember.findFirst({
-        where: {
-          userId: user.id,
-          serverId: data.serverId,
-          voiceConnectedAt: { not: null }
-        }
-      });
-
-      if (member) {
-        // Update database
-        await prisma.serverMember.update({
-          where: {
-            userId_serverId: {
-              userId: user.id,
-              serverId: data.serverId
-            }
-          },
-          data: { isDeafened: data.isDeafened }
-        });
-
-        // Notify other users in the server about deafen state (for UI display)
-        socket.to(`server:${data.serverId}`).emit('voice:user_deafened', {
-          userId: user.id,
-          username: data.username,
-          isDeafened: data.isDeafened,
-          serverId: data.serverId
-        });
-        
-        console.log(`📡 Broadcasted deafen state for ${data.username}: ${data.isDeafened}`);
-      }
-    } catch (error) {
-      console.error('Error handling voice:user_deafened:', error);
-    }
-  });
-
-  // Server join/leave events
-  socket.on('server:join', async (serverId: string) => {
-    try {
-      await socket.join(`server:${serverId}`);
-      console.log(`User ${user.username} joined server room ${serverId}`);
-    } catch (error) {
-      console.error('Error joining server room:', error);
-    }
-  });
-
-  socket.on('server:leave', async (serverId: string) => {
-    try {
-      await socket.leave(`server:${serverId}`);
-      console.log(`User ${user.username} left server room ${serverId}`);
-    } catch (error) {
-      console.error('Error leaving server room:', error);
-    }
-  });
-
-  socket.on('disconnect', async () => {
-    try {
-      console.log(`Client disconnected: ${socket.id}, user: ${user?.username}`);
-      
-      // Clean up voice connections on disconnect
-      if (user) {
-        const connectedMember = await prisma.serverMember.findFirst({
-          where: {
-            userId: user.id,
-            voiceConnectedAt: { not: null }
-          },
-          select: { serverId: true }
-        });
-
-        if (connectedMember) {
-          // Update database
-          await prisma.serverMember.update({
-            where: {
-              userId_serverId: {
-                userId: user.id,
-                serverId: connectedMember.serverId
-              }
-            },
-            data: {
-              voiceConnectedAt: null,
-              isMuted: false,
-              isDeafened: false,
-              isSpeaking: false
-            }
-          });
-
-          // Notify other users
-          socket.to(`server:${connectedMember.serverId}`).emit('voice:user_left', user.id, connectedMember.serverId);
-        }
-      }
-    } catch (error) {
-      console.error('Error handling disconnect:', error);
-    }
-  });
-});
+// Export for use in controllers  
+export { socketService };
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

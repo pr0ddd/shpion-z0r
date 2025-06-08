@@ -49,7 +49,6 @@ export class InviteController {
             select: {
               id: true,
               username: true,
-              displayName: true,
               avatar: true
             }
           }
@@ -350,7 +349,6 @@ export class InviteController {
             select: {
               id: true,
               username: true,
-              displayName: true,
               avatar: true
             }
           }
@@ -428,7 +426,6 @@ export class InviteController {
             select: {
               id: true,
               username: true,
-              displayName: true,
               avatar: true
             }
           }

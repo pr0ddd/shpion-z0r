@@ -17,6 +17,9 @@ router.get('/:serverId', ServerController.getServer);
 // Получить участников сервера
 router.get('/:serverId/members', ServerController.getServerMembers);
 
+// Получить голосовое состояние сервера
+router.get('/:serverId/voice', ServerController.getServerVoiceState);
+
 // Получить приглашения сервера
 router.get('/:serverId/invites', InviteController.getServerInvites);
 

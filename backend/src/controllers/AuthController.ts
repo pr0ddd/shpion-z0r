@@ -48,19 +48,17 @@ export class AuthController {
       // Хеширование пароля
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Создание пользователя (используем username как displayName)
+      // Создание пользователя
       const user = await prisma.user.create({
         data: {
           email,
           username,
-          displayName: username, // Используем username как displayName
           password: hashedPassword
         },
         select: {
           id: true,
           email: true,
           username: true,
-          displayName: true,
           avatar: true,
           status: true,
           createdAt: true
@@ -171,7 +169,6 @@ export class AuthController {
           id: true,
           email: true,
           username: true,
-          displayName: true,
           avatar: true,
           status: true,
           lastSeen: true,

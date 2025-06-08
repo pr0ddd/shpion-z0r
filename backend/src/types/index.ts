@@ -57,13 +57,7 @@ export interface ClientToServerEvents {
   'voice:user_deafened': (data: { serverId: string, userId: string, username: string, isDeafened: boolean }) => void;
 }
 
-// LiveKit типы
-export interface LiveKitTokenData {
-  roomName: string;
-  identity: string;
-  token: string;
-  expiresAt: Date;
-}
+
 
 // Права доступа
 export interface ServerPermissions {

@@ -1,13 +1,5 @@
 import axios from 'axios';
-import { 
-  ApiResponse, 
-  User, 
-  Server, 
-  Message, 
-  LoginResponse,
-  LiveKitToken,
-  VoiceStatus 
-} from '../types';
+import { ApiResponse, User, Server } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -23,115 +15,83 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('authToken');
+  console.log('API Request:', config.url, 'Token:', token ? 'Present' : 'Missing');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// Response interceptor for error handling
+// Response interceptor to handle auth errors
 api.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    console.log('API Response:', response.config.url, response.status);
+    return response;
+  },
   (error) => {
+    console.log('API Error:', error.config?.url, error.response?.status, error.response?.data);
     if (error.response?.status === 401) {
-      console.log('🚨 axios interceptor: 401 Unauthorized');
-      console.log('🚨 axios interceptor: URL:', error.config?.url);
-      // НЕ очищаем localStorage автоматически - пусть useAuth сам решает
+      console.log('401 Unauthorized - Token might be invalid, but NOT reloading page');
+      localStorage.removeItem('authToken');
+      // window.location.reload(); // Убираем автоматическую перезагрузку
     }
-    return Promise.reject(error.response?.data || error.message);
+    return Promise.reject(error);
   }
 );
 
 // Auth API
 export const authAPI = {
-  login: (email: string, password: string): Promise<ApiResponse<LoginResponse>> =>
-    api.post('/auth/login', { email, password }),
+  login: (email: string, password: string): Promise<ApiResponse<{ user: User; token: string }>> =>
+    api.post('/auth/login', { email, password }).then(res => res.data),
 
-  register: (email: string, username: string, password: string): Promise<ApiResponse<LoginResponse>> =>
-    api.post('/auth/register', { 
-      email, 
-      username, 
-      password 
-    }),
+  register: (email: string, username: string, password: string): Promise<ApiResponse<{ user: User; token: string }>> =>
+    api.post('/auth/register', { email, username, password }).then(res => res.data),
 
   me: (): Promise<ApiResponse<User>> =>
-    api.get('/auth/me'),
-
-  logout: (): Promise<ApiResponse> =>
-    api.post('/auth/logout'),
+    api.get('/auth/me').then(res => res.data),
 };
 
 // Server API
 export const serverAPI = {
   getServers: (): Promise<ApiResponse<Server[]>> =>
-    api.get('/servers'),
+    api.get('/servers').then(res => res.data),
 
-  getServer: (serverId: string): Promise<ApiResponse<Server>> =>
-    api.get(`/servers/${serverId}`),
+  createServer: (name: string, description?: string): Promise<ApiResponse<any>> =>
+    api.post('/servers', { name, description }).then(res => res.data),
 
-  createServer: (name: string, description?: string): Promise<ApiResponse<Server>> =>
-    api.post('/servers', { name, description }),
+  getServerVoiceState: (serverId: string): Promise<ApiResponse<any>> =>
+    api.get(`/servers/${serverId}/voice`).then(res => res.data),
 
-  leaveServer: (serverId: string): Promise<ApiResponse> =>
-    api.delete(`/servers/${serverId}/leave`),
+  getServerMembers: (serverId: string): Promise<ApiResponse<any>> =>
+    api.get(`/servers/${serverId}/members`).then(res => res.data),
 
   // Invite methods
-  getInvites: (serverId: string): Promise<ApiResponse<any[]>> =>
-    api.get(`/servers/${serverId}/invites`),
+  getServerInvites: (serverId: string): Promise<ApiResponse<any>> =>
+    api.get(`/servers/${serverId}/invites`).then(res => res.data),
 
-  createInvite: (serverId: string, options: { maxUses?: number; expiresInHours?: number }): Promise<ApiResponse<any>> =>
-    api.post(`/servers/${serverId}/invites`, options),
+  createInvite: (serverId: string, data: { maxUses?: number; expiresInHours?: number }): Promise<ApiResponse<any>> =>
+    api.post(`/servers/${serverId}/invites`, data).then(res => res.data),
 
-  deleteInvite: (inviteId: string): Promise<ApiResponse> =>
-    api.delete(`/invites/${inviteId}`),
-
-  useInvite: (inviteCode: string): Promise<ApiResponse<Server>> =>
-    api.post(`/invites/${inviteCode}/use`),
+  deleteInvite: (inviteId: string): Promise<ApiResponse<any>> =>
+    api.delete(`/invites/${inviteId}`).then(res => res.data),
 
   getInviteInfo: (inviteCode: string): Promise<ApiResponse<any>> =>
-    api.get(`/invites/${inviteCode}/info`),
+    api.get(`/invites/${inviteCode}/info`).then(res => res.data),
 
-  getPublicInviteInfo: (inviteCode: string): Promise<ApiResponse<any>> =>
-    axios.get(`${API_BASE_URL}/api/public/invites/${inviteCode}/public`).then(res => res.data),
-
-  getMembers: (serverId: string): Promise<ApiResponse<any[]>> =>
-    api.get(`/servers/${serverId}/members`),
-};
-
-// Message API
-export const messageAPI = {
-  getMessages: (serverId: string, page?: number): Promise<ApiResponse<Message[]>> =>
-    api.get(`/messages/${serverId}`, { params: { page } }),
-
-  sendMessage: (serverId: string, content: string): Promise<ApiResponse<Message>> =>
-    api.post(`/messages/${serverId}`, { content }),
-
-  editMessage: (messageId: string, content: string): Promise<ApiResponse<Message>> =>
-    api.put(`/messages/${messageId}`, { content }),
-
-  deleteMessage: (messageId: string): Promise<ApiResponse> =>
-    api.delete(`/messages/${messageId}`),
+  useInvite: (inviteCode: string): Promise<ApiResponse<any>> =>
+    api.post(`/invites/${inviteCode}/use`).then(res => res.data),
 };
 
 // LiveKit API
 export const livekitAPI = {
-  getVoiceToken: (serverId: string): Promise<ApiResponse<LiveKitToken>> =>
-    api.post(`/livekit/voice/${serverId}/token`),
-
-  leaveVoice: (serverId: string): Promise<ApiResponse> =>
-    api.post(`/livekit/voice/${serverId}/leave`),
-
-  getVoiceStatus: (serverId: string): Promise<ApiResponse<VoiceStatus>> =>
-    api.get(`/livekit/voice/${serverId}/status`),
-
-  getStreamToken: (streamId: string): Promise<ApiResponse<LiveKitToken & { isStreamer: boolean; streamTitle: string }>> =>
-    api.post(`/livekit/stream/${streamId}/token`),
+  getVoiceToken: (serverId: string): Promise<ApiResponse<{ token: string; wsUrl: string }>> =>
+    api.post(`/livekit/voice/${serverId}/token`).then(res => res.data),
 };
 
-// Health check
-export const healthAPI = {
-  check: (): Promise<{ status: string; service: string; timestamp: string; version: string }> =>
-    axios.get(`${API_BASE_URL}/health`).then(res => res.data),
+// User API
+export const userAPI = {
+  getCurrentUser: (): Promise<ApiResponse<User & { servers: Server[]; currentServerId: string | null }>> =>
+    api.get('/users/me').then(res => res.data),
 };
 
 export default api; 

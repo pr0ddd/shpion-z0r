@@ -1,263 +1,55 @@
-import { Response } from 'express';
-import { AuthenticatedRequest, ApiResponse } from '../types';
+import { Request, Response } from 'express';
 import { LiveKitService } from '../services/LiveKitService';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { AuthenticatedRequest } from '../types';
+import { prisma } from '../index';
 
 export class LiveKitController {
   /**
-   * Получить токен для подключения к голосовому чату сервера
+   * GET /api/livekit/voice/:serverId/token
+   * Generate voice token for server voice chat
    */
-  static async getVoiceToken(req: AuthenticatedRequest, res: Response<ApiResponse>) {
+  static async getVoiceToken(req: AuthenticatedRequest, res: Response) {
     try {
-      const userId = req.user?.id;
-      const username = req.user?.username;
-      const serverId = req.params.serverId;
+      const { serverId } = req.params;
+      const user = req.user!;
 
-      if (!userId || !username) {
-        return res.status(401).json({
-          success: false,
-          error: 'User not authenticated'
-        });
-      }
+      console.log(`🎤 Generating voice token for user ${user.username} in server ${serverId}`);
 
-      // Проверяем доступ к серверу и голосовому чату
-      const member = await prisma.serverMember.findUnique({
-        where: {
-          userId_serverId: {
-            userId,
-            serverId
-          }
-        }
-      });
-
-      if (!member || !member.canAccessVoiceChat) {
-        return res.status(403).json({
-          success: false,
-          error: 'You do not have access to voice chat on this server'
-        });
-      }
-
-      // Создаем комнату если её нет
-      const server = await prisma.server.findUnique({
-        where: { id: serverId },
-        select: { livekitVoiceRoom: true, maxVoiceUsers: true }
-      });
-
-      if (!server) {
-        return res.status(404).json({
-          success: false,
-          error: 'Server not found'
-        });
-      }
-
-      await LiveKitService.createVoiceRoom(server.livekitVoiceRoom, server.maxVoiceUsers);
-
-      // Генерируем токен
-      const tokenData = await LiveKitService.createVoiceToken(userId, serverId, username);
-
-      // Обновляем статус пользователя как подключенного к голосовому чату
-      await prisma.serverMember.update({
-        where: {
-          userId_serverId: {
-            userId,
-            serverId
-          }
-        },
-        data: {
-          voiceConnectedAt: new Date()
-        }
-      });
+      const tokenData = await LiveKitService.createVoiceToken(
+        user.id,
+        serverId,
+        user.username
+      );
 
       return res.json({
         success: true,
         data: tokenData,
         message: 'Voice token generated successfully'
       });
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating voice token:', error);
       return res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Failed to generate voice token',
+        message: error.message
       });
     }
   }
 
   /**
-   * Покинуть голосовой чат
+   * GET /api/livekit/voice/:serverId/status
+   * Get voice chat status for server
    */
-  static async leaveVoice(req: AuthenticatedRequest, res: Response<ApiResponse>) {
+  static async getVoiceStatus(req: AuthenticatedRequest, res: Response) {
     try {
-      const userId = req.user?.id;
-      const serverId = req.params.serverId;
-
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: 'User not authenticated'
-        });
-      }
-
-      // Обновляем статус как отключенного от голосового чата
-      await prisma.serverMember.update({
-        where: {
-          userId_serverId: {
-            userId,
-            serverId
-          }
-        },
-        data: {
-          voiceConnectedAt: null,
-          isMuted: false,
-          isDeafened: false,
-          isSpeaking: false
-        }
-      });
-
-      return res.json({
-        success: true,
-        message: 'Successfully left voice chat'
-      });
-
-    } catch (error) {
-      console.error('Error leaving voice chat:', error);
-      return res.status(500).json({
-        success: false,
-        error: 'Internal server error'
-      });
-    }
-  }
-
-  /**
-   * Получить токен для подключения к стриму
-   */
-  static async getStreamToken(req: AuthenticatedRequest, res: Response<ApiResponse>) {
-    try {
-      const userId = req.user?.id;
-      const username = req.user?.username;
-      const streamId = req.params.streamId;
-
-      if (!userId || !username) {
-        return res.status(401).json({
-          success: false,
-          error: 'User not authenticated'
-        });
-      }
-
-      // Получаем информацию о стриме
-      const stream = await prisma.stream.findUnique({
-        where: { id: streamId },
-        include: {
-          server: {
-            include: {
-              members: {
-                where: { userId }
-              }
-            }
-          }
-        }
-      });
-
-      if (!stream) {
-        return res.status(404).json({
-          success: false,
-          error: 'Stream not found'
-        });
-      }
-
-      const member = stream.server.members[0];
+      const { serverId } = req.params;
       
-      // Проверяем доступ к стримам
-      if (!member || !member.canAccessStreams) {
-        return res.status(403).json({
-          success: false,
-          error: 'You do not have access to streams on this server'
-        });
-      }
-
-      const isStreamer = stream.streamerId === userId;
-
-      // Создаем комнату для стрима если её нет
-      await LiveKitService.createStreamRoom(stream.livekitStreamRoom, stream.maxViewers);
-
-      // Генерируем токен
-      const tokenData = await LiveKitService.createStreamToken(userId, streamId, username, isStreamer);
-
-      // Если это зритель, добавляем запись в таблицу зрителей
-      if (!isStreamer) {
-        await prisma.streamViewer.upsert({
-          where: {
-            userId_streamId: {
-              userId,
-              streamId
-            }
-          },
-          update: {
-            joinedAt: new Date()
-          },
-          create: {
-            userId,
-            streamId,
-            joinedAt: new Date()
-          }
-        });
-      }
-
-      return res.json({
-        success: true,
-        data: {
-          ...tokenData,
-          isStreamer,
-          streamTitle: stream.title
-        },
-        message: 'Stream token generated successfully'
-      });
-
-    } catch (error) {
-      console.error('Error generating stream token:', error);
-      return res.status(500).json({
-        success: false,
-        error: 'Internal server error'
-      });
-    }
-  }
-
-  /**
-   * Получить информацию о голосовом чате сервера
-   */
-  static async getVoiceStatus(req: AuthenticatedRequest, res: Response<ApiResponse>) {
-    try {
-      const userId = req.user?.id;
-      const serverId = req.params.serverId;
-
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: 'User not authenticated'
-        });
-      }
-
-      // Получаем участников в голосовом чате
+      // Get server info
       const server = await prisma.server.findUnique({
         where: { id: serverId },
-        include: {
-          members: {
-            where: {
-              voiceConnectedAt: { not: null }
-            },
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  username: true,
-                  displayName: true,
-                  avatar: true
-                }
-              }
-            }
-          }
+        select: {
+          livekitVoiceRoom: true,
+          name: true
         }
       });
 
@@ -268,25 +60,23 @@ export class LiveKitController {
         });
       }
 
-      // Получаем информацию от LiveKit о комнате
-      const participants = await LiveKitService.getRoomInfo(server.livekitVoiceRoom);
+      const roomInfo = await LiveKitService.getRoomInfo(server.livekitVoiceRoom);
 
       return res.json({
         success: true,
         data: {
           roomName: server.livekitVoiceRoom,
-          voiceChannelName: server.voiceChannelName,
-          maxUsers: server.maxVoiceUsers,
-          connectedMembers: server.members,
-          liveKitParticipants: participants || []
-        }
+          participants: roomInfo?.length || 0,
+          details: roomInfo
+        },
+        message: 'Voice status retrieved successfully'
       });
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error getting voice status:', error);
       return res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Failed to get voice status',
+        message: error.message
       });
     }
   }

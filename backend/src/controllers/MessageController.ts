@@ -50,7 +50,6 @@ export class MessageController {
             select: {
               id: true,
               username: true,
-              displayName: true,
               avatar: true
             }
           }
@@ -130,7 +129,6 @@ export class MessageController {
             select: {
               id: true,
               username: true,
-              displayName: true,
               avatar: true
             }
           }
@@ -209,7 +207,6 @@ export class MessageController {
             select: {
               id: true,
               username: true,
-              displayName: true,
               avatar: true
             }
           }

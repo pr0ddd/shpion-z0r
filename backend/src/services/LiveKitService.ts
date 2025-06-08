@@ -6,16 +6,16 @@ const prisma = new PrismaClient();
 export class LiveKitService {
   private static apiKey = process.env.LIVEKIT_API_KEY || 'devkey';
   private static apiSecret = process.env.LIVEKIT_API_SECRET || 'secret';
-  private static wsUrl = process.env.LIVEKIT_WS_URL || 'ws://localhost:7880';
+  private static wsUrl = process.env.LIVEKIT_URL || 'ws://10.10.3.1:7880';
   
   private static roomService = new RoomServiceClient(
-    process.env.LIVEKIT_URL || 'http://localhost:7880',
+    process.env.LIVEKIT_URL || 'ws://10.10.3.1:7880',
     this.apiKey,
     this.apiSecret
   );
 
   /**
-   * Создать JWT токен для подключения к LiveKit комнате
+   * Create JWT access token for LiveKit room connection
    */
   static async createAccessToken(
     roomName: string,
@@ -27,7 +27,7 @@ export class LiveKitService {
       metadata,
     });
 
-    // Права доступа
+    // Grant permissions
     token.addGrant({
       room: roomName,
       roomJoin: true,
@@ -41,19 +41,19 @@ export class LiveKitService {
   }
 
   /**
-   * Создать токен для голосового чата сервера
+   * Create voice token for server voice chat
    */
   static async createVoiceToken(
     userId: string,
     serverId: string,
     username: string
   ): Promise<{ token: string; wsUrl: string }> {
-    // Получаем информацию о сервере
+    // Get server info
     const server = await prisma.server.findUnique({
       where: { id: serverId },
       select: {
         livekitVoiceRoom: true,
-        voiceChannelName: true
+        name: true
       }
     });
 
@@ -73,14 +73,14 @@ export class LiveKitService {
 
     const token = await this.createAccessToken(roomName, identity, metadata);
 
-    // Сохраняем токен в базе данных
+    // Store token in database for tracking
     await prisma.liveKitToken.create({
       data: {
         userId,
         token,
         roomName,
         roomType: 'VOICE',
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 часа
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
       }
     });
 
@@ -91,95 +91,14 @@ export class LiveKitService {
   }
 
   /**
-   * Создать токен для стрима
-   */
-  static async createStreamToken(
-    userId: string,
-    streamId: string,
-    username: string,
-    isStreamer: boolean = false
-  ): Promise<{ token: string; wsUrl: string }> {
-    // Получаем информацию о стриме
-    const stream = await prisma.stream.findUnique({
-      where: { id: streamId },
-      select: {
-        livekitStreamRoom: true,
-        title: true,
-        streamerId: true
-      }
-    });
-
-    if (!stream) {
-      throw new Error('Stream not found');
-    }
-
-    const roomName = stream.livekitStreamRoom;
-    const identity = `${userId}:${username}`;
-    
-    const metadata = JSON.stringify({
-      userId,
-      streamId,
-      username,
-      type: 'stream',
-      isStreamer: isStreamer || stream.streamerId === userId
-    });
-
-    // Создаем токен с соответствующими правами
-    const token = new AccessToken(this.apiKey, this.apiSecret, {
-      identity,
-      metadata,
-    });
-
-    if (isStreamer || stream.streamerId === userId) {
-      // Права стримера
-      token.addGrant({
-        room: roomName,
-        roomJoin: true,
-        canPublish: true,
-        canSubscribe: true,
-        canPublishData: true,
-        canUpdateOwnMetadata: true,
-      });
-    } else {
-      // Права зрителя
-      token.addGrant({
-        room: roomName,
-        roomJoin: true,
-        canPublish: false,
-        canSubscribe: true,
-        canPublishData: true,
-        canUpdateOwnMetadata: true,
-      });
-    }
-
-    const jwt = await token.toJwt();
-
-    // Сохраняем токен в базе данных
-    await prisma.liveKitToken.create({
-      data: {
-        userId,
-        token: jwt,
-        roomName,
-        roomType: 'STREAM',
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      }
-    });
-
-    return {
-      token: jwt,
-      wsUrl: this.wsUrl
-    };
-  }
-
-  /**
-   * Создать комнату для голосового чата
+   * Create voice room for server
    */
   static async createVoiceRoom(roomName: string, maxParticipants: number = 50): Promise<void> {
     try {
       const options = {
         name: roomName,
         maxParticipants,
-        emptyTimeout: 300, // 5 минут до закрытия пустой комнаты
+        emptyTimeout: 300, // 5 minutes until empty room closes
         metadata: JSON.stringify({
           type: 'voice',
           createdAt: new Date().toISOString()
@@ -188,7 +107,7 @@ export class LiveKitService {
 
       await this.roomService.createRoom(options);
     } catch (error: any) {
-      // Комната уже существует - это нормально
+      // Room already exists - that's fine
       if (!error.message?.includes('already exists')) {
         throw error;
       }
@@ -196,30 +115,7 @@ export class LiveKitService {
   }
 
   /**
-   * Создать комнату для стрима
-   */
-  static async createStreamRoom(roomName: string, maxParticipants: number = 100): Promise<void> {
-    try {
-      const options = {
-        name: roomName,
-        maxParticipants,
-        emptyTimeout: 60, // 1 минута до закрытия пустой комнаты стрима
-        metadata: JSON.stringify({
-          type: 'stream',
-          createdAt: new Date().toISOString()
-        })
-      };
-
-      await this.roomService.createRoom(options);
-    } catch (error: any) {
-      if (!error.message?.includes('already exists')) {
-        throw error;
-      }
-    }
-  }
-
-  /**
-   * Получить информацию о комнате
+   * Get room participants info
    */
   static async getRoomInfo(roomName: string) {
     try {
@@ -231,18 +127,7 @@ export class LiveKitService {
   }
 
   /**
-   * Закрыть комнату
-   */
-  static async deleteRoom(roomName: string): Promise<void> {
-    try {
-      await this.roomService.deleteRoom(roomName);
-    } catch (error) {
-      console.error(`Error deleting room ${roomName}:`, error);
-    }
-  }
-
-  /**
-   * Отключить участника от комнаты
+   * Remove participant from room
    */
   static async removeParticipant(roomName: string, identity: string): Promise<void> {
     try {
@@ -253,19 +138,13 @@ export class LiveKitService {
   }
 
   /**
-   * Очистить просроченные токены
+   * Delete room
    */
-  static async cleanupExpiredTokens(): Promise<void> {
+  static async deleteRoom(roomName: string): Promise<void> {
     try {
-      await prisma.liveKitToken.deleteMany({
-        where: {
-          expiresAt: {
-            lt: new Date()
-          }
-        }
-      });
+      await this.roomService.deleteRoom(roomName);
     } catch (error) {
-      console.error('Error cleaning up expired tokens:', error);
+      console.error(`Error deleting room ${roomName}:`, error);
     }
   }
 } 
