@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { Room, RoomEvent, RoomConnectOptions, Participant, Track } from 'livekit-client';
+import { Room, RoomEvent, RoomConnectOptions, Participant, Track, ScreenShareCaptureOptions, TrackPublishOptions, VideoPresets, VideoQuality, LocalTrack, ScreenSharePresets } from 'livekit-client';
 import { Server } from '../types';
 import { livekitAPI, userAPI } from '../services/api';
 import { useSocket } from './SocketContext';
@@ -17,7 +17,6 @@ interface ServerContextType {
   isLocalSpeaking: boolean;
   isScreenSharing: boolean;
   screenTracks: Map<string, Track>;
-  currentQualityInfo: string | null;
   setServers: (servers: Server[]) => void;
   selectServer: (server: Server | null) => void;
   setLoading: (loading: boolean) => void;
@@ -28,7 +27,6 @@ interface ServerContextType {
   restoreUserState: () => Promise<void>;
   startScreenShare: () => Promise<void>;
   stopScreenShare: () => Promise<void>;
-  getQualityInfo: () => string;
 }
 
 const ServerContext = createContext<ServerContextType | null>(null);
@@ -54,7 +52,6 @@ export const ServerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isLocalSpeaking, setIsLocalSpeaking] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [screenTracks, setScreenTracks] = useState<Map<string, Track>>(new Map());
-  const [currentQualityInfo, setCurrentQualityInfo] = useState<string | null>(null);
   const connectingRef = useRef(false);
   
   // Используем сокеты для уведомлений о присоединении/выходе
@@ -62,8 +59,6 @@ export const ServerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   
   // Храним pending server ID пока сокет не подключится
   const [pendingServerId, setPendingServerId] = useState<string | null>(null);
-
-
 
   const disconnectFromVoice = useCallback(() => {
     if (room) {
@@ -127,23 +122,15 @@ export const ServerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           adaptiveStream: true,
           // optimize publishing bandwidth and CPU for published tracks
           dynacast: true,
-                  // ЭКСТРЕМАЛЬНЫЕ настройки для минимальной задержки
-        audioCaptureDefaults: {
-          echoCancellation: false, // Отключаем для меньшей задержки!
-          noiseSuppression: false, // Отключаем для меньшей задержки!
-          autoGainControl: false,  // Отключаем для меньшей задержки!
-          // Максимальная частота дискретизации
-          sampleRate: 48000,
-          sampleSize: 16,
-          // Минимальные буферы
-          latency: 0.01, // 10ms буфер (минимум!)
-        },
-          // Отключаем видео по умолчанию для меньшей нагрузки
-          videoCaptureDefaults: {
-            resolution: { width: 0, height: 0 }, // Отключаем видео
+          // More balanced capture settings
+          audioCaptureDefaults: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
           },
-          // Настройки для быстрого детектирования говорящих
-          webAudioMix: true, // Функция для лучшего аудио
+          videoCaptureDefaults: {
+            resolution: { width: 1280, height: 720 }, // Default to 720p
+          },
         });
 
         // Настраиваем обработчики событий ПЕРЕД подключением
@@ -176,44 +163,47 @@ export const ServerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           .on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
             console.log('Track subscribed:', track.kind, 'from', participant.identity);
             
+            if (track.source === Track.Source.ScreenShare) {
+              setScreenTracks(prev => new Map(prev).set(participant.identity, track));
+            }
+
             // Автоматически воспроизводим аудио треки
             if (track.kind === Track.Kind.Audio) {
               const audioElement = track.attach() as HTMLAudioElement;
               audioElement.autoplay = true;
               audioElement.muted = false;
               
-              // ЭКСТРЕМАЛЬНЫЕ настройки для ультра-низкой задержки
-              audioElement.volume = 1.0;
-              audioElement.preload = 'none';
-              audioElement.controls = false;
-              
-              // Ключевые настройки для минимальной задержки!
-              if ('mozAudioChannelType' in audioElement) {
-                (audioElement as any).mozAudioChannelType = 'telephony'; // Firefox оптимизация
-              }
-              
-                          // Web Audio API оптимизации
-            try {
-              const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-              void audioContext.audioWorklet; // Проверяем поддержку
-              console.log('🔊 Audio Context latency:', audioContext.baseLatency || 'unknown');
-            } catch (e) {
-              console.log('🔊 Web Audio API not available for optimization');
-            }
-              
               // Добавляем элемент в DOM (можно скрыть его)
               audioElement.style.display = 'none';
               document.body.appendChild(audioElement);
-              console.log('🔊 Audio track attached with ULTRA low-latency settings');
+              console.log('🔊 Audio track attached');
             }
           })
           .on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
             console.log('Track unsubscribed:', track.kind, 'from', participant.identity);
             
+            if (track.source === Track.Source.ScreenShare) {
+              setScreenTracks(prev => {
+                const newTracks = new Map(prev);
+                newTracks.delete(participant.identity);
+                return newTracks;
+              });
+            }
+
             // Удаляем аудио элементы при отписке
             if (track.kind === Track.Kind.Audio) {
               track.detach();
               console.log('🔇 Audio track detached');
+            }
+          })
+          .on(RoomEvent.LocalTrackPublished, (publication) => {
+            if (publication.source === Track.Source.ScreenShare) {
+              setIsScreenSharing(true);
+            }
+          })
+          .on(RoomEvent.LocalTrackUnpublished, (publication) => {
+            if (publication.source === Track.Source.ScreenShare) {
+              setIsScreenSharing(false);
             }
           })
           .on(RoomEvent.ParticipantConnected, (participant) => {
@@ -232,20 +222,10 @@ export const ServerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // Уведомляем сокеты о присоединении к голосу
         joinVoice(server.id);
         
-        // ЭКСТРЕМАЛЬНЫЕ настройки микрофона для ультра-низкой задержки
+        // Use default microphone settings
         try {
-          await newRoom.localParticipant.setMicrophoneEnabled(true, {
-            // ОТКЛЮЧАЕМ ВСЕ обработки для минимальной задержки!
-            echoCancellation: false,
-            noiseSuppression: false,
-            autoGainControl: false,
-            // Минимальные буферы
-            sampleRate: 48000,
-            sampleSize: 16,
-            channelCount: 1, // Моно для меньшей нагрузки
-            latency: 0.01,   // 10ms - экстремально низкий буфер!
-          });
-          console.log('🎤 Microphone enabled with ULTRA low-latency settings');
+          await newRoom.localParticipant.setMicrophoneEnabled(true);
+          console.log('🎤 Microphone enabled');
           
           // TODO: Добавить уведомление сокетов о включении микрофона
         } catch (micError) {
@@ -519,119 +499,49 @@ export const ServerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [joinServer, isConnected, connectToVoice]);
 
   const startScreenShare = useCallback(async () => {
-    if (!room) {
-      console.warn('❌ No room available for screen share');
-      return;
-    }
+    if (!room || isScreenSharing) return;
 
-    if (isScreenSharing) {
-      console.warn('⚠️ Already sharing screen');
-      return;
-    }
+    const screenShareTracks = await room.localParticipant.createScreenTracks({
+      audio: true,
+      resolution: VideoPresets.h1080.resolution,
+    });
 
-    try {
-      console.log('🖥️ Starting screen share...');
-      console.log('📊 Adaptive Quality Mode: Simulcast enabled with 3 layers');
-      console.log('   → High: 1920x1080@60fps (8 Mbps) - для простых сцен');
-      console.log('   → Medium: 1280x720@30fps (4 Mbps) - для умеренного движения'); 
-      console.log('   → Low: 854x480@15fps (1.5 Mbps) - для сложных сцен');
-      setIsScreenSharing(true);
-      
-      // Создаем высококачественные screen share треки вручную
-      const screenTracks = await room.localParticipant.createScreenTracks({
-        audio: true, // Включаем звук с экрана
-        resolution: { width: 1920, height: 1080 }, // Full HD качество
-      });
-
-      // Публикуем треки с максимальными настройками качества
-      for (const track of screenTracks) {
-        await room.localParticipant.publishTrack(track, {
-          // АДАПТИВНОЕ КАЧЕСТВО: Настройки для сложных сцен
-          videoEncoding: {
-            maxBitrate: 8_000_000, // Максимальный битрейт для высокого качества
-            maxFramerate: 60,
-          },
-          // ВКЛЮЧАЕМ simulcast для автоматической адаптации к сложности контента
+    for (const track of screenShareTracks) {
+      if (track.kind === 'video') {
+        const publishOptions: TrackPublishOptions = {
+          videoEncoding: ScreenSharePresets.h1080fps15.encoding,
           simulcast: true,
-          // Слои качества для адаптивного стриминга (копируем из publishDefaults)
           videoSimulcastLayers: [
-            // Высокое качество для простых сцен (минимальное движение)
-            {
-              width: 1920,
-              height: 1080,
-              resolution: { width: 1920, height: 1080 },
-              encoding: {
-                maxBitrate: 8_000_000, // 8 Mbps для Full HD при статичном контенте
-                maxFramerate: 60,
-              },
-            },
-            // Среднее качество для умеренно сложных сцен
-            {
-              width: 1280,
-              height: 720,
-              resolution: { width: 1280, height: 720 },
-              encoding: {
-                maxBitrate: 4_000_000, // 4 Mbps для HD при движении
-                maxFramerate: 30,
-              },
-            },
-            // Низкое качество для очень сложных сцен (много движения)
-            {
-              width: 854,
-              height: 480,
-              resolution: { width: 854, height: 480 },
-              encoding: {
-                maxBitrate: 1_500_000, // 1.5 Mbps для SD при интенсивном движении
-                maxFramerate: 15,
-              },
-            },
+            ScreenSharePresets.h360fps3,
+            ScreenSharePresets.h720fps5,
           ],
-          // Помечаем как screen share источник
-          source: track.kind === Track.Kind.Video ? Track.Source.ScreenShare : Track.Source.ScreenShareAudio,
-        });
+          source: track.source,
+          videoCodec: 'vp9'
+        };
+        await room.localParticipant.publishTrack(track, publishOptions);
+      } else if (track.kind === 'audio') {
+        await room.localParticipant.publishTrack(track);
       }
-      
-      console.log('✅ Screen share started successfully');
-    } catch (err: any) {
-      console.error('❌ Failed to start screen share:', err);
-      setError(err.message || 'Failed to start screen sharing');
-      setIsScreenSharing(false);
     }
+    
+    setIsScreenSharing(true);
+
   }, [room, isScreenSharing]);
 
   const stopScreenShare = useCallback(async () => {
-    if (!room) {
-      console.warn('❌ No room available for stopping screen share');
-      return;
-    }
+    if (!room || !isScreenSharing) return;
 
-    if (!isScreenSharing) {
-      console.warn('⚠️ Not currently sharing screen');
-      return;
-    }
-
-    try {
-      console.log('🛑 Stopping screen share...');
-      
-      // Отключаем все screen share треки
-      const allPublications = Array.from(room.localParticipant.trackPublications.values());
-      
-      for (const publication of allPublications) {
-        if (publication.source === Track.Source.ScreenShare || 
-            publication.source === Track.Source.ScreenShareAudio) {
-          if (publication.track) {
-            publication.track.stop();
-            await room.localParticipant.unpublishTrack(publication.track);
-          }
-        }
+    const screenSharePublications = Array.from(room.localParticipant.trackPublications.values()).filter(
+      pub => pub.source === Track.Source.ScreenShare || pub.source === Track.Source.ScreenShareAudio
+    );
+    
+    for (const pub of screenSharePublications) {
+      if(pub.track){
+        await room.localParticipant.unpublishTrack(pub.track);
       }
-      
-      setIsScreenSharing(false);
-      console.log('✅ Screen share stopped successfully');
-    } catch (err: any) {
-      console.error('❌ Failed to stop screen share:', err);
-      setError(err.message || 'Failed to stop screen sharing');
     }
+
+    setIsScreenSharing(false);
   }, [room, isScreenSharing]);
 
   const startAudio = useCallback(async () => {
@@ -652,27 +562,7 @@ export const ServerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [room]);
 
-  const getQualityInfo = useCallback(() => {
-    if (!room || !isScreenSharing) {
-      return 'Адаптивное качество готово';
-    }
-
-    // Информация об адаптивном качестве simulcast
-    return 'Автоматическая адаптация: HD→Full HD→SD';
-  }, [room, isScreenSharing]);
-
-  // Мониторинг изменений качества
-  useEffect(() => {
-    if (room && isScreenSharing) {
-      const qualityInfo = getQualityInfo();
-      setCurrentQualityInfo(qualityInfo);
-      console.log('📊 Quality Info:', qualityInfo);
-    } else {
-      setCurrentQualityInfo(null);
-    }
-  }, [room, isScreenSharing, getQualityInfo]);
-
-  const value = useMemo<ServerContextType>(() => ({
+  const value: ServerContextType = {
     selectedServer,
     servers,
     isLoading,
@@ -685,7 +575,6 @@ export const ServerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     isLocalSpeaking,
     isScreenSharing,
     screenTracks,
-          currentQualityInfo,
     setServers,
     selectServer,
     setLoading: setIsLoading,
@@ -696,32 +585,7 @@ export const ServerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     restoreUserState,
     startScreenShare,
     stopScreenShare,
-    getQualityInfo,
-  }), [
-    selectedServer,
-    servers,
-    isLoading,
-    error,
-    room,
-    isConnecting,
-    canPlaybackAudio,
-    needsUserInteraction,
-    activeSpeakers,
-    isLocalSpeaking,
-    isScreenSharing,
-    screenTracks,
-    setServers,
-    selectServer,
-    setIsLoading,
-    setError,
-    connectToVoice,
-    disconnectFromVoice,
-    startAudio,
-    restoreUserState,
-    startScreenShare,
-    stopScreenShare,
-    getQualityInfo,
-  ]);
+  };
 
   return (
     <ServerContext.Provider value={value}>

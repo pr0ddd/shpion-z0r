@@ -1,9 +1,19 @@
 import { Request } from 'express';
-import { User } from '@prisma/client';
+import { User, UserStatus } from '@prisma/client';
+
+export type RequestUser = {
+  id: string;
+  email: string;
+  username: string;
+  avatar: string | null;
+  status: UserStatus;
+  lastSeen: Date;
+  createdAt: Date;
+}
 
 // Расширяем Express Request для добавления пользователя
 export interface AuthenticatedRequest extends Request {
-  user?: User;
+  user?: RequestUser;
 }
 
 // API Response типы
@@ -57,7 +67,16 @@ export interface ClientToServerEvents {
   'voice:user_deafened': (data: { serverId: string, userId: string, username: string, isDeafened: boolean }) => void;
 }
 
+export type SocketUser = {
+  id: string;
+  username: string;
+  avatar: string | null;
+  status: 'ONLINE' | 'OFFLINE' | 'AWAY';
+};
 
+export interface SocketData {
+  user: SocketUser;
+}
 
 // Права доступа
 export interface ServerPermissions {

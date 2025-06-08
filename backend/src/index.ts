@@ -13,14 +13,16 @@ import authRoutes from './routes/auth';
 import serverRoutes from './routes/servers';
 import messageRoutes from './routes/messages';
 import livekitRoutes from './routes/livekit';
-import inviteRoutes from './routes/invites';
+import invitePublicRoutes from './routes/invite.public.routes';
+import inviteProtectedRoutes from './routes/invite.protected.routes';
 import userRoutes from './routes/users';
 
 // Middleware
 import { authMiddleware } from './middleware/auth';
+import { socketAuthMiddleware } from './middleware/socketAuth';
 
 // Types and Services
-import { ServerToClientEvents, ClientToServerEvents, SocketData } from './types/socket';
+import { ServerToClientEvents, ClientToServerEvents, SocketData } from './types';
 import { SocketService } from './services/SocketService';
 
 // Load environment variables
@@ -78,55 +80,14 @@ app.use('/api/auth', authRoutes);
 app.use('/api/servers', authMiddleware, serverRoutes);
 app.use('/api/messages', authMiddleware, messageRoutes);
 app.use('/api/livekit', authMiddleware, livekitRoutes);
-app.use('/api/invites', authMiddleware, inviteRoutes);
+app.use('/api/invites', authMiddleware, inviteProtectedRoutes);
 app.use('/api/users', authMiddleware, userRoutes);
 
 // Публичные роуты (без авторизации)
-app.use('/api/public/invites', inviteRoutes);
+app.use('/api/invites', invitePublicRoutes);
 
 // Socket.IO authentication middleware
-io.use(async (socket, next) => {
-  try {
-    const token = socket.handshake.auth.token;
-    if (!token) {
-      return next(new Error('Authentication token required'));
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
-    
-    // Get user info with status
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: { 
-        id: true, 
-        username: true, 
-        avatar: true,
-        status: true 
-      }
-    });
-
-    if (!user) {
-      return next(new Error('User not found'));
-    }
-
-    // Update user status to online
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { status: 'ONLINE' }
-    });
-
-    socket.data.user = {
-      id: user.id,
-      username: user.username,
-      avatar: user.avatar,
-      status: 'ONLINE' as const
-    };
-    next();
-  } catch (error) {
-    console.error('Socket authentication error:', error);
-    next(new Error('Authentication failed'));
-  }
-});
+io.use(socketAuthMiddleware);
 
 // Initialize Socket Service
 const socketService = new SocketService(io, prisma);

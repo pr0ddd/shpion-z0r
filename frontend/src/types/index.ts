@@ -4,6 +4,7 @@ export interface User {
   username: string;
   email: string;
   avatar?: string;
+  status: 'ONLINE' | 'OFFLINE' | 'AWAY';
 }
 
 // Server types  
@@ -28,5 +29,14 @@ export interface VoiceParticipant {
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
+  error?: string;
+}
+
+export interface LoginResponse {
+  success: boolean;
+  data?: {
+    user: User;
+    token: string;
+  };
   error?: string;
 } 

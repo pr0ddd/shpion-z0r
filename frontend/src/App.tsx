@@ -18,6 +18,7 @@ import ServersSidebar from './components/ServersSidebar';
 import ServerContent from './components/ServerContent';
 import ServerMembers from './components/ServerMembers';
 import InvitePage from './components/InvitePage';
+import ProtectedAppLayout from './components/ProtectedAppLayout';
 
 // Создаем тему по официальному примеру
 const theme = createTheme({
@@ -44,62 +45,10 @@ const theme = createTheme({
   },
 });
 
-// Главная страница для авторизованных пользователей
-function MainApp() {
-  const { user, logout } = useAuth();
-
-  return (
-    <Box sx={{ display: 'flex', height: '100vh' }}>
-      {/* Servers Sidebar */}
-      <ServersSidebar />
-      
-      {/* Members Sidebar */}
-      <ServerMembers />
-      
-      {/* Main Content Area */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        {/* Header */}
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            p: 2,
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            bgcolor: 'background.paper'
-          }}
-        >
-          <Typography variant="h5" component="h1">
-            Shpion Voice Chat
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="body1">
-              Привет, {user?.username}!
-            </Typography>
-            <Button variant="outlined" size="small" onClick={logout}>
-              Выйти
-            </Button>
-          </Box>
-        </Box>
-        
-        {/* Content Area */}
-        <Box sx={{ flex: 1, overflow: 'auto' }}>
-          <ServerContent />
-        </Box>
-      </Box>
-    </Box>
-  );
-}
-
-// Компонент приложения с проверкой авторизации
 function AppContent() {
-  const { user, isLoading, token } = useAuth();
-
-  console.log('🔄 AppContent render - isLoading:', isLoading, 'user:', user?.username || 'null', 'token:', token ? 'Present' : 'None');
+  const { user, isLoading, logout } = useAuth();
 
   if (isLoading) {
-    console.log('⏳ Showing loading spinner...');
     return (
       <Box 
         sx={{ 
@@ -116,32 +65,17 @@ function AppContent() {
 
   return (
     <Routes>
-      {/* Страница приглашения - доступна всем */}
       <Route path="/invite/:inviteCode" element={<InvitePage />} />
-      
-      {/* Основное приложение - только для авторизованных */}
       <Route 
         path="/app" 
         element={
-          user ? (
-            <SocketProvider>
-              <ServerProvider>
-                <MainApp />
-              </ServerProvider>
-            </SocketProvider>
-          ) : (
-            <Navigate to="/auth" replace />
-          )
+          user ? <ProtectedAppLayout /> : <Navigate to="/auth" replace />
         } 
       />
-      
-      {/* Страница авторизации */}
       <Route 
         path="/auth" 
         element={user ? <Navigate to="/app" replace /> : <AuthPage />} 
       />
-      
-      {/* Перенаправление на главную */}
       <Route path="/" element={<Navigate to={user ? "/app" : "/auth"} replace />} />
     </Routes>
   );
@@ -153,7 +87,11 @@ function App() {
       <CssBaseline />
       <Router>
         <AuthProvider>
-          <AppContent />
+          <SocketProvider>
+            <ServerProvider>
+              <AppContent />
+            </ServerProvider>
+          </SocketProvider>
         </AuthProvider>
       </Router>
     </ThemeProvider>

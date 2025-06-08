@@ -1,9 +1,8 @@
 import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
-import { AuthenticatedRequest } from '../types';
+import { prisma } from '../index';
+import { AuthenticatedRequest, RequestUser } from '../types';
 
-const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export const authMiddleware = async (
@@ -48,7 +47,7 @@ export const authMiddleware = async (
     }
 
     // Attach user to request
-    req.user = user as any;
+    req.user = user as RequestUser;
     return next();
   } catch (error) {
     console.error('Auth middleware error:', error);
