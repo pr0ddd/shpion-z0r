@@ -1,11 +1,11 @@
-import React, { Suspense, lazy } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { Box, CircularProgress, ThemeProvider, createTheme, CssBaseline } from '@mui/material';
-import { AuthPage } from './components/AuthPage';
+import AuthPage from './components/AuthPage';
 import InvitePage from './components/InvitePage';
-import { ServerProvider } from './contexts/ServerContext';
-import ErrorBoundary from './components/ErrorBoundary';
+import { AppProviders } from './contexts/AppProviders';
+import ProtectedAppLayout from './components/ProtectedAppLayout';
 
 // Module augmentation to add custom palette colors
 declare module '@mui/material/styles' {
@@ -26,9 +26,6 @@ declare module '@mui/material/styles' {
     };
   }
 }
-
-// Lazy load the main application layout
-const ProtectedAppLayout = lazy(() => import('./components/ProtectedAppLayout'));
 
 // Определение нашей новой нео-дарк темы
 const neoDarkTheme = createTheme({
@@ -111,43 +108,31 @@ const App: React.FC = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100vh" bgcolor="#1e1f22">
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: 'background.default' }}>
         <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <ThemeProvider theme={neoDarkTheme}>
-      <CssBaseline />
-      <Router>
-        <ErrorBoundary>
-          <Suspense fallback={
-            <Box display="flex" justifyContent="center" alignItems="center" height="100vh" bgcolor="background.default">
-              <CircularProgress />
-            </Box>
-          }>
-            <Routes>
-              <Route path="/auth" element={!user ? <AuthPage /> : <Navigate to="/" />} />
-              <Route path="/invite/:inviteCode" element={user ? <InvitePage /> : <Navigate to="/auth" />} />
-              <Route 
-                path="/*" 
-                element={
-                  user ? (
-                    <ServerProvider>
-                      <ProtectedAppLayout />
-                    </ServerProvider>
-                  ) : (
-                    <Navigate to="/auth" />
-                  )
-                } 
-              />
-            </Routes>
-          </Suspense>
-        </ErrorBoundary>
-      </Router>
-    </ThemeProvider>
+    <Routes>
+      <Route path="/" element={user ? <ProtectedAppLayout /> : <Navigate to="/auth" />} />
+      <Route path="/auth" element={!user ? <AuthPage /> : <Navigate to="/" />} />
+      <Route path="/invite/:inviteCode" element={<InvitePage />} />
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
   );
 };
 
-export default App;
+const Root: React.FC = () => (
+  <ThemeProvider theme={neoDarkTheme}>
+    <CssBaseline />
+    <Router>
+      <AppProviders>
+        <App />
+      </AppProviders>
+    </Router>
+  </ThemeProvider>
+);
+
+export default Root;

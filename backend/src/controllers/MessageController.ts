@@ -1,8 +1,6 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma, socketService } from '../index';
 import { AuthenticatedRequest, ApiResponse } from '../types';
-
-const prisma = new PrismaClient();
 
 export class MessageController {
   // Получить сообщения для сервера
@@ -19,8 +17,8 @@ export class MessageController {
         });
       }
 
-      // Проверяем доступ к серверу и текстовому чату
-      const member = await prisma.serverMember.findUnique({
+      // Проверяем доступ к серверу
+      const member = await prisma.member.findUnique({
         where: {
           userId_serverId: {
             userId,
@@ -29,10 +27,10 @@ export class MessageController {
         }
       });
 
-      if (!member || !member.canAccessTextChat) {
+      if (!member) {
         return res.status(403).json({
           success: false,
-          error: 'You do not have access to text chat on this server'
+          error: 'You do not have access to this server'
         });
       }
 
@@ -101,8 +99,8 @@ export class MessageController {
         });
       }
 
-      // Проверяем доступ к серверу и текстовому чату
-      const member = await prisma.serverMember.findUnique({
+      // Проверяем доступ к серверу
+      const member = await prisma.member.findUnique({
         where: {
           userId_serverId: {
             userId,
@@ -111,10 +109,10 @@ export class MessageController {
         }
       });
 
-      if (!member || !member.canAccessTextChat) {
+      if (!member) {
         return res.status(403).json({
           success: false,
-          error: 'You do not have access to text chat on this server'
+          error: 'You do not have access to this server'
         });
       }
 
@@ -134,6 +132,9 @@ export class MessageController {
           }
         }
       });
+
+      // Уведомляем всех на сервере через сокет
+      socketService.notifyNewMessage(serverId, message);
 
       return res.status(201).json({
         success: true,
@@ -199,8 +200,7 @@ export class MessageController {
       const updatedMessage = await prisma.message.update({
         where: { id: messageId },
         data: {
-          content: content.trim(),
-          editedAt: new Date()
+          content: content.trim()
         },
         include: {
           author: {
@@ -212,6 +212,9 @@ export class MessageController {
           }
         }
       });
+
+      // Уведомляем всех на сервере через сокет
+      socketService.notifyUpdatedMessage(updatedMessage.serverId, updatedMessage);
 
       return res.json({
         success: true,
@@ -240,17 +243,11 @@ export class MessageController {
         });
       }
 
-      // Проверяем, что сообщение принадлежит пользователю
+      // Проверяем права на удаление
       const existingMessage = await prisma.message.findUnique({
         where: { id: messageId },
         include: {
-          server: {
-            include: {
-              members: {
-                where: { userId }
-              }
-            }
-          }
+          server: true
         }
       });
 
@@ -260,14 +257,12 @@ export class MessageController {
           error: 'Message not found'
         });
       }
+      
+      const serverId = existingMessage.server.id; // Сохраняем ID сервера перед удалением
+      const isAuthor = existingMessage.authorId === userId;
+      const isServerOwner = existingMessage.server.ownerId === userId;
 
-      const userMember = existingMessage.server.members[0];
-      const canDelete = existingMessage.authorId === userId || 
-                       userMember?.roleType === 'OWNER' || 
-                       userMember?.roleType === 'ADMIN' || 
-                       userMember?.roleType === 'MODERATOR';
-
-      if (!canDelete) {
+      if (!isAuthor && !isServerOwner) {
         return res.status(403).json({
           success: false,
           error: 'You do not have permission to delete this message'
@@ -277,6 +272,9 @@ export class MessageController {
       await prisma.message.delete({
         where: { id: messageId }
       });
+
+      // Уведомляем всех на сервере через сокет
+      socketService.notifyDeletedMessage(serverId, messageId);
 
       return res.json({
         success: true,

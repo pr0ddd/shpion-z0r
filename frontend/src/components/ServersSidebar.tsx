@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useCallback } from 'react';
+import React, { memo, useCallback, useState } from 'react';
 import {
   Box,
   Avatar,
@@ -7,12 +7,13 @@ import {
   Divider,
   Typography,
 } from '@mui/material';
-import { styled, useTheme } from '@mui/material/styles';
+import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useServer } from '../contexts/ServerContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Server } from '../types';
+import CreateServerDialog from './CreateServerDialog';
 
 const SidebarWrapper = styled(Box)(({ theme }) => ({
   width: 72,
@@ -64,9 +65,13 @@ const ServerItem = memo(({ server, isSelected, onClick }: ServerItemProps) => {
         isselected={isSelected.toString()}
         onClick={() => onClick(server)}
       >
-        <Typography variant="h6" sx={{fontWeight: 'bold'}}>
-            {server.name.charAt(0).toUpperCase()}
-        </Typography>
+        {server.icon ? (
+          <Avatar src={server.icon} sx={{ width: 48, height: 48 }} />
+        ) : (
+          <Typography variant="h6" sx={{fontWeight: 'bold'}}>
+              {server.name.charAt(0).toUpperCase()}
+          </Typography>
+        )}
       </ServerButton>
     </Tooltip>
   );
@@ -81,58 +86,52 @@ const ActionButtons = styled(Box)({
 });
 
 const ServersSidebar: React.FC = () => {
-  const {
-    servers,
-    selectedServer,
-    isLoading,
-    error,
-    selectServer,
-    fetchServers,
-  } = useServer();
-  const { user, logout } = useAuth();
-  const theme = useTheme();
-
-  useEffect(() => {
-    if (user) {
-      fetchServers();
-    }
-  }, [user, fetchServers]);
+  const { servers, selectedServer, isLoading, error, selectServer } = useServer();
+  const { logout } = useAuth();
+  const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
 
   const handleServerClick = useCallback((server: Server) => {
     selectServer(server);
   }, [selectServer]);
   
   return (
-    <SidebarWrapper>
-      <Tooltip title="Личные сообщения (скоро)" placement="right">
-        <ServerButton isselected={(selectedServer === null).toString()} onClick={() => selectServer(null)}>
-            <Typography sx={{fontWeight: 'bold'}}>DM</Typography>
-        </ServerButton>
-      </Tooltip>
-      <StyledDivider />
-      {servers.map(server => (
-        <ServerItem
-          key={server.id}
-          server={server}
-          isSelected={selectedServer?.id === server.id}
-          onClick={handleServerClick}
-        />
-      ))}
-      {isLoading && <CircularProgress size={24} sx={{marginTop: 2}}/>}
-      {error && <Typography color="error">{error}</Typography>}
-      <ActionButtons>
-        <Tooltip title="Добавить сервер (скоро)" placement="right">
-          <ServerButton>
-            <AddIcon />
+    <>
+      <SidebarWrapper>
+        <Tooltip title="Личные сообщения (скоро)" placement="right">
+          <ServerButton isselected={(selectedServer === null).toString()} onClick={() => selectServer(null)}>
+              <Typography sx={{fontWeight: 'bold'}}>DM</Typography>
           </ServerButton>
         </Tooltip>
-        <Tooltip title="Выйти" placement="right">
-          <ServerButton onClick={() => logout()}>
-            <LogoutIcon />
-          </ServerButton>
-        </Tooltip>
-      </ActionButtons>
-    </SidebarWrapper>
+        <StyledDivider />
+        {servers.map(server => (
+          <ServerItem
+            key={server.id}
+            server={server}
+            isSelected={selectedServer?.id === server.id}
+            onClick={handleServerClick}
+          />
+        ))}
+        {isLoading && <CircularProgress size={24} sx={{marginTop: 2}}/>}
+        {error && <Typography color="error" sx={{maxWidth: '60px', overflowWrap: 'break-word', fontSize: '10px'}}>{error}</Typography>}
+        
+        <ActionButtons>
+          <Tooltip title="Создать сервер" placement="right">
+            <ServerButton onClick={() => setCreateDialogOpen(true)}>
+              <AddIcon />
+            </ServerButton>
+          </Tooltip>
+          <Tooltip title="Выйти" placement="right">
+            <ServerButton onClick={logout}>
+              <LogoutIcon />
+            </ServerButton>
+          </Tooltip>
+        </ActionButtons>
+      </SidebarWrapper>
+      <CreateServerDialog 
+        open={isCreateDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+      />
+    </>
   );
 };
 

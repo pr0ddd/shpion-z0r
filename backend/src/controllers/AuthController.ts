@@ -1,10 +1,9 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { AuthenticatedRequest, ApiResponse } from '../types';
+import { prisma } from '..'; // Импортируем prisma из index.ts
 
-const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export class AuthController {
@@ -60,7 +59,6 @@ export class AuthController {
           email: true,
           username: true,
           avatar: true,
-          status: true,
           createdAt: true
         }
       });
@@ -119,15 +117,6 @@ export class AuthController {
         });
       }
 
-      // Обновление статуса на онлайн
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          status: 'ONLINE',
-          lastSeen: new Date()
-        }
-      });
-
       // Создание JWT токена
       const token = jwt.sign(
         { userId: user.id },
@@ -170,8 +159,6 @@ export class AuthController {
           email: true,
           username: true,
           avatar: true,
-          status: true,
-          lastSeen: true,
           createdAt: true
         }
       });
@@ -198,35 +185,12 @@ export class AuthController {
 
   // Выход из системы
   static async logout(req: AuthenticatedRequest, res: Response<ApiResponse>) {
-    try {
-      const userId = req.user?.id;
-
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: 'User not authenticated'
-        });
-      }
-
-      // Обновление статуса на оффлайн
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          status: 'OFFLINE',
-          lastSeen: new Date()
-        }
-      });
-
-      return res.json({
-        success: true,
-        message: 'Logout successful'
-      });
-    } catch (error) {
-      console.error('Error logging out:', error);
-      return res.status(500).json({
-        success: false,
-        error: 'Internal server error'
-      });
-    }
+    // В текущей схеме нет статуса онлайн/оффлайн,
+    // поэтому этот эндпоинт просто возвращает успешный ответ.
+    // На клиенте токен должен быть удален.
+    return res.json({
+      success: true,
+      message: 'Logout successful'
+    });
   }
 } 

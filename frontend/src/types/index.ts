@@ -1,51 +1,76 @@
-// User types
-export interface User {
-  id: string;
-  username: string;
-  email: string;
-  avatar?: string;
-  status: 'ONLINE' | 'OFFLINE' | 'AWAY';
-}
+// =================================
+// Basic API & Entity Types
+// =================================
 
-// Server types  
-export interface Server {
-  id: string;
-  name: string;
-  description?: string;
-  members: User[];
-  voiceParticipants: VoiceParticipant[];
-}
-
-// Voice participant type
-export interface VoiceParticipant {
-  userId: string;
-  username: string;
-  isMuted: boolean;
-  isDeafened: boolean;
-  avatar?: string;
-}
-
-// Voice State for socket events
-export interface VoiceState {
-  userId: string;
-  username: string;
-  serverId: string;
-  isMuted: boolean;
-  isDeafened: boolean;
-}
-
-// API Response type
+// Generic API response structure
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   error?: string;
+  message?: string;
 }
 
-export interface LoginResponse {
-  success: boolean;
-  data?: {
-    user: User;
-    token: string;
+// User entity
+export interface User {
+  id: string;
+  email: string;
+  username: string;
+  avatar: string | null;
+  createdAt: string;
+}
+
+// Member entity
+export interface Member {
+  id: string;
+  role: 'ADMIN' | 'MEMBER';
+  userId: string;
+  serverId: string;
+  user: User;
+}
+
+// Server entity
+export interface Server {
+  id: string;
+  name: string;
+  icon: string | null;
+  inviteCode: string;
+  ownerId: string;
+  members: Member[];
+  _count: {
+    members: number;
+    messages: number;
   };
-  error?: string;
+}
+
+// Message entity (as returned by the API with author)
+export interface Message {
+  id: string;
+  content: string;
+  authorId: string;
+  serverId: string;
+  createdAt: string;
+  updatedAt: string;
+  author: {
+    id: string;
+    username: string;
+    avatar: string | null;
+  };
+}
+
+// =================================
+// API-specific response types
+// =================================
+
+// Auth responses
+export interface LoginResponseData {
+  user: User;
+  token: string;
+}
+
+// Invite responses
+export interface PublicInviteInfo {
+  id: string;
+  name: string;
+  icon: string | null;
+  memberCount: number;
 } 

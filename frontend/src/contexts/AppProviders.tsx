@@ -6,14 +6,14 @@ import ErrorBoundary from '../components/ErrorBoundary';
 
 export const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <AuthProvider>
-      <SocketProvider>
-        <ServerProvider>
-          <ErrorBoundary>
+    <ErrorBoundary>
+      <AuthProvider>
+        <SocketProvider>
+          <ServerProvider>
             {children}
-          </ErrorBoundary>
-        </ServerProvider>
-      </SocketProvider>
-    </AuthProvider>
+          </ServerProvider>
+        </SocketProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }; 

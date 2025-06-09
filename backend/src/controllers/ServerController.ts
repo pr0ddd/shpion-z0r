@@ -1,8 +1,6 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../index';
 import { AuthenticatedRequest, ApiResponse } from '../types';
-
-const prisma = new PrismaClient();
 
 export class ServerController {
   // Получить все серверы пользователя
@@ -31,8 +29,7 @@ export class ServerController {
                 select: {
                   id: true,
                   username: true,
-                  avatar: true,
-                  status: true
+                  avatar: true
                 }
               }
             }
@@ -40,34 +37,15 @@ export class ServerController {
           _count: {
             select: {
               members: true,
-              messages: true,
-              streams: true
+              messages: true
             }
           }
         }
       });
 
-      // Обогащаем данные серверов голосовой информацией
-      const enrichedServers = servers.map(server => {
-        const voiceMembers = server.members.filter(member => member.voiceConnectedAt !== null);
-        return {
-          ...server,
-          voiceParticipants: voiceMembers.map(member => ({
-            userId: member.user.id,
-            username: member.user.username,
-            avatar: member.user.avatar,
-            serverId: server.id,
-            isMuted: member.isMuted,
-            isDeafened: member.isDeafened,
-            connectedAt: member.voiceConnectedAt
-          })),
-          voiceParticipantCount: voiceMembers.length
-        };
-      });
-
       return res.json({
         success: true,
-        data: enrichedServers
+        data: servers
       });
     } catch (error) {
       console.error('Error fetching user servers:', error);
@@ -89,7 +67,7 @@ export class ServerController {
         });
       }
 
-      const { name, description } = req.body;
+      const { name } = req.body;
       if (!name) {
         return res.status(400).json({
           success: false,
@@ -97,20 +75,14 @@ export class ServerController {
         });
       }
 
-      // Создаем сервер с владельцем
       const server = await prisma.server.create({
         data: {
           name,
-          description,
           ownerId: userId,
           members: {
             create: {
               userId,
-              roleType: 'OWNER',
-              canAccessTextChat: true,
-              canAccessVoiceChat: true,
-              canAccessStreams: true,
-              canCreateStreams: true
+              role: 'ADMIN'
             }
           }
         },
@@ -156,8 +128,7 @@ export class ServerController {
         });
       }
 
-      // Проверяем, состоит ли пользователь в сервере
-      const member = await prisma.serverMember.findUnique({
+      const member = await prisma.member.findUnique({
         where: {
           userId_serverId: {
             userId,
@@ -182,24 +153,8 @@ export class ServerController {
                 select: {
                   id: true,
                   username: true,
-                  avatar: true,
-                  status: true
-                }
-              }
-            }
-          },
-          streams: {
-            where: { status: 'LIVE' },
-            include: {
-              streamer: {
-                select: {
-                  id: true,
-                  username: true,
                   avatar: true
                 }
-              },
-              _count: {
-                select: { viewers: true }
               }
             }
           }
@@ -219,88 +174,11 @@ export class ServerController {
     }
   }
 
-  // Получить информацию о голосовом состоянии сервера
-  static async getServerVoiceState(req: AuthenticatedRequest, res: Response<ApiResponse>) {
-    try {
-      const userId = req.user?.id;
-      const serverId = req.params.serverId;
-
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: 'User not authenticated'
-        });
-      }
-
-      // Проверяем, состоит ли пользователь в сервере
-      const member = await prisma.serverMember.findUnique({
-        where: {
-          userId_serverId: {
-            userId,
-            serverId
-          }
-        }
-      });
-
-      if (!member) {
-        return res.status(403).json({
-          success: false,
-          error: 'You are not a member of this server'
-        });
-      }
-
-      // Получаем всех участников в голосовом канале
-      const voiceMembers = await prisma.serverMember.findMany({
-        where: {
-          serverId,
-          voiceConnectedAt: {
-            not: null
-          }
-        },
-                  include: {
-            user: {
-              select: {
-                id: true,
-                username: true,
-                avatar: true,
-                status: true
-              }
-            }
-          }
-      });
-
-      const voiceStates = voiceMembers.map(member => ({
-        userId: member.user.id,
-        username: member.user.username,
-        avatar: member.user.avatar,
-        serverId: serverId,
-        isMuted: member.isMuted,
-        isDeafened: member.isDeafened,
-        connectedAt: member.voiceConnectedAt
-      }));
-
-      return res.json({
-        success: true,
-        data: {
-          serverId,
-          voiceParticipants: voiceStates,
-          participantCount: voiceStates.length
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching server voice state:', error);
-      return res.status(500).json({
-        success: false,
-        error: 'Internal server error'
-      });
-    }
-  }
-
   // Покинуть сервер
   static async leaveServer(req: AuthenticatedRequest, res: Response<ApiResponse>) {
     try {
       const userId = req.user?.id;
-      const serverId = req.params.serverId;
+      const { serverId } = req.params;
 
       if (!userId) {
         return res.status(401).json({
@@ -309,31 +187,25 @@ export class ServerController {
         });
       }
 
-      // Проверяем, что пользователь не владелец
-      const member = await prisma.serverMember.findUnique({
-        where: {
-          userId_serverId: {
-            userId,
-            serverId
-          }
-        }
+      const server = await prisma.server.findUnique({
+        where: { id: serverId },
       });
 
-      if (!member) {
+      if (!server) {
         return res.status(404).json({
           success: false,
-          error: 'You are not a member of this server'
+          error: 'Server not found'
         });
       }
 
-      if (member.roleType === 'OWNER') {
+      if (server.ownerId === userId) {
         return res.status(400).json({
           success: false,
-          error: 'Owner cannot leave the server. Transfer ownership first or delete the server.'
+          error: 'Owner cannot leave the server. You must delete it instead.'
         });
       }
 
-      await prisma.serverMember.delete({
+      await prisma.member.delete({
         where: {
           userId_serverId: {
             userId,
@@ -344,7 +216,7 @@ export class ServerController {
 
       return res.json({
         success: true,
-        message: 'Successfully left the server'
+        message: `Successfully left server ${server.name}`
       });
     } catch (error) {
       console.error('Error leaving server:', error);
@@ -358,70 +230,24 @@ export class ServerController {
   // Получить участников сервера
   static async getServerMembers(req: AuthenticatedRequest, res: Response<ApiResponse>) {
     try {
-      const userId = req.user?.id;
       const serverId = req.params.serverId;
 
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: 'User not authenticated'
-        });
-      }
-
-      // Проверяем, состоит ли пользователь в сервере
-      const member = await prisma.serverMember.findUnique({
-        where: {
-          userId_serverId: {
-            userId,
-            serverId
-          }
-        }
-      });
-
-      if (!member) {
-        return res.status(403).json({
-          success: false,
-          error: 'You are not a member of this server'
-        });
-      }
-
-      const members = await prisma.serverMember.findMany({
+      const members = await prisma.member.findMany({
         where: { serverId },
         include: {
           user: {
             select: {
               id: true,
               username: true,
-              email: true,
-              avatar: true,
-              status: true
+              avatar: true
             }
           }
-        },
-        orderBy: [
-          { roleType: 'desc' }, // OWNER, ADMIN, MODERATOR, MEMBER
-          { user: { username: 'asc' } }
-        ]
+        }
       });
-
-              // Упрощаем структуру - только нужные данные для UI
-        const simplifiedMembers = members.map(member => ({
-          id: member.user.id,
-          username: member.user.username,
-          email: member.user.email,
-          avatar: member.user.avatar,
-          isOnline: member.user.status === 'ONLINE',
-          role: member.roleType,
-          // Голосовые статусы
-          inVoice: member.voiceConnectedAt !== null,
-          isMuted: member.isMuted,
-          isDeafened: member.isDeafened,
-          isSpeaking: member.isSpeaking
-        }));
 
       return res.json({
         success: true,
-        data: simplifiedMembers
+        data: members
       });
     } catch (error) {
       console.error('Error fetching server members:', error);
@@ -431,4 +257,4 @@ export class ServerController {
       });
     }
   }
-} 
+}

@@ -1,11 +1,18 @@
 import axios from 'axios';
-import { ApiResponse, User, Server } from '../types';
+import { 
+  ApiResponse, 
+  User, 
+  Server, 
+  LoginResponseData, 
+  PublicInviteInfo,
+  Message
+} from '../types';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
 // Create axios instance
 const api = axios.create({
-  baseURL: `${API_BASE_URL}/api`,
+  baseURL: API_BASE_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -30,68 +37,98 @@ api.interceptors.response.use(
   },
   (error) => {
     console.log('API Error:', error.config?.url, error.response?.status, error.response?.data);
+    
+    // Check if the response exists and has a status of 401
     if (error.response?.status === 401) {
-      console.log('401 Unauthorized - Token might be invalid, but NOT reloading page');
+      // Prevent infinite loop on logout
+      if (error.config.url?.endsWith('/auth/logout')) {
+        return Promise.reject(error);
+      }
+
+      console.log('401 Unauthorized - Token might be invalid or expired. Logging out.');
       localStorage.removeItem('authToken');
-      // window.location.reload(); // Убираем автоматическую перезагрузку
+      
+      // Dispatch a custom event to notify the app of the auth error.
+      // This is a cleaner way to handle global state changes from a service file.
+      window.dispatchEvent(new Event('auth-error'));
     }
+    
     return Promise.reject(error);
   }
 );
 
-// Auth API
+// --- Auth API ---
 export const authAPI = {
-  login: (email: string, password: string): Promise<ApiResponse<{ user: User; token: string }>> =>
+  login: (email: string, password: string): Promise<ApiResponse<LoginResponseData>> =>
     api.post('/auth/login', { email, password }).then(res => res.data),
 
-  register: (email: string, username: string, password: string): Promise<ApiResponse<{ user: User; token: string }>> =>
+  register: (email: string, username: string, password: string): Promise<ApiResponse<LoginResponseData>> =>
     api.post('/auth/register', { email, username, password }).then(res => res.data),
 
   me: (): Promise<ApiResponse<User>> =>
     api.get('/auth/me').then(res => res.data),
+
+  logout: (): Promise<ApiResponse> =>
+    api.post('/auth/logout').then(res => res.data),
 };
 
-// Server API
+// --- Server API ---
 export const serverAPI = {
   getServers: (): Promise<ApiResponse<Server[]>> =>
     api.get('/servers').then(res => res.data),
-
-  createServer: (name: string, description?: string): Promise<ApiResponse<any>> =>
-    api.post('/servers', { name, description }).then(res => res.data),
-
-  getServerVoiceState: (serverId: string): Promise<ApiResponse<any>> =>
-    api.get(`/servers/${serverId}/voice`).then(res => res.data),
-
-  getServerMembers: (serverId: string): Promise<ApiResponse<any>> =>
+  
+  createServer: (name: string): Promise<ApiResponse<Server>> =>
+    api.post('/servers', { name }).then(res => res.data),
+  
+  leaveServer: (serverId: string): Promise<ApiResponse> =>
+    api.post(`/servers/${serverId}/leave`).then(res => res.data), // Changed from DELETE to POST for consistency, check backend route
+  
+  // Note: getServerMembers might be redundant if servers are fetched with members included
+  getServerMembers: (serverId: string): Promise<ApiResponse<User[]>> =>
     api.get(`/servers/${serverId}/members`).then(res => res.data),
-
-  // Invite methods
-  getServerInvites: (serverId: string): Promise<ApiResponse<any>> =>
-    api.get(`/servers/${serverId}/invites`).then(res => res.data),
-
-  createInvite: (serverId: string, data: { maxUses?: number; expiresInHours?: number }): Promise<ApiResponse<any>> =>
-    api.post(`/servers/${serverId}/invites`, data).then(res => res.data),
-
-  deleteInvite: (inviteId: string): Promise<ApiResponse<any>> =>
-    api.delete(`/invites/${inviteId}`).then(res => res.data),
-
-  getInviteInfo: (inviteCode: string): Promise<ApiResponse<any>> =>
-    api.get(`/invites/${inviteCode}/info`).then(res => res.data),
-
-  useInvite: (inviteCode: string): Promise<ApiResponse<any>> =>
-    api.post(`/invites/${inviteCode}/use`).then(res => res.data),
 };
 
-// LiveKit API
+// --- Invite API ---
+export const inviteAPI = {
+  getPublicInviteInfo: (inviteCode: string): Promise<ApiResponse<PublicInviteInfo>> =>
+    api.get(`/invites/${inviteCode}`).then(res => res.data),
+    
+  useInvite: (inviteCode: string): Promise<ApiResponse<Server>> =>
+    api.post(`/invites/${inviteCode}`).then(res => res.data),
+
+  regenerateInviteCode: (serverId: string): Promise<ApiResponse<{ inviteCode: string }>> =>
+    api.post(`/invites/${serverId}/regenerate`).then(res => res.data),
+};
+
+// --- Message API ---
+export const messageAPI = {
+  getMessages: (serverId: string, before?: string): Promise<ApiResponse<Message[]>> =>
+    api.get(`/messages/${serverId}${before ? `?before=${before}` : ''}`).then(res => res.data),
+  
+  sendMessage: (serverId: string, content: string): Promise<ApiResponse<Message>> =>
+    api.post(`/messages/${serverId}`, { content }).then(res => res.data),
+
+  editMessage: (messageId: string, content: string): Promise<ApiResponse<Message>> =>
+    api.patch(`/messages/${messageId}`, { content }).then(res => res.data),
+    
+  deleteMessage: (messageId: string): Promise<ApiResponse<null>> =>
+    api.delete(`/messages/${messageId}`).then(res => res.data),
+};
+
+
+// --- LiveKit API ---
 export const livekitAPI = {
-  getVoiceToken: (serverId: string): Promise<ApiResponse<{ token: string; wsUrl: string }>> =>
-    api.post(`/livekit/voice/${serverId}/token`).then(res => res.data),
+  getVoiceToken: (serverId: string): Promise<ApiResponse<{ token: string }>> =>
+    api.get(`/livekit/voice/${serverId}/token`).then(res => res.data),
 };
 
-// User API
+// --- User API ---
 export const userAPI = {
-  getCurrentUser: (): Promise<ApiResponse<User & { servers: Server[]; currentServerId: string | null }>> =>
+  getCurrentUser: (): Promise<ApiResponse<User>> =>
     api.get('/users/me').then(res => res.data),
+
+  getUsersByIds: (userIds: string[]): Promise<ApiResponse<User[]>> =>
+    api.post('/users/by-ids', { userIds }).then(res => res.data),
 };
 
 export default api; 

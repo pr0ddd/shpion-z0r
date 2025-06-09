@@ -8,142 +8,82 @@ import {
   Button,
   Alert,
   Box,
+  CircularProgress
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
 import { serverAPI } from '../services/api';
+import { useServer } from '../contexts/ServerContext';
 
 interface CreateServerDialogProps {
   open: boolean;
   onClose: () => void;
-  onSuccess: (newServer: any) => void;
 }
 
-const StyledDialog = styled(Dialog)(({ theme }) => ({
-  '& .MuiDialog-paper': {
-    backgroundColor: theme.palette.background.paper,
-  },
-}));
-
-const StyledDialogTitle = styled(DialogTitle)({
-  paddingBottom: 1,
-});
-
-const StyledDialogContent = styled(DialogContent)({
-  paddingBottom: 2,
-});
-
-const StyledDialogActions = styled(DialogActions)(({ theme }) => ({
-  padding: theme.spacing(0, 3, 2, 3),
-}));
-
-export const CreateServerDialog: React.FC<CreateServerDialogProps> = ({
-  open,
-  onClose,
-  onSuccess,
-}) => {
+const CreateServerDialog: React.FC<CreateServerDialogProps> = ({ open, onClose }) => {
+  const { setServers } = useServer();
   const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const handleClose = () => {
+    setName('');
+    setError('');
+    setIsLoading(false);
+    onClose();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    
     if (!name.trim()) {
-      setError('Название сервера обязательно');
+      setError('Название сервера не может быть пустым.');
       return;
     }
-    
+    setError('');
     setIsLoading(true);
-    
+
     try {
-      const response = await serverAPI.createServer(name.trim(), description.trim());
-      
+      const response = await serverAPI.createServer(name);
       if (response.success && response.data) {
-        onSuccess(response.data);
+        // Add the new server to the global state
+        setServers(prevServers => [...prevServers, response.data!]);
         handleClose();
       } else {
-        setError(response.error || 'Ошибка создания сервера');
+        setError(response.error || 'Не удалось создать сервер.');
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || err.message || 'Ошибка создания сервера');
+      setError(err.response?.data?.error || 'Произошла непредвиденная ошибка.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleClose = () => {
-    setName('');
-    setDescription('');
-    setError('');
-    onClose();
-  };
-
   return (
-    <StyledDialog 
-      open={open} 
-      onClose={handleClose}
-      maxWidth="sm"
-      fullWidth
-    >
-      <StyledDialogTitle>
-        Создать сервер
-      </StyledDialogTitle>
-      
+    <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
+      <DialogTitle>Создание своего сервера</DialogTitle>
       <Box component="form" onSubmit={handleSubmit}>
-        <StyledDialogContent>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-          
+        <DialogContent>
           <TextField
             autoFocus
-            margin="normal"
+            margin="dense"
             id="name"
             label="Название сервера"
             type="text"
             fullWidth
-            required
+            variant="standard"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Мой крутой сервер"
-            helperText="Это имя будет видно всем участникам"
-          />
-          
-          <TextField
-            margin="normal"
-            id="description"
-            label="Описание (необязательно)"
-            type="text"
-            fullWidth
-            multiline
-            rows={3}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Краткое описание сервера..."
-            helperText="Расскажите, о чем ваш сервер"
-          />
-        </StyledDialogContent>
-        
-        <StyledDialogActions>
-          <Button 
-            onClick={handleClose}
             disabled={isLoading}
-          >
-            Отмена
+          />
+          {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose} disabled={isLoading}>Отмена</Button>
+          <Button type="submit" disabled={isLoading || !name.trim()}>
+            {isLoading ? <CircularProgress size={24} /> : 'Создать'}
           </Button>
-          <Button 
-            type="submit"
-            variant="contained"
-            disabled={isLoading || !name.trim()}
-          >
-            {isLoading ? 'Создание...' : 'Создать сервер'}
-          </Button>
-        </StyledDialogActions>
+        </DialogActions>
       </Box>
-    </StyledDialog>
+    </Dialog>
   );
-}; 
+};
+
+export default CreateServerDialog; 

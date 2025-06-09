@@ -17,16 +17,7 @@ router.get('/:serverId', ServerController.getServer);
 // Получить участников сервера
 router.get('/:serverId/members', ServerController.getServerMembers);
 
-// Получить голосовое состояние сервера
-router.get('/:serverId/voice', ServerController.getServerVoiceState);
-
-// Получить приглашения сервера
-router.get('/:serverId/invites', InviteController.getServerInvites);
-
-// Создать приглашение для сервера
-router.post('/:serverId/invites', InviteController.createInvite);
-
 // Покинуть сервер
-router.delete('/:serverId/leave', ServerController.leaveServer);
+router.post('/:serverId/leave', ServerController.leaveServer);
 
 export default router; 

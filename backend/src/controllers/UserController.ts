@@ -1,16 +1,6 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { socketService } from '../index';
-
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    username: string;
-    email: string;
-  };
-}
-
-const prisma = new PrismaClient();
+import { AuthenticatedRequest } from '../types';
+import { prisma, socketService } from '../index';
 
 export class UserController {
   static async getCurrentUser(req: AuthenticatedRequest, res: Response) {
@@ -28,7 +18,7 @@ export class UserController {
       const user = await prisma.user.findUnique({
         where: { id: userId },
         include: {
-          serverMembers: {
+          servers: {
             include: {
               server: true
             }
@@ -52,13 +42,50 @@ export class UserController {
           id: user.id,
           username: user.username,
           email: user.email,
-          servers: user.serverMembers.map((member: any) => member.server),
+          avatar: user.avatar,
+          servers: user.servers.map((member: any) => member.server),
           currentServerId: currentServerId // Теперь возвращаем реальный ID!
         }
       });
       
     } catch (error) {
       console.error('Error getting current user:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
+  }
+
+  static async getUsersByIds(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { userIds } = req.body;
+
+      if (!Array.isArray(userIds) || userIds.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'userIds must be a non-empty array'
+        });
+      }
+
+      const users = await prisma.user.findMany({
+        where: {
+          id: { in: userIds }
+        },
+        select: {
+          id: true,
+          username: true,
+          avatar: true,
+        }
+      });
+
+      return res.json({
+        success: true,
+        data: users
+      });
+
+    } catch (error) {
+      console.error('Error getting users by ids:', error);
       return res.status(500).json({
         success: false,
         error: 'Internal server error'

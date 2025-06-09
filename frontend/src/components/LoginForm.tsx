@@ -1,25 +1,19 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Box, TextField, Button, CircularProgress } from '@mui/material';
+import { Box, TextField, Button, CircularProgress, Typography } from '@mui/material';
 
 const LoginForm: React.FC = () => {
-  const { login, loading } = useAuth();
+  const { login, loading, error } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    try {
-      await login(email, password);
-    } catch (err: any) {
-      setError(err.message || 'Произошла ошибка');
-    }
+    await login(email, password);
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%', maxWidth: '400px' }}>
       <TextField
         variant="outlined"
         margin="normal"
@@ -49,9 +43,9 @@ const LoginForm: React.FC = () => {
         disabled={loading}
       />
       {error && (
-        <Box sx={{ mt: 2, color: 'error.main' }}>
+        <Typography color="error" sx={{ mt: 2 }}>
           {error}
-        </Box>
+        </Typography>
       )}
       <Button
         type="submit"
@@ -60,7 +54,7 @@ const LoginForm: React.FC = () => {
         sx={{ mt: 3, mb: 2 }}
         disabled={loading}
       >
-        {loading ? <CircularProgress size={24} /> : 'Войти'}
+        {loading ? <CircularProgress size={24} color="inherit" /> : 'Войти'}
       </Button>
     </Box>
   );

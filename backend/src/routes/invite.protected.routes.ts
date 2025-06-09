@@ -3,13 +3,10 @@ import { InviteController } from '../controllers/InviteController';
 
 const router = Router();
 
-// Получить информацию о приглашении
-router.get('/:inviteCode/info', InviteController.getInviteInfo);
+// Использовать приглашение для вступления в сервер
+router.post('/:inviteCode', InviteController.useInvite);
 
-// Удалить приглашение
-router.delete('/:inviteId', InviteController.deleteInvite);
-
-// Использовать приглашение
-router.post('/:inviteCode/use', InviteController.useInvite);
+// Сгенерировать новый код приглашения для сервера
+router.post('/:serverId/regenerate', InviteController.regenerateInviteCode);
 
 export default router; 

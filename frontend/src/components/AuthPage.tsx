@@ -3,14 +3,8 @@ import { Box, Typography, Button, Paper } from '@mui/material';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 
-export const AuthPage: React.FC = () => {
+const AuthPage: React.FC = () => {
   const [isLoginMode, setIsLoginMode] = useState(true);
-
-  const handleRegisterSuccess = () => {
-    // После успешной регистрации страница автоматически обновится
-    // потому что токен сохранен в localStorage
-    window.location.reload();
-  };
 
   return (
     <Box
@@ -45,7 +39,7 @@ export const AuthPage: React.FC = () => {
       {isLoginMode ? (
         <LoginForm />
       ) : (
-        <RegisterForm onSuccess={handleRegisterSuccess} />
+        <RegisterForm />
       )}
 
       {/* Переключатель между входом и регистрацией */}
@@ -62,4 +56,6 @@ export const AuthPage: React.FC = () => {
       </Box>
     </Box>
   );
-}; 
+};
+
+export default AuthPage; 

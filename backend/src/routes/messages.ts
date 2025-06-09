@@ -3,16 +3,16 @@ import { MessageController } from '../controllers/MessageController';
 
 const router = Router();
 
-// Получить сообщения для сервера
-router.get('/server/:serverId', MessageController.getMessages);
+// Get messages for a server
+router.get('/:serverId', MessageController.getMessages);
 
-// Отправить сообщение в сервер
-router.post('/server/:serverId', MessageController.sendMessage);
+// Send a message to a server
+router.post('/:serverId', MessageController.sendMessage);
 
-// Редактировать сообщение
-router.put('/:messageId', MessageController.editMessage);
+// Edit a message
+router.patch('/:messageId', MessageController.editMessage);
 
-// Удалить сообщение
+// Delete a message
 router.delete('/:messageId', MessageController.deleteMessage);
 
 export default router; 

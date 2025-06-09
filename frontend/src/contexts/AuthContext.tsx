@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { User, LoginResponse } from '../types';
+import { User, LoginResponseData } from '../types';
 import { authAPI } from '../services/api';
 
 interface AuthContextType {
@@ -19,6 +19,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const logout = useCallback(() => {
+    authAPI.logout().catch(err => console.error("Logout API call failed, proceeding.", err));
+    localStorage.removeItem('authToken');
+    setUser(null);
+    setToken(null);
+  }, []);
 
   useEffect(() => {
     const initialAuthCheck = async () => {
@@ -43,16 +50,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     initialAuthCheck();
-  }, []); // Empty array ensures this runs only once on mount
 
-  const handleAuthSuccess = useCallback((data: LoginResponse['data']) => {
-    if (data) {
-      const { user, token: newToken } = data;
-      localStorage.setItem('authToken', newToken);
-      setUser(user);
-      setToken(newToken);
-      setError(null);
-    }
+    const handleAuthError = () => {
+      console.log("Auth error detected, logging out.");
+      logout();
+    };
+
+    window.addEventListener('auth-error', handleAuthError);
+
+    return () => {
+      window.removeEventListener('auth-error', handleAuthError);
+    };
+
+  }, [logout]);
+
+  const handleAuthSuccess = useCallback((data: LoginResponseData) => {
+    const { user, token: newToken } = data;
+    localStorage.setItem('authToken', newToken);
+    setUser(user);
+    setToken(newToken);
+    setError(null);
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
@@ -60,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
     try {
       const response = await authAPI.login(email, password);
-      if (response.success) {
+      if (response.success && response.data) {
         handleAuthSuccess(response.data);
       } else {
         setError(response.error || 'Login failed');
@@ -78,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
     try {
       const response = await authAPI.register(email, username, password);
-      if (response.success) {
+      if (response.success && response.data) {
         handleAuthSuccess(response.data);
       } else {
          setError(response.error || 'Registration failed');
@@ -90,12 +107,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
     }
   }, [handleAuthSuccess]);
-
-  const logout = useCallback(() => {
-    localStorage.removeItem('authToken');
-    setUser(null);
-    setToken(null);
-  }, []);
 
   const value = useMemo(() => ({
     user,

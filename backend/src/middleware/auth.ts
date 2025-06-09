@@ -28,13 +28,11 @@ export const authMiddleware = async (
     // Get user from database
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-              select: {
+        select: {
           id: true,
           email: true,
           username: true,
           avatar: true,
-          status: true,
-          lastSeen: true,
           createdAt: true
         }
     });
@@ -47,7 +45,7 @@ export const authMiddleware = async (
     }
 
     // Attach user to request
-    req.user = user as RequestUser;
+    req.user = user;
     return next();
   } catch (error) {
     console.error('Auth middleware error:', error);

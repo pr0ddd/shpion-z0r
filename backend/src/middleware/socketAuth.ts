@@ -1,7 +1,7 @@
 import { Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../index';
-import { SocketData } from '../types';
+import { SocketData } from '../types/socket'; // Убедитесь, что путь правильный
 import { ExtendedError } from 'socket.io/dist/namespace';
 
 export const socketAuthMiddleware = async (
@@ -25,7 +25,6 @@ export const socketAuthMiddleware = async (
         id: true,
         username: true,
         avatar: true,
-        status: true,
       },
     });
 
@@ -33,16 +32,11 @@ export const socketAuthMiddleware = async (
       return next(new Error('User not found'));
     }
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { status: 'ONLINE' },
-    });
-
+    // Здесь больше нет status
     socket.data.user = {
       id: user.id,
       username: user.username,
       avatar: user.avatar,
-      status: 'ONLINE' as const,
     };
     
     next();
@@ -50,4 +44,4 @@ export const socketAuthMiddleware = async (
     console.error('Socket authentication error:', error);
     next(new Error('Authentication failed'));
   }
-}; 
+};

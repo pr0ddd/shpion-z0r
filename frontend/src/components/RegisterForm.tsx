@@ -1,31 +1,21 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Box, TextField, Button, CircularProgress } from '@mui/material';
+import { Box, TextField, Button, CircularProgress, Typography } from '@mui/material';
 
-interface RegisterFormProps {
-  onSuccess: () => void;
-}
-
-const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
-  const { register, loading } = useAuth();
+const RegisterForm: React.FC = () => {
+  const { register, loading, error } = useAuth();
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    try {
-      await register(email, username, password);
-      onSuccess();
-    } catch (err: any) {
-      setError(err.message || 'Произошла ошибка');
-    }
+    // The actual registration logic is now fully handled by the context
+    await register(email, username, password);
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%', maxWidth: '400px' }}>
       <TextField
         variant="outlined"
         margin="normal"
@@ -67,9 +57,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
         disabled={loading}
       />
       {error && (
-        <Box sx={{ mt: 2, color: 'error.main' }}>
+        <Typography color="error" sx={{ mt: 2 }}>
           {error}
-        </Box>
+        </Typography>
       )}
       <Button
         type="submit"
@@ -78,7 +68,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
         sx={{ mt: 3, mb: 2 }}
         disabled={loading}
       >
-        {loading ? <CircularProgress size={24} /> : 'Зарегистрироваться'}
+        {loading ? <CircularProgress size={24} color="inherit" /> : 'Зарегистрироваться'}
       </Button>
     </Box>
   );

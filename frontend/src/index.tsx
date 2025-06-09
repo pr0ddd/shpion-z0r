@@ -1,27 +1,19 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
 import './index.css';
-import App from './App';
+import Root from './App';
 import reportWebVitals from './reportWebVitals';
-import { AuthProvider } from './contexts/AuthContext';
-import { SocketProvider } from './contexts/SocketContext';
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import theme from './theme';
 
-const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
-);
-root.render(
-  <ThemeProvider theme={theme}>
-    <CssBaseline />
-    <AuthProvider>
-      <SocketProvider>
-        <App />
-      </SocketProvider>
-    </AuthProvider>
-  </ThemeProvider>
-);
+const container = document.getElementById('root');
+
+if (container) {
+  const root = createRoot(container);
+  root.render(
+    <React.StrictMode>
+      <Root />
+    </React.StrictMode>
+  );
+}
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))

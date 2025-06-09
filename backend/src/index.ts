@@ -22,7 +22,7 @@ import { authMiddleware } from './middleware/auth';
 import { socketAuthMiddleware } from './middleware/socketAuth';
 
 // Types and Services
-import { ServerToClientEvents, ClientToServerEvents, SocketData } from './types';
+import { ServerToClientEvents, ClientToServerEvents, SocketData } from './types/socket';
 import { SocketService } from './services/SocketService';
 
 // Load environment variables
@@ -34,8 +34,9 @@ const httpServer = createServer(app);
 // Initialize Prisma
 export const prisma = new PrismaClient();
 
-// Initialize Socket.IO with CORS and types
+// Initialize Socket.IO with CORS, types, and a specific path
 const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents, any, SocketData>(httpServer, {
+  path: '/api/socket.io',
   cors: {
     origin: process.env.SOCKETIO_CORS_ORIGIN || "http://localhost:3000",
     methods: ["GET", "POST"],
