@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -9,9 +9,13 @@ import {
   Avatar,
   Divider,
   CircularProgress,
-  Alert
+  Alert,
+  Container,
+  Paper
 } from '@mui/material';
 import { serverAPI } from '../services/api';
+import { useServer } from '../contexts/ServerContext';
+import { Server } from '../types';
 
 interface InviteInfo {
   invite: {
@@ -30,6 +34,7 @@ interface InviteInfo {
     _count: {
       members: number;
     };
+    memberCount: number;
   };
   inviter: {
     id: string;
@@ -39,56 +44,59 @@ interface InviteInfo {
   isAlreadyMember?: boolean;
 }
 
-export default function InvitePage() {
+const InvitePage: React.FC = () => {
   const { inviteCode } = useParams<{ inviteCode: string }>();
   const navigate = useNavigate();
+  const { selectServer } = useServer();
+
   const [inviteInfo, setInviteInfo] = useState<InviteInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    loadInviteInfo();
-  }, [inviteCode]);
-
-  const loadInviteInfo = async () => {
-    if (!inviteCode) return;
-
+  const loadInviteInfo = useCallback(async () => {
+    if (!inviteCode) {
+      setError("Код приглашения не найден.");
+      setLoading(false);
+      return;
+    }
     try {
       const response = await serverAPI.getInviteInfo(inviteCode);
       if (response.success && response.data) {
         setInviteInfo(response.data);
       } else {
-        setError('Приглашение не найдено или недействительно');
+        setError(response.error || "Неверный или истекший код приглашения.");
       }
-    } catch (error) {
-      console.error('Error loading invite info:', error);
-      setError('Ошибка загрузки информации о приглашении');
+    } catch (err) {
+      setError("Произошла ошибка при проверке приглашения.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [inviteCode]);
 
-  const acceptInvite = async () => {
-    if (!inviteCode) return;
+  useEffect(() => {
+    loadInviteInfo();
+  }, [loadInviteInfo]);
 
-    setJoining(true);
+  const handleAcceptInvite = async () => {
+    if (!inviteCode || !inviteInfo) return;
     try {
       const response = await serverAPI.useInvite(inviteCode);
       if (response.success) {
-        setSuccess(true);
-        setTimeout(() => {
-          navigate('/app');
-        }, 2000);
+        const serverToSelect: Server = {
+          id: inviteInfo.server.id,
+          name: inviteInfo.server.name,
+          members: [],
+          voiceParticipants: [],
+        };
+        selectServer(serverToSelect);
+        navigate('/');
       } else {
-        setError(response.error || 'Ошибка принятия приглашения');
+        setError(response.error || "Не удалось принять приглашение.");
       }
-    } catch (error) {
-      console.error('Error accepting invite:', error);
-      setError('Ошибка принятия приглашения');
-    } finally {
-      setJoining(false);
+    } catch (err) {
+      setError("Произошла ошибка при принятии приглашения.");
     }
   };
 
@@ -108,57 +116,20 @@ export default function InvitePage() {
 
   if (loading) {
     return (
-      <Box 
-        sx={{ 
-          minHeight: '100vh',
-          bgcolor: '#36393f',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#dcddde'
-        }}
-      >
-        <Box sx={{ textAlign: 'center' }}>
-          <CircularProgress sx={{ color: '#5865f2', mb: 2 }} />
-          <Typography variant="body1">Загрузка приглашения...</Typography>
-        </Box>
-      </Box>
+      <Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Container>
     );
   }
 
   if (error) {
     return (
-      <Box 
-        sx={{ 
-          minHeight: '100vh',
-          bgcolor: '#36393f',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          p: 3
-        }}
-      >
-        <Card sx={{ maxWidth: 400, bgcolor: '#2f3136', color: '#dcddde' }}>
-          <CardContent sx={{ textAlign: 'center', p: 4 }}>
-            <Typography variant="h5" sx={{ mb: 2, color: '#ed4245' }}>
-              Ошибка
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 3, color: '#b9bbbe' }}>
-              {error}
-            </Typography>
-            <Button
-              variant="contained"
-              onClick={() => navigate('/app')}
-              sx={{
-                bgcolor: '#5865f2',
-                '&:hover': { bgcolor: '#4752c4' }
-              }}
-            >
-              Вернуться в приложение
-            </Button>
-          </CardContent>
-        </Card>
-      </Box>
+      <Container sx={{ textAlign: 'center', mt: 8 }}>
+        <Typography variant="h5" color="error">{error}</Typography>
+        <Button variant="contained" onClick={() => navigate('/')} sx={{ mt: 2 }}>
+          На главную
+        </Button>
+      </Container>
     );
   }
 
@@ -179,9 +150,9 @@ export default function InvitePage() {
             <Typography variant="h5" sx={{ mb: 2, color: '#57f287' }}>
               Успешно!
             </Typography>
-                         <Typography variant="body1" sx={{ mb: 3, color: '#b9bbbe' }}>
-               Вы присоединились к серверу "{inviteInfo?.server.name}"
-             </Typography>
+            <Typography variant="body1" sx={{ mb: 3, color: '#b9bbbe' }}>
+              Вы присоединились к серверу "{inviteInfo?.server.name}"
+            </Typography>
             <Typography variant="body2" sx={{ color: '#8e9297' }}>
               Перенаправление в приложение...
             </Typography>
@@ -194,119 +165,23 @@ export default function InvitePage() {
   const status = getInviteStatus();
 
   return (
-    <Box 
-      sx={{ 
-        minHeight: '100vh',
-        bgcolor: '#36393f',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        p: 3
-      }}
-    >
-      <Card sx={{ maxWidth: 500, bgcolor: '#2f3136', color: '#dcddde' }}>
-        <CardContent sx={{ p: 4 }}>
-                     {/* Server Info */}
-           <Box sx={{ textAlign: 'center', mb: 3 }}>
-             <Avatar
-               sx={{ 
-                 width: 80, 
-                 height: 80, 
-                 mx: 'auto', 
-                 mb: 2,
-                 bgcolor: '#5865f2',
-                 fontSize: '2rem'
-               }}
-               src={inviteInfo?.server.icon}
-             >
-               {inviteInfo?.server.name?.charAt(0)?.toUpperCase()}
-             </Avatar>
-             
-             <Typography variant="h4" sx={{ mb: 1, fontWeight: 600 }}>
-               {inviteInfo?.server.name}
-             </Typography>
-             
-             <Typography variant="body1" sx={{ color: '#b9bbbe', mb: 2 }}>
-               {inviteInfo?.server._count.members} участников
-             </Typography>
-
-             {status && (
-               <Typography 
-                 variant="body2" 
-                 sx={{ 
-                   color: status.color,
-                   fontWeight: 500
-                 }}
-               >
-                 {status.text}
-               </Typography>
-             )}
-           </Box>
-
-           <Divider sx={{ bgcolor: '#40444b', my: 3 }} />
-
-           {/* Inviter Info */}
-           <Box sx={{ mb: 3 }}>
-             <Typography variant="body2" sx={{ color: '#8e9297', mb: 1 }}>
-               Приглашение от:
-             </Typography>
-             <Typography variant="body1" sx={{ color: '#dcddde' }}>
-               {inviteInfo?.inviter.username}
-             </Typography>
-           </Box>
-
-           {/* Action Buttons */}
-           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-             <Button
-               variant="outlined"
-               onClick={() => navigate('/app')}
-               sx={{
-                 borderColor: '#40444b',
-                 color: '#dcddde',
-                 '&:hover': { 
-                   borderColor: '#dcddde',
-                   bgcolor: 'rgba(220, 221, 222, 0.04)'
-                 }
-               }}
-             >
-               Отмена
-             </Button>
-             
-             <Button
-               variant="contained"
-               onClick={acceptInvite}
-               disabled={joining || !inviteInfo?.invite.isValid || inviteInfo?.isAlreadyMember}
-               sx={{
-                 bgcolor: '#5865f2',
-                 minWidth: 120,
-                 '&:hover': { bgcolor: '#4752c4' },
-                 '&:disabled': { bgcolor: '#40444b' }
-               }}
-             >
-               {joining ? (
-                 <CircularProgress size={20} sx={{ color: '#dcddde' }} />
-               ) : inviteInfo?.isAlreadyMember ? (
-                 'Уже участник'
-               ) : (
-                 'Присоединиться'
-               )}
-             </Button>
-           </Box>
-
-          {/* Help Text */}
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              textAlign: 'center', 
-              color: '#8e9297', 
-              mt: 3,
-              fontSize: '0.75rem'
-            }}
-          >
-            Присоединяясь к серверу, вы соглашаетесь с правилами сообщества
-          </Typography>
-        </CardContent>
-      </Card>
-    </Box>
+    <Container component="main" maxWidth="sm">
+      <Paper elevation={3} sx={{ mt: 8, p: 4, textAlign: 'center' }}>
+        <Typography variant="h4" gutterBottom>
+          Вас пригласили на сервер
+        </Typography>
+        <Typography variant="h5" sx={{ mb: 2 }}>
+          {inviteInfo?.server.name}
+        </Typography>
+        <Typography color="text.secondary" sx={{ mb: 4 }}>
+          Участников: {inviteInfo?.server._count.members}
+        </Typography>
+        <Button variant="contained" size="large" onClick={handleAcceptInvite}>
+          Принять приглашение
+        </Button>
+      </Paper>
+    </Container>
   );
-} 
+};
+
+export default InvitePage; 

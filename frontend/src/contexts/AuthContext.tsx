@@ -5,7 +5,8 @@ import { authAPI } from '../services/api';
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  isLoading: boolean;
+  loading: boolean;
+  error: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, username: string, password: string) => Promise<void>;
   logout: () => void;
@@ -16,7 +17,8 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const initialAuthCheck = async () => {
@@ -37,7 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setToken(null);
         }
       }
-      setIsLoading(false);
+      setLoading(false);
     };
 
     initialAuthCheck();
@@ -49,34 +51,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('authToken', newToken);
       setUser(user);
       setToken(newToken);
+      setError(null);
     }
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
+    setLoading(true);
+    setError(null);
     try {
       const response = await authAPI.login(email, password);
       if (response.success) {
         handleAuthSuccess(response.data);
       } else {
-        throw new Error(response.error || 'Login failed');
+        setError(response.error || 'Login failed');
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError(err.message || 'An unexpected error occurred during login.');
+    } finally {
+        setLoading(false);
     }
   }, [handleAuthSuccess]);
 
   const register = useCallback(async (email: string, username: string, password: string) => {
+    setLoading(true);
+    setError(null);
     try {
       const response = await authAPI.register(email, username, password);
       if (response.success) {
         handleAuthSuccess(response.data);
       } else {
-        throw new Error(response.error || 'Registration failed');
+         setError(response.error || 'Registration failed');
       }
-    } catch (error) {
-      console.error('Registration error:', error);
-      throw error;
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      setError(err.message || 'An unexpected error occurred during registration.');
+    } finally {
+        setLoading(false);
     }
   }, [handleAuthSuccess]);
 
@@ -89,11 +100,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value = useMemo(() => ({
     user,
     token,
-    isLoading,
+    loading,
+    error,
     login,
     register,
     logout,
-  }), [user, token, isLoading, login, register, logout]);
+  }), [user, token, loading, error, login, register, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

@@ -1,60 +1,93 @@
-import React from 'react';
-import {
-  ControlBar,
-  useChat,
-  ChatMessage,
-  ChatEntry
-} from '@livekit/components-react';
-import { Box, TextField, IconButton, Paper, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { useChat, useTracks } from '@livekit/components-react';
+import { Box, TextField, IconButton, Paper, Typography, useTheme, Avatar, Collapse } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import { styled } from '@mui/material/styles';
+import { format } from 'date-fns';
+import ScreenShareDisplay from './ScreenShareDisplay';
+import { Track } from 'livekit-client';
 
-const ChatWrapper = styled(Box)({
+const ChatWrapper = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   height: '100%',
-});
+  backgroundColor: theme.palette.background.default,
+}));
 
 const MessageList = styled(Box)({
   flexGrow: 1,
   overflowY: 'auto',
-  padding: '8px',
+  padding: '16px',
+  '&::-webkit-scrollbar': {
+    width: '6px',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: '3px',
+  },
+  '&::-webkit-scrollbar-track': {
+    backgroundColor: 'transparent',
+  },
 });
 
-const MessageItem = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(1, 2),
-  marginBottom: theme.spacing(1),
-  backgroundColor: theme.palette.background.default,
+const MessageItem = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  marginBottom: theme.spacing(2),
+  alignItems: 'flex-start',
 }));
 
-const ChatInputWrapper = styled(Box)({
-  padding: '8px',
+const MessageContent = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(1, 1.5),
+  borderRadius: theme.shape.borderRadius,
+  backgroundColor: theme.palette.background.paper,
+  maxWidth: '80%',
+  wordWrap: 'break-word',
+}));
+
+const ChatInputWrapper = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(1.5, 2),
+  backgroundColor: 'transparent',
   flexShrink: 0,
-});
+}));
 
 const CustomChat = () => {
+    const theme = useTheme();
     const { chatMessages, send } = useChat();
+    const [inputValue, setInputValue] = useState('');
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const message = event.currentTarget.message.value;
-        if (message && send) {
-            send(message);
-            event.currentTarget.message.value = '';
+        if (inputValue.trim() && send) {
+            send(inputValue);
+            setInputValue('');
         }
     };
 
     return (
         <ChatWrapper>
             <MessageList>
-                {chatMessages.map((msg, i) => (
-                    <MessageItem key={i}>
-                        <Typography variant="caption" color="text.secondary">
-                            {msg.from?.identity}
-                        </Typography>
-                        <Typography variant="body2">{msg.message}</Typography>
-                    </MessageItem>
-                ))}
+                {chatMessages.map((msg, i) => {
+                    const displayName = msg.from?.identity.split(':')[1] || msg.from?.identity || 'Unknown';
+                    const initial = displayName.charAt(0).toUpperCase();
+                    return (
+                        <MessageItem key={i}>
+                            <Avatar sx={{ width: 40, height: 40, mr: 2, bgcolor: theme.palette.primary.main }}>{initial}</Avatar>
+                            <Box>
+                                <Box display="flex" alignItems="center" mb={0.5}>
+                                    <Typography variant="body1" fontWeight="bold" color="text.primary">
+                                        {displayName}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary" sx={{ ml: 1.5 }}>
+                                        {format(msg.timestamp, 'HH:mm')}
+                                    </Typography>
+                                </Box>
+                                <MessageContent elevation={0}>
+                                    <Typography variant="body2" color="text.primary">{msg.message}</Typography>
+                                </MessageContent>
+                            </Box>
+                        </MessageItem>
+                    );
+                })}
             </MessageList>
             <ChatInputWrapper>
                 <form onSubmit={handleSubmit}>
@@ -62,11 +95,24 @@ const CustomChat = () => {
                         name="message"
                         fullWidth
                         variant="outlined"
-                        placeholder="Enter a message..."
+                        placeholder={`Написать сообщение...`}
                         autoComplete="off"
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                backgroundColor: theme.palette.background.paper,
+                                '& fieldset': {
+                                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                                },
+                                '&:hover fieldset': {
+                                    borderColor: theme.palette.primary.main,
+                                },
+                            },
+                        }}
                         InputProps={{
                             endAdornment: (
-                                <IconButton type="submit" color="primary">
+                                <IconButton type="submit" color="primary" disabled={!inputValue.trim()}>
                                     <SendIcon />
                                 </IconButton>
                             )
@@ -78,28 +124,33 @@ const CustomChat = () => {
     );
 }
 
-
 const ServerContent = () => {
-    return (
-        <Box style={{ display: 'flex', height: '100%', flexGrow: 1 }}>
-            {/* Main content with video and controls */}
-            <Box style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', minWidth: 0 }}>
-                {/* This is the empty main area now, it will push the control bar to the bottom */}
-                <Box sx={{ flexGrow: 1 }} />
-            </Box>
+    const theme = useTheme();
+    const screenShareTracks = useTracks([Track.Source.ScreenShare]);
 
-            {/* Right sidebar with members and chat */}
+    // Centralized deduplication logic
+    const uniqueTracks = Array.from(
+        new Map(screenShareTracks.map((trackRef) => [trackRef.participant.identity, trackRef])).values()
+    );
+    const isScreenSharing = uniqueTracks.length > 0;
+
+    return (
+        <Box sx={{ display: 'flex', height: '100%', flexGrow: 1, overflow: 'hidden' }}>
+            <Collapse in={isScreenSharing} orientation="horizontal" timeout={300} easing="ease-in-out">
+                 <Box sx={{
+                    height: '100%',
+                    width: '30vw',
+                    borderRight: `1px solid ${theme.palette.background.paper}`
+                }}>
+                    <ScreenShareDisplay tracks={uniqueTracks} />
+                </Box>
+            </Collapse>
             <Box sx={{ 
-                width: '25%', 
-                minWidth: '280px',
-                maxWidth: '360px',
-                height: '100%', 
+                flex: 1, 
                 display: 'flex', 
-                flexDirection: 'column',
-                flexShrink: 0,
-                backgroundColor: 'discord.members_bg',
-                borderLeft: '1px solid',
-                borderColor: 'divider'
+                flexDirection: 'column', 
+                height: '100%', 
+                minWidth: 0,
             }}>
                 <CustomChat />
             </Box>
@@ -107,4 +158,4 @@ const ServerContent = () => {
     );
 };
 
-export default ServerContent; 
+export default ServerContent;

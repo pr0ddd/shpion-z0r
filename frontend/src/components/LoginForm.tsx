@@ -1,92 +1,69 @@
-import React, { useState, useCallback, memo } from 'react';
-import {
-  Box,
-  TextField,
-  Button,
-  Typography,
-  Paper,
-  Alert,
-} from '@mui/material';
-import { styled } from '@mui/material/styles';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-
-const StyledPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(4),
-  maxWidth: 400,
-  margin: 'auto',
-  marginTop: theme.spacing(8),
-}));
+import { Box, TextField, Button, CircularProgress } from '@mui/material';
 
 const LoginForm: React.FC = () => {
-  const { login, isLoading } = useAuth();
+  const { login, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
     try {
       await login(email, password);
     } catch (err: any) {
-      setError(err.message || 'Ошибка входа');
+      setError(err.message || 'Произошла ошибка');
     }
-  }, [email, password, login]);
+  };
 
   return (
-    <StyledPaper 
-      elevation={3}
-    >
-      <Typography variant="h4" component="h1" align="center" gutterBottom>
-        Вход
-      </Typography>
-      
-      <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-        
-        <TextField
-          margin="normal"
-          required
-          fullWidth
-          id="email"
-          label="Email"
-          name="email"
-          autoComplete="email"
-          autoFocus
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        
-        <TextField
-          margin="normal"
-          required
-          fullWidth
-          name="password"
-          label="Пароль"
-          type="password"
-          id="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        
-        <Button
-          type="submit"
-          fullWidth
-          variant="contained"
-          sx={{ mt: 3, mb: 2 }}
-          disabled={isLoading}
-        >
-          {isLoading ? 'Вход...' : 'Войти'}
-        </Button>
-      </Box>
-    </StyledPaper>
+    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+      <TextField
+        variant="outlined"
+        margin="normal"
+        required
+        fullWidth
+        id="email"
+        label="Email"
+        name="email"
+        autoComplete="email"
+        autoFocus
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        disabled={loading}
+      />
+      <TextField
+        variant="outlined"
+        margin="normal"
+        required
+        fullWidth
+        name="password"
+        label="Пароль"
+        type="password"
+        id="password"
+        autoComplete="current-password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        disabled={loading}
+      />
+      {error && (
+        <Box sx={{ mt: 2, color: 'error.main' }}>
+          {error}
+        </Box>
+      )}
+      <Button
+        type="submit"
+        fullWidth
+        variant="contained"
+        sx={{ mt: 3, mb: 2 }}
+        disabled={loading}
+      >
+        {loading ? <CircularProgress size={24} /> : 'Войти'}
+      </Button>
+    </Box>
   );
 };
 
-export default memo(LoginForm); 
+export default LoginForm; 

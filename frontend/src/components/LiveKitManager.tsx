@@ -5,8 +5,10 @@ import { useServer } from '../contexts/ServerContext';
 import { useAuth } from '../contexts/AuthContext';
 import ServerContent from './ServerContent';
 import ServerMembers from './ServerMembers';
+import ScreenShareDisplay from './ScreenShareDisplay';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { livekitAPI } from '../services/api';
+import { RoomInitialActions } from './RoomInitialActions';
 
 const LiveKitManager: React.FC = () => {
     const { selectedServer } = useServer();
@@ -18,8 +20,6 @@ const LiveKitManager: React.FC = () => {
     useEffect(() => {
         if (selectedServer && user) {
             setIsLoading(true);
-            setToken(undefined);
-            setWsUrl(undefined);
             const getToken = async () => {
                 try {
                     const response = await livekitAPI.getVoiceToken(selectedServer.id);
@@ -31,6 +31,8 @@ const LiveKitManager: React.FC = () => {
                     }
                 } catch (err: any) {
                     console.error('Error fetching LiveKit token:', err);
+                    setToken(undefined);
+                    setWsUrl(undefined);
                 } finally {
                     setIsLoading(false);
                 }
@@ -39,61 +41,59 @@ const LiveKitManager: React.FC = () => {
         } else {
             setToken(undefined);
             setWsUrl(undefined);
+            setIsLoading(false);
         }
     }, [selectedServer, user]);
 
-    // Apply a container with full height to all states
+    if (!selectedServer) {
+        return (
+            <Box sx={{ display: 'flex', height: '100%' }}>
+                <ServerMembers isConnected={false} />
+                <Box display="flex" justifyContent="center" alignItems="center" height="100%" flexGrow={1}>
+                    <Typography>Пожалуйста, выберите сервер.</Typography>
+                </Box>
+            </Box>
+        );
+    }
+
+    if (isLoading) {
+        return (
+             <Box sx={{ display: 'flex', height: '100%' }}>
+                <ServerMembers isConnected={false} />
+                <Box display="flex" justifyContent="center" alignItems="center" height="100%" flexGrow={1}>
+                    <CircularProgress />
+                </Box>
+            </Box>
+        );
+    }
+    
+    if (token && wsUrl) {
+        return (
+            <LiveKitRoom
+                token={token}
+                serverUrl={wsUrl}
+                connect={true}
+                audio={true}
+                video={false}
+                data-lk-theme="default"
+            >
+              <RoomInitialActions>
+                <Box sx={{ display: 'flex', height: '100%', width: '100%' }}>
+                    <ServerMembers isConnected={true} />
+                    <ServerContent />
+                </Box>
+              </RoomInitialActions>
+            </LiveKitRoom>
+        );
+    }
+
+    // Fallback case for when there is no token after loading
     return (
-        <Box sx={{ height: '100%' }}>
-            {(() => {
-                if (!selectedServer) {
-                    return (
-                        <Box sx={{ display: 'flex', height: '100%' }}>
-                            <ServerMembers isConnected={false} />
-                            <Box display="flex" justifyContent="center" alignItems="center" height="100%" flexGrow={1}>
-                                <Typography>Пожалуйста, выберите сервер.</Typography>
-                            </Box>
-                        </Box>
-                    );
-                }
-
-                if (isLoading) {
-                    return (
-                        <Box sx={{ display: 'flex', height: '100%' }}>
-                            <ServerMembers isConnected={false} />
-                            <Box display="flex" justifyContent="center" alignItems="center" height="100%" flexGrow={1}>
-                                <CircularProgress />
-                            </Box>
-                        </Box>
-                    );
-                }
-                
-                if (token && wsUrl) {
-                    return (
-                        <LiveKitRoom
-                            token={token}
-                            serverUrl={wsUrl}
-                            connect={true}
-                            data-lk-theme="default"
-                        >
-                            <Box sx={{ display: 'flex', height: '100%' }}>
-                                <ServerMembers isConnected={true} />
-                                <ServerContent />
-                            </Box>
-                        </LiveKitRoom>
-                    );
-                }
-
-                // Fallback case for when there is no token after loading
-                return (
-                    <Box sx={{ display: 'flex', height: '100%' }}>
-                        <ServerMembers isConnected={false} />
-                        <Box display="flex" justifyContent="center" alignItems="center" height="100%" flexGrow={1}>
-                            <Typography color="error">Не удалось подключиться к голосовому чату.</Typography>
-                        </Box>
-                    </Box>
-                );
-            })()}
+        <Box sx={{ display: 'flex', height: '100%' }}>
+            <ServerMembers isConnected={false} />
+            <Box display="flex" justifyContent="center" alignItems="center" height="100%" flexGrow={1}>
+                <Typography color="error">Не удалось подключиться к голосовому чату.</Typography>
+            </Box>
         </Box>
     );
 };

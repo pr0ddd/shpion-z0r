@@ -1,4 +1,4 @@
-import { createTheme, ThemeOptions } from '@mui/material/styles';
+import { createTheme } from '@mui/material/styles';
 
 // Расширяем интерфейс PaletteOptions для TypeScript
 declare module '@mui/material/styles' {
@@ -11,9 +11,21 @@ declare module '@mui/material/styles' {
       members_bg: string;
       chat_bg: string;
     };
+    custom: {
+      green: string;
+      red: string;
+      purple: string;
+      yellow: string;
+    };
   }
   interface PaletteOptions {
     discord?: Partial<Palette['discord']>;
+    custom?: {
+      green?: string;
+      red?: string;
+      purple?: string;
+      yellow?: string;
+    };
   }
 }
 
@@ -22,20 +34,25 @@ const theme = createTheme({
   palette: {
     mode: 'dark', // Используем темную тему, как это часто бывает в игровых приложениях
     primary: {
-      main: '#7289da', // Цвет как у Discord
+      main: '#5865F2', // Яркий сине-фиолетовый (Blurple)
     },
     secondary: {
-      main: '#747f8d',
+      main: '#B9BBBE', // Светло-серый для второстепенного текста
     },
     background: {
-      default: '#2c2f33',
-      paper: '#23272a',
+      default: '#1e1f22', // Очень темный, почти черный фон
+      paper: '#2b2d31', // Фон для панелей, чуть светлее
     },
     text: {
-      primary: '#ffffff',
-      secondary: '#b9bbbe',
+      primary: '#f2f3f5', // Яркий белый для основного текста
+      secondary: '#b8b9bf', // Приглушенный серый для вторичного текста
     },
-    // Дополнительные цвета для дискорд-подобного интерфейса
+    success: {
+        main: '#2DC770', // Яркий зеленый
+    },
+    error: {
+        main: '#ED4245' // Яркий красный
+    },
     discord: {
       sidebar: '#202225',
       blurple: '#5865f2',
@@ -43,10 +60,19 @@ const theme = createTheme({
       grey: '#36393f',
       members_bg: '#2f3136',
       chat_bg: '#36393f',
-    }
+    },
+    custom: {
+      green: '#2DC770',
+      red: '#ED4245',
+      purple: '#B589D6',
+      yellow: '#FEE75C',
+    },
   },
   typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    h6: {
+      fontWeight: 600,
+    },
     h2: {
       fontWeight: 700,
     },
@@ -67,6 +93,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           boxShadow: 'none',
+          backgroundImage: 'none', // Убираем градиенты по-умолчанию
         },
         elevation1: {
           boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)',
@@ -80,13 +107,13 @@ const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 6,
-        },
-        contained: {
+          textTransform: 'none',
+          fontWeight: 600,
           boxShadow: 'none',
+          transition: 'all 0.2s ease-in-out',
           '&:hover': {
-            boxShadow: 'none',
-          },
+            boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.2)',
+          }
         },
       },
     },
@@ -117,6 +144,18 @@ const theme = createTheme({
           },
         },
       },
+    MuiTooltip: {
+        styleOverrides: {
+            tooltip: {
+                backgroundColor: '#111214',
+                color: '#f2f3f5',
+                border: '1px solid #2b2d31',
+            },
+            arrow: {
+                color: '#111214',
+            }
+        }
+    }
   },
 });
 

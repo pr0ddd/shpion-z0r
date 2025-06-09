@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
+import io, { Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { User, VoiceState, Server } from '../types';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 // More specific event types for clarity
 interface ServerToClientEvents {
@@ -31,7 +33,7 @@ interface SocketContextType {
   leaveVoice: (serverId: string) => void;
 }
 
-const SocketContext = createContext<SocketContextType | undefined>(undefined);
+const SocketContext = createContext<SocketContextType | null>(null);
 
 export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { token } = useAuth();
@@ -44,8 +46,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Effect to manage the socket lifecycle
   useEffect(() => {
     if (token) {
-      const socket = io('http://localhost:3001', {
-        auth: { token },
+      const socket = io(API_BASE_URL, {
+        query: { token },
         transports: ['websocket'],
       });
 

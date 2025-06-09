@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { Component, ReactNode } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 
 interface Props {
@@ -7,47 +7,67 @@ interface Props {
 
 interface State {
   hasError: boolean;
+  error?: Error;
 }
 
 class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false,
+    error: undefined,
   };
 
-  public static getDerivedStateFromError(_: Error): State {
-    return { hasError: true };
+  public static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error:', error, errorInfo);
+  public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Uncaught error:", error, errorInfo);
+  }
+
+  private handleReload = () => {
+      window.location.reload();
   }
 
   public render() {
     if (this.state.hasError) {
       return (
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100vh',
-            textAlign: 'center',
-            p: 3,
-          }}
+        <Box 
+          display="flex" 
+          flexDirection="column" 
+          justifyContent="center" 
+          alignItems="center" 
+          height="100vh"
+          bgcolor="#1e1f22"
+          color="white"
+          textAlign="center"
+          p={3}
         >
-          <Typography variant="h4" gutterBottom>
-            Что-то пошло не так.
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 3 }}>
-            Произошла непредвиденная ошибка. Попробуйте перезагрузить страницу.
-          </Typography>
-          <Button
-            variant="contained"
-            onClick={() => window.location.reload()}
+          <Typography variant="h5" gutterBottom>Что-то пошло не так.</Typography>
+          <Typography gutterBottom>Произошла непредвиденная ошибка. Попробуйте перезагрузить страницу.</Typography>
+          <Button 
+            variant="contained" 
+            onClick={this.handleReload}
+            sx={{ mt: 2 }}
           >
             Перезагрузить
           </Button>
+          {this.state.error && (
+             <pre 
+                style={{ 
+                    color: '#f44336', 
+                    marginTop: 20, 
+                    background: '#333', 
+                    padding: 10, 
+                    borderRadius: 5,
+                    maxWidth: '80vw',
+                    overflowX: 'auto',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-all'
+                }}
+            >
+                {this.state.error.message}
+            </pre>
+          )}
         </Box>
       );
     }

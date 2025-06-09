@@ -1,14 +1,13 @@
-import React, { memo, useState, useCallback, useEffect } from 'react';
+import React, { memo, useEffect, useCallback } from 'react';
 import {
   Box,
   Avatar,
   Tooltip,
   CircularProgress,
-  Alert,
   Divider,
   Typography,
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { styled, useTheme } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useServer } from '../contexts/ServerContext';
@@ -18,33 +17,38 @@ import { Server } from '../types';
 const SidebarWrapper = styled(Box)(({ theme }) => ({
   width: 72,
   height: '100vh',
-  padding: theme.spacing(1, 0),
+  padding: theme.spacing(1.5, 0),
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  gap: theme.spacing(1),
-  backgroundColor: theme.palette.discord.sidebar,
+  gap: theme.spacing(1.5),
+  backgroundColor: theme.palette.background.default,
   position: 'relative',
 }));
 
-const ServerButton = styled(Avatar)<{ isselected?: string }>(({ theme, isselected }) => ({
+const ServerButton = styled(Box)<{ isselected?: string }>(({ theme, isselected }) => ({
   width: 48,
   height: 48,
   cursor: 'pointer',
-  transition: 'border-radius 0.2s ease, background-color 0.2s ease',
-  backgroundColor: isselected === 'true' ? theme.palette.discord.blurple : theme.palette.discord.grey,
-  borderRadius: isselected === 'true' ? '30%' : '50%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  transition: 'border-radius 0.2s ease, background-color 0.2s ease, transform 0.2s ease',
+  backgroundColor: isselected === 'true' ? theme.palette.primary.main : theme.palette.background.paper,
+  color: isselected === 'true' ? theme.palette.getContrastText(theme.palette.primary.main) : theme.palette.text.secondary,
+  borderRadius: isselected === 'true' ? '16px' : '50%', // More pronounced "squircle"
   '&:hover': {
-    borderRadius: '30%',
-    backgroundColor: theme.palette.discord.blurple,
+    borderRadius: '16px',
+    backgroundColor: theme.palette.primary.main,
+    color: theme.palette.getContrastText(theme.palette.primary.main),
+    transform: 'scale(1.05)',
   },
 }));
 
 const StyledDivider = styled(Divider)(({ theme }) => ({
   width: 32,
-  backgroundColor: theme.palette.discord.grey,
-  marginTop: theme.spacing(0.5),
-  marginBottom: theme.spacing(0.5),
+  backgroundColor: theme.palette.background.paper,
+  margin: theme.spacing(0.5, 'auto'),
 }));
 
 interface ServerItemProps {
@@ -60,7 +64,9 @@ const ServerItem = memo(({ server, isSelected, onClick }: ServerItemProps) => {
         isselected={isSelected.toString()}
         onClick={() => onClick(server)}
       >
-        {server.name.charAt(0)}
+        <Typography variant="h6" sx={{fontWeight: 'bold'}}>
+            {server.name.charAt(0).toUpperCase()}
+        </Typography>
       </ServerButton>
     </Tooltip>
   );
@@ -71,6 +77,7 @@ const ActionButtons = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
   gap: 8,
+  paddingBottom: 8,
 });
 
 const ServersSidebar: React.FC = () => {
@@ -83,6 +90,7 @@ const ServersSidebar: React.FC = () => {
     fetchServers,
   } = useServer();
   const { user, logout } = useAuth();
+  const theme = useTheme();
 
   useEffect(() => {
     if (user) {
@@ -97,9 +105,11 @@ const ServersSidebar: React.FC = () => {
   return (
     <SidebarWrapper>
       <Tooltip title="Личные сообщения (скоро)" placement="right">
-        <ServerButton isselected={(selectedServer === null).toString()} onClick={() => selectServer(null)}>DM</ServerButton>
+        <ServerButton isselected={(selectedServer === null).toString()} onClick={() => selectServer(null)}>
+            <Typography sx={{fontWeight: 'bold'}}>DM</Typography>
+        </ServerButton>
       </Tooltip>
-      <Divider sx={{ my: 1, borderColor: '#36393f', width: '50%', alignSelf: 'center' }} />
+      <StyledDivider />
       {servers.map(server => (
         <ServerItem
           key={server.id}
@@ -108,6 +118,8 @@ const ServersSidebar: React.FC = () => {
           onClick={handleServerClick}
         />
       ))}
+      {isLoading && <CircularProgress size={24} sx={{marginTop: 2}}/>}
+      {error && <Typography color="error">{error}</Typography>}
       <ActionButtons>
         <Tooltip title="Добавить сервер (скоро)" placement="right">
           <ServerButton>
@@ -120,9 +132,6 @@ const ServersSidebar: React.FC = () => {
           </ServerButton>
         </Tooltip>
       </ActionButtons>
-
-      {isLoading && <CircularProgress size={24} sx={{ position: 'absolute', top: '50%', left: '50%', marginTop: '-12px', marginLeft: '-12px' }} />}
-      {error && <Typography color="error">{error}</Typography>}
     </SidebarWrapper>
   );
 };
