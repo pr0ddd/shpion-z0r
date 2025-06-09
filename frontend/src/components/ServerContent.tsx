@@ -1,43 +1,110 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
-import { useServer } from '../contexts/ServerContext';
-import { ScreenShareButton } from './ScreenShareButton';
-import { ScreenShareViewer } from './ScreenShareViewer';
+import {
+  ControlBar,
+  useChat,
+  ChatMessage,
+  ChatEntry
+} from '@livekit/components-react';
+import { Box, TextField, IconButton, Paper, Typography } from '@mui/material';
+import SendIcon from '@mui/icons-material/Send';
+import { styled } from '@mui/material/styles';
 
-export default function ServerContent() {
-  const { selectedServer } = useServer();
+const ChatWrapper = styled(Box)({
+  display: 'flex',
+  flexDirection: 'column',
+  height: '100%',
+});
 
-  if (!selectedServer) {
+const MessageList = styled(Box)({
+  flexGrow: 1,
+  overflowY: 'auto',
+  padding: '8px',
+});
+
+const MessageItem = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(1, 2),
+  marginBottom: theme.spacing(1),
+  backgroundColor: theme.palette.background.default,
+}));
+
+const ChatInputWrapper = styled(Box)({
+  padding: '8px',
+  flexShrink: 0,
+});
+
+const CustomChat = () => {
+    const { chatMessages, send } = useChat();
+
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const message = event.currentTarget.message.value;
+        if (message && send) {
+            send(message);
+            event.currentTarget.message.value = '';
+        }
+    };
+
     return (
-      <Box sx={{ p: 3, textAlign: 'center' }}>
-        <Typography variant="h6" color="text.secondary">
-          Выберите сервер из списка слева
-        </Typography>
-      </Box>
+        <ChatWrapper>
+            <MessageList>
+                {chatMessages.map((msg, i) => (
+                    <MessageItem key={i}>
+                        <Typography variant="caption" color="text.secondary">
+                            {msg.from?.identity}
+                        </Typography>
+                        <Typography variant="body2">{msg.message}</Typography>
+                    </MessageItem>
+                ))}
+            </MessageList>
+            <ChatInputWrapper>
+                <form onSubmit={handleSubmit}>
+                    <TextField
+                        name="message"
+                        fullWidth
+                        variant="outlined"
+                        placeholder="Enter a message..."
+                        autoComplete="off"
+                        InputProps={{
+                            endAdornment: (
+                                <IconButton type="submit" color="primary">
+                                    <SendIcon />
+                                </IconButton>
+                            )
+                        }}
+                    />
+                </form>
+            </ChatInputWrapper>
+        </ChatWrapper>
     );
-  }
+}
 
-  return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Voice Controls Area */}
-      <Box sx={{ p: 2, borderBottom: '1px solid #e0e0e0' }}>
-        <Typography variant="h6" gutterBottom>
-          🎤 Голосовой чат: {selectedServer.name}
-        </Typography>
-        <ScreenShareButton />
-      </Box>
-      
-      {/* Main Content Area with Screen Shares */}
-      <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>
-        <ScreenShareViewer />
-        
-        {/* Основной контент чата/текста будет здесь */}
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="body1" color="text.secondary">
-            💬 Здесь будет основной чат и контент сервера
-          </Typography>
+
+const ServerContent = () => {
+    return (
+        <Box style={{ display: 'flex', height: '100%', flexGrow: 1 }}>
+            {/* Main content with video and controls */}
+            <Box style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', minWidth: 0 }}>
+                {/* This is the empty main area now, it will push the control bar to the bottom */}
+                <Box sx={{ flexGrow: 1 }} />
+            </Box>
+
+            {/* Right sidebar with members and chat */}
+            <Box sx={{ 
+                width: '25%', 
+                minWidth: '280px',
+                maxWidth: '360px',
+                height: '100%', 
+                display: 'flex', 
+                flexDirection: 'column',
+                flexShrink: 0,
+                backgroundColor: 'discord.members_bg',
+                borderLeft: '1px solid',
+                borderColor: 'divider'
+            }}>
+                <CustomChat />
+            </Box>
         </Box>
-      </Box>
-    </Box>
-  );
-} 
+    );
+};
+
+export default ServerContent; 

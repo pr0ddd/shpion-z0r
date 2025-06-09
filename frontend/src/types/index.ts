@@ -25,6 +25,15 @@ export interface VoiceParticipant {
   avatar?: string;
 }
 
+// Voice State for socket events
+export interface VoiceState {
+  userId: string;
+  username: string;
+  serverId: string;
+  isMuted: boolean;
+  isDeafened: boolean;
+}
+
 // API Response type
 export interface ApiResponse<T = any> {
   success: boolean;

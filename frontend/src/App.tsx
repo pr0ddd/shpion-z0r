@@ -2,14 +2,12 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { 
   ThemeProvider, 
-  createTheme, 
   CssBaseline,
   Box,
   Typography,
   Button,
   CircularProgress
 } from '@mui/material';
-import { red } from '@mui/material/colors';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ServerProvider } from './contexts/ServerContext';
 import { SocketProvider } from './contexts/SocketContext';
@@ -19,35 +17,10 @@ import ServerContent from './components/ServerContent';
 import ServerMembers from './components/ServerMembers';
 import InvitePage from './components/InvitePage';
 import ProtectedAppLayout from './components/ProtectedAppLayout';
+import theme from './theme';
+import ErrorBoundary from './components/ErrorBoundary';
 
-// Создаем тему по официальному примеру
-const theme = createTheme({
-  cssVariables: true,
-  palette: {
-    mode: 'dark',
-    primary: {
-      main: '#556cd6',
-    },
-    secondary: {
-      main: '#19857b',
-    },
-    error: {
-      main: red.A400,
-    },
-    background: {
-      default: '#36393f', // Discord style
-      paper: '#2f3136',
-    },
-    text: {
-      primary: '#ffffff',
-      secondary: '#b9bbbe',
-    },
-  },
-});
-
-function AppContent() {
-  const { user, isLoading, logout } = useAuth();
-
+function AppContent({ user, isLoading }: { user: any, isLoading: boolean }) {
   if (isLoading) {
     return (
       <Box 
@@ -89,7 +62,9 @@ function App() {
         <AuthProvider>
           <SocketProvider>
             <ServerProvider>
-              <AppContent />
+              <ErrorBoundary>
+                <AuthWrapper />
+              </ErrorBoundary>
             </ServerProvider>
           </SocketProvider>
         </AuthProvider>
@@ -97,5 +72,10 @@ function App() {
     </ThemeProvider>
   );
 }
+
+const AuthWrapper = () => {
+  const { user, isLoading } = useAuth();
+  return <AppContent user={user} isLoading={isLoading} />;
+};
 
 export default App;

@@ -1,30 +1,48 @@
 import React from 'react';
 import { Box, Typography, Button } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import ServersSidebar from './ServersSidebar';
-import ServerContent from './ServerContent';
-import ServerMembers from './ServerMembers';
+import LiveKitManager from './LiveKitManager';
 import { useAuth } from '../contexts/AuthContext';
+import ServerMembers from './ServerMembers';
+
+const Root = styled(Box)({
+  display: 'flex',
+  height: '100vh',
+  overflow: 'hidden',
+});
+
+const Header = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  padding: theme.spacing(2),
+  borderBottom: `1px solid ${theme.palette.divider}`,
+  backgroundColor: theme.palette.background.paper,
+  flexShrink: 0,
+}));
+
+const ContentWrapper = styled(Box)({
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  minWidth: 0,
+});
+
+const MainContent = styled(Box)({
+  flex: 1,
+  minHeight: 0,
+});
 
 export default function ProtectedAppLayout() {
   const { user, logout } = useAuth();
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh' }}>
+    <Root>
       <ServersSidebar />
-      <ServerMembers />
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            p: 2,
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            bgcolor: 'background.paper'
-          }}
-        >
-          <Typography variant="h5" component="h1">
+      <ContentWrapper>
+        <Header>
+          <Typography variant="h5" component="h1" sx={{ fontWeight: 600 }}>
             Shpion Voice Chat
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -35,11 +53,11 @@ export default function ProtectedAppLayout() {
               Выйти
             </Button>
           </Box>
-        </Box>
-        <Box sx={{ flex: 1, overflow: 'auto' }}>
-          <ServerContent />
-        </Box>
-      </Box>
-    </Box>
+        </Header>
+        <MainContent>
+          <LiveKitManager />
+        </MainContent>
+      </ContentWrapper>
+    </Root>
   );
 } 

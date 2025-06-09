@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { useAuth } from './AuthContext'; // Импортируем useAuth
 
 interface User {
   id: string;
@@ -63,192 +64,118 @@ interface SocketContextType {
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
 
 export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { token, user } = useAuth(); // Получаем токен и юзера из AuthContext
   const [socket, setSocket] = useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [serverUsers, setServerUsers] = useState<Map<string, User[]>>(new Map());
   const [serverVoiceStates, setServerVoiceStates] = useState<Map<string, VoiceState[]>>(new Map());
-  const currentServerId = useRef<string | null>(null);
+
+  // Обработчики событий сокета
+  const onConnect = useCallback(() => {
+    setIsConnected(true);
+    console.log('Socket connected');
+  }, []);
+
+  const onDisconnect = useCallback(() => {
+    setIsConnected(false);
+    console.log('Socket disconnected');
+  }, []);
+  
+  const onUserJoined = useCallback((newUser: User, serverId: string) => {
+    setServerUsers(prev => {
+      const newMap = new Map(prev);
+      const currentUsers = newMap.get(serverId) || [];
+      if (!currentUsers.find(u => u.id === newUser.id)) {
+        newMap.set(serverId, [...currentUsers, newUser]);
+      }
+      return newMap;
+    });
+  }, []);
+
+  const onUserLeft = useCallback((userId: string, serverId: string) => {
+    setServerUsers(prev => {
+      const newMap = new Map(prev);
+      const currentUsers = newMap.get(serverId) || [];
+      newMap.set(serverId, currentUsers.filter(u => u.id !== userId));
+      return newMap;
+    });
+  }, []);
+
+  const onVoiceUserJoined = useCallback((voiceState: VoiceState) => {
+    setServerVoiceStates(prev => {
+      const newMap = new Map(prev);
+      const currentStates = newMap.get(voiceState.serverId) || [];
+      if (!currentStates.find(v => v.userId === voiceState.userId)) {
+        newMap.set(voiceState.serverId, [...currentStates, voiceState]);
+      }
+      return newMap;
+    });
+  }, []);
+  
+  const onVoiceUserLeft = useCallback((userId: string, serverId: string) => {
+    setServerVoiceStates(prev => {
+      const newMap = new Map(prev);
+      const currentStates = newMap.get(serverId) || [];
+      newMap.set(serverId, currentStates.filter(v => v.userId !== userId));
+      return newMap;
+    });
+  }, []);
+
 
   useEffect(() => {
-    // Получаем токен из localStorage
-    const token = localStorage.getItem('authToken');
-    if (!token) return;
+    if (!token) {
+      if (socket) {
+        socket.disconnect();
+      }
+      return;
+    };
 
-    console.log('🔌 Connecting to socket server...');
-    const socketStartTime = performance.now();
-    
     const newSocket = io('http://localhost:3001', {
-      auth: {
-        token
-      },
+      auth: { token },
       transports: ['websocket']
     });
 
-    newSocket.on('connect', () => {
-      console.log('✅ Socket connected:', newSocket.id);
-      console.log('⏱️ Socket connection took:', (performance.now() - socketStartTime).toFixed(2), 'ms');
-      setIsConnected(true);
-    });
-
-    newSocket.on('disconnect', () => {
-      console.log('❌ Socket disconnected');
-      setIsConnected(false);
-    });
-
-    // Server events
-    newSocket.on('server:users_list', (users: User[], serverId: string) => {
-      console.log('📋 Server users list:', users, 'for server:', serverId);
-      setServerUsers(prev => new Map(prev).set(serverId, users));
-    });
-
-    newSocket.on('server:voice_states', (voiceStates: VoiceState[], serverId: string) => {
-      console.log('🎤 Server voice states:', voiceStates, 'for server:', serverId);
-      setServerVoiceStates(prev => new Map(prev).set(serverId, voiceStates));
-    });
-
-    // User presence events
-    newSocket.on('user:joined', (user: User, serverId: string) => {
-      console.log('👋 User joined:', user.username, 'to server:', serverId);
-      setServerUsers(prev => {
-        const newMap = new Map(prev);
-        const currentUsers = newMap.get(serverId) || [];
-        if (!currentUsers.find(u => u.id === user.id)) {
-          newMap.set(serverId, [...currentUsers, user]);
-        }
-        return newMap;
-      });
-    });
-
-    newSocket.on('user:left', (userId: string, serverId: string) => {
-      console.log('👋 User left:', userId, 'from server:', serverId);
-      setServerUsers(prev => {
-        const newMap = new Map(prev);
-        const currentUsers = newMap.get(serverId) || [];
-        newMap.set(serverId, currentUsers.filter(u => u.id !== userId));
-        return newMap;
-      });
-    });
-
-    // Voice events
-    newSocket.on('voice:user_joined', (voiceState: VoiceState) => {
-      console.log('🎤 Voice user joined:', voiceState);
-      setServerVoiceStates(prev => {
-        const newMap = new Map(prev);
-        const currentStates = newMap.get(voiceState.serverId) || [];
-        if (!currentStates.find(v => v.userId === voiceState.userId)) {
-          newMap.set(voiceState.serverId, [...currentStates, voiceState]);
-        }
-        return newMap;
-      });
-    });
-
-    newSocket.on('voice:user_left', (userId: string, serverId: string) => {
-      console.log('🔇 Voice user left:', userId, 'from server:', serverId);
-      setServerVoiceStates(prev => {
-        const newMap = new Map(prev);
-        const currentStates = newMap.get(serverId) || [];
-        newMap.set(serverId, currentStates.filter(v => v.userId !== userId));
-        return newMap;
-      });
-    });
-
-    newSocket.on('voice:user_muted', (userId: string, isMuted: boolean, serverId: string) => {
-      console.log('🎤 Voice user muted:', userId, isMuted, 'in server:', serverId);
-      setServerVoiceStates(prev => {
-        const newMap = new Map(prev);
-        const currentStates = newMap.get(serverId) || [];
-        const updatedStates = currentStates.map(v => 
-          v.userId === userId ? { ...v, isMuted } : v
-        );
-        newMap.set(serverId, updatedStates);
-        return newMap;
-      });
-    });
-
-    newSocket.on('voice:user_deafened', (userId: string, isDeafened: boolean, serverId: string) => {
-      console.log('🔊 Voice user deafened:', userId, isDeafened, 'in server:', serverId);
-      setServerVoiceStates(prev => {
-        const newMap = new Map(prev);
-        const currentStates = newMap.get(serverId) || [];
-        const updatedStates = currentStates.map(v => 
-          v.userId === userId ? { ...v, isDeafened } : v
-        );
-        newMap.set(serverId, updatedStates);
-        return newMap;
-      });
-    });
-
+    newSocket.on('connect', onConnect);
+    newSocket.on('disconnect', onDisconnect);
+    newSocket.on('user:joined', onUserJoined);
+    newSocket.on('user:left', onUserLeft);
+    newSocket.on('voice:user_joined', onVoiceUserJoined);
+    newSocket.on('voice:user_left', onVoiceUserLeft);
+    
     setSocket(newSocket);
 
     return () => {
-      console.log('🔌 Disconnecting socket...');
+      newSocket.off('connect', onConnect);
+      newSocket.off('disconnect', onDisconnect);
+      newSocket.off('user:joined', onUserJoined);
+      newSocket.off('user:left', onUserLeft);
+      newSocket.off('voice:user_joined', onVoiceUserJoined);
+      newSocket.off('voice:user_left', onVoiceUserLeft);
       newSocket.disconnect();
     };
-  }, []);
+  }, [token, onConnect, onDisconnect, onUserJoined, onUserLeft, onVoiceUserJoined, onVoiceUserLeft]);
 
-  const joinServer = (serverId: string) => {
-    if (!socket || !isConnected) return;
-    
-    // Покидаем предыдущий сервер
-    if (currentServerId.current && currentServerId.current !== serverId) {
-      console.log('👋 Leaving previous server:', currentServerId.current);
-      socket.emit('server:leave', currentServerId.current);
+  const joinServer = useCallback((serverId: string) => {
+    socket?.emit('server:join', serverId);
+  }, [socket]);
+
+  const leaveServer = useCallback((serverId: string) => {
+    socket?.emit('server:leave', serverId);
+  }, [socket]);
+
+  const joinVoice = useCallback((serverId: string) => {
+    if (socket && user) {
+      socket.emit('voice:join', { serverId, userId: user.id, username: user.username });
     }
-    
-    console.log('🚪 Joining server:', serverId);
-    socket.emit('server:join', serverId);
-    currentServerId.current = serverId;
-  };
+  }, [socket, user]);
 
-  const leaveServer = (serverId: string) => {
-    if (!socket || !isConnected) return;
-    
-    console.log('👋 Leaving server:', serverId);
-    socket.emit('server:leave', serverId);
-    if (currentServerId.current === serverId) {
-      currentServerId.current = null;
+  const leaveVoice = useCallback((serverId: string) => {
+    if (socket && user) {
+      socket.emit('voice:leave', { serverId, userId: user.id });
     }
-  };
-
-  const joinVoice = (serverId: string) => {
-    if (!socket || !isConnected) return;
-    
-    // Получаем данные пользователя из localStorage или другого источника
-    const userStr = localStorage.getItem('user');
-    const user = userStr ? JSON.parse(userStr) : null;
-    
-    if (!user) {
-      console.error('❌ No user data available for voice join');
-      return;
-    }
-    
-    console.log('🎤 Joining voice in server:', serverId);
-    socket.emit('voice:join', {
-      serverId,
-      userId: user.id,
-      username: user.username
-    });
-  };
-
-  const leaveVoice = (serverId: string) => {
-    if (!socket || !isConnected) return;
-    
-    const userStr = localStorage.getItem('user');
-    const user = userStr ? JSON.parse(userStr) : null;
-    
-    if (!user) {
-      console.error('❌ No user data available for voice leave');
-      return;
-    }
-    
-    console.log('🔇 Leaving voice in server:', serverId);
-    socket.emit('voice:leave', {
-      serverId,
-      userId: user.id
-    });
-  };
-
-  const value: SocketContextType = {
+  }, [socket, user]);
+  
+  const value = useMemo(() => ({
     socket,
     isConnected,
     serverUsers,
@@ -256,14 +183,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     joinServer,
     leaveServer,
     joinVoice,
-    leaveVoice
-  };
+    leaveVoice,
+  }), [socket, isConnected, serverUsers, serverVoiceStates, joinServer, leaveServer, joinVoice, leaveVoice]);
 
-  return (
-    <SocketContext.Provider value={value}>
-      {children}
-    </SocketContext.Provider>
-  );
+  return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
 };
 
 export const useSocket = (): SocketContextType => {

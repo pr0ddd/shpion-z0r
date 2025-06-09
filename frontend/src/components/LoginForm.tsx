@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import {
   Box,
   TextField,
@@ -7,15 +7,23 @@ import {
   Paper,
   Alert,
 } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import { useAuth } from '../contexts/AuthContext';
 
-export const LoginForm: React.FC = () => {
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(4),
+  maxWidth: 400,
+  margin: 'auto',
+  marginTop: theme.spacing(8),
+}));
+
+const LoginForm: React.FC = () => {
   const { login, isLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     
@@ -24,17 +32,11 @@ export const LoginForm: React.FC = () => {
     } catch (err: any) {
       setError(err.message || 'Ошибка входа');
     }
-  };
+  }, [email, password, login]);
 
   return (
-    <Paper 
+    <StyledPaper 
       elevation={3}
-      sx={{
-        padding: 4,
-        maxWidth: 400,
-        margin: 'auto',
-        mt: 8,
-      }}
     >
       <Typography variant="h4" component="h1" align="center" gutterBottom>
         Вход
@@ -83,6 +85,8 @@ export const LoginForm: React.FC = () => {
           {isLoading ? 'Вход...' : 'Войти'}
         </Button>
       </Box>
-    </Paper>
+    </StyledPaper>
   );
-}; 
+};
+
+export default memo(LoginForm); 

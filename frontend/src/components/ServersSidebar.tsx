@@ -1,256 +1,130 @@
-import React, { useEffect, useCallback, useState, useRef } from 'react';
+import React, { memo, useState, useCallback, useEffect } from 'react';
 import {
   Box,
   Avatar,
   Tooltip,
   CircularProgress,
   Alert,
-  Divider
+  Divider,
+  Typography,
 } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
-import { serverAPI } from '../services/api';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { useServer } from '../contexts/ServerContext';
-import { CreateServerDialog } from './CreateServerDialog';
+import { useAuth } from '../contexts/AuthContext';
+import { Server } from '../types';
 
-export default function ServersSidebar() {
-  const { 
-    servers, 
-    selectedServer, 
-    isLoading, 
+const SidebarWrapper = styled(Box)(({ theme }) => ({
+  width: 72,
+  height: '100vh',
+  padding: theme.spacing(1, 0),
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: theme.spacing(1),
+  backgroundColor: theme.palette.discord.sidebar,
+  position: 'relative',
+}));
+
+const ServerButton = styled(Avatar)<{ isselected?: string }>(({ theme, isselected }) => ({
+  width: 48,
+  height: 48,
+  cursor: 'pointer',
+  transition: 'border-radius 0.2s ease, background-color 0.2s ease',
+  backgroundColor: isselected === 'true' ? theme.palette.discord.blurple : theme.palette.discord.grey,
+  borderRadius: isselected === 'true' ? '30%' : '50%',
+  '&:hover': {
+    borderRadius: '30%',
+    backgroundColor: theme.palette.discord.blurple,
+  },
+}));
+
+const StyledDivider = styled(Divider)(({ theme }) => ({
+  width: 32,
+  backgroundColor: theme.palette.discord.grey,
+  marginTop: theme.spacing(0.5),
+  marginBottom: theme.spacing(0.5),
+}));
+
+interface ServerItemProps {
+  server: Server;
+  isSelected: boolean;
+  onClick: (server: Server) => void;
+}
+
+const ServerItem = memo(({ server, isSelected, onClick }: ServerItemProps) => {
+  return (
+    <Tooltip title={server.name} placement="right">
+      <ServerButton
+        isselected={isSelected.toString()}
+        onClick={() => onClick(server)}
+      >
+        {server.name.charAt(0)}
+      </ServerButton>
+    </Tooltip>
+  );
+});
+
+const ActionButtons = styled(Box)({
+  marginTop: 'auto',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 8,
+});
+
+const ServersSidebar: React.FC = () => {
+  const {
+    servers,
+    selectedServer,
+    isLoading,
     error,
-    isConnecting,
-    setServers, 
-    selectServer, 
-    setLoading, 
-    setError,
-    restoreUserState
+    selectServer,
+    fetchServers,
   } = useServer();
-
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const hasInitialized = useRef(false);
+  const { user, logout } = useAuth();
 
   useEffect(() => {
-    if (!hasInitialized.current) {
-      restoreUserState();
-      hasInitialized.current = true;
+    if (user) {
+      fetchServers();
     }
-  }, [restoreUserState]);
+  }, [user, fetchServers]);
 
-  const handleServerClick = useCallback((server: any) => {
+  const handleServerClick = useCallback((server: Server) => {
     selectServer(server);
   }, [selectServer]);
-
-  const handleCreateServer = useCallback((newServer: any) => {
-    // Добавляем новый сервер в список
-    setServers([...(servers || []), newServer]);
-    // Автоматически выбираем новый сервер
-    selectServer(newServer);
-  }, [servers, setServers, selectServer]);
-
-  if (isLoading) {
-    return (
-      <Box 
-        sx={{ 
-          width: 72,
-          height: '100vh',
-          bgcolor: 'background.paper',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          borderRight: '1px solid',
-          borderColor: 'divider'
-        }}
-      >
-        <CircularProgress size={24} />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box 
-        sx={{ 
-          width: 72,
-          height: '100vh',
-          bgcolor: 'background.paper',
-          p: 1,
-          borderRight: '1px solid',
-          borderColor: 'divider'
-        }}
-      >
-        <Alert severity="error" sx={{ fontSize: '0.75rem' }}>
-          Error
-        </Alert>
-      </Box>
-    );
-  }
-
+  
   return (
-    <Box 
-      sx={{ 
-        width: 72,
-        height: '100vh',
-        bgcolor: '#202225', // Discord sidebar color
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        py: 1,
-        gap: 1,
-        overflowY: 'auto',
-        '&::-webkit-scrollbar': {
-          width: '8px',
-        },
-        '&::-webkit-scrollbar-track': {
-          background: 'transparent',
-        },
-        '&::-webkit-scrollbar-thumb': {
-          background: '#2f3136',
-          borderRadius: '4px',
-        },
-      }}
-    >
-      {/* Home/Direct Messages icon */}
-      <Tooltip title="Direct Messages" placement="right">
-        <Avatar
-          sx={{
-            width: 48,
-            height: 48,
-            bgcolor: '#5865f2', // Discord blurple
-            cursor: 'pointer',
-            transition: 'border-radius 0.2s ease',
-            borderRadius: selectedServer === null ? '30%' : '50%',
-            '&:hover': {
-              borderRadius: '30%',
-              bgcolor: '#4752c4',
-            }
-          }}
-          onClick={() => selectServer(null)}
-        >
-          🏠
-        </Avatar>
+    <SidebarWrapper>
+      <Tooltip title="Личные сообщения (скоро)" placement="right">
+        <ServerButton isselected={(selectedServer === null).toString()} onClick={() => selectServer(null)}>DM</ServerButton>
       </Tooltip>
-
-      <Divider 
-        sx={{ 
-          width: 32, 
-          bgcolor: '#36393f',
-          my: 0.5
-        }} 
-      />
-
-      {/* Server icons */}
-      {servers && servers.map((server) => (
-        <Tooltip key={server.id} title={server.name} placement="right">
-          <Box sx={{ position: 'relative' }}>
-            <Avatar
-              sx={{
-                width: 48,
-                height: 48,
-                bgcolor: 'primary.main',
-                cursor: 'pointer',
-                transition: 'border-radius 0.2s ease',
-                borderRadius: selectedServer?.id === server.id ? '30%' : '50%',
-                fontSize: '1.2rem',
-                fontWeight: 'bold',
-                '&:hover': {
-                  borderRadius: '30%',
-                }
-              }}
-              onClick={() => handleServerClick(server)}
-            >
-              {server.name.charAt(0).toUpperCase()}
-            </Avatar>
-            
-            {/* Connection loading indicator */}
-            {isConnecting && selectedServer?.id === server.id && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: 48,
-                  height: 48,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  bgcolor: 'rgba(0,0,0,0.7)',
-                  borderRadius: '30%',
-                }}
-              >
-                <CircularProgress size={20} sx={{ color: 'white' }} />
-              </Box>
-            )}
-            
-            {/* Active server indicator */}
-            {selectedServer?.id === server.id && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  left: -12,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  width: 8,
-                  height: 40,
-                  bgcolor: '#ffffff',
-                  borderRadius: '0 4px 4px 0',
-                }}
-              />
-            )}
-            
-            {/* Voice participants indicator */}
-            {server.voiceParticipants && server.voiceParticipants.length > 0 && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  bottom: -2,
-                  right: -2,
-                  minWidth: 16,
-                  height: 16,
-                  bgcolor: '#57f287', // Discord green
-                  color: '#000',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.7rem',
-                  fontWeight: 'bold',
-                  border: '2px solid #202225',
-                }}
-              >
-                {server.voiceParticipants.length}
-              </Box>
-            )}
-          </Box>
-        </Tooltip>
+      <Divider sx={{ my: 1, borderColor: '#36393f', width: '50%', alignSelf: 'center' }} />
+      {servers.map(server => (
+        <ServerItem
+          key={server.id}
+          server={server}
+          isSelected={selectedServer?.id === server.id}
+          onClick={handleServerClick}
+        />
       ))}
+      <ActionButtons>
+        <Tooltip title="Добавить сервер (скоро)" placement="right">
+          <ServerButton>
+            <AddIcon />
+          </ServerButton>
+        </Tooltip>
+        <Tooltip title="Выйти" placement="right">
+          <ServerButton onClick={() => logout()}>
+            <LogoutIcon />
+          </ServerButton>
+        </Tooltip>
+      </ActionButtons>
 
-      {/* Create Server Button */}
-      <Tooltip title="Создать сервер" placement="right">
-        <Avatar
-          sx={{
-            width: 48,
-            height: 48,
-            bgcolor: '#43b581', // Discord green
-            cursor: 'pointer',
-            transition: 'border-radius 0.2s ease',
-            borderRadius: '50%',
-            '&:hover': {
-              borderRadius: '30%',
-              bgcolor: '#3ca374',
-            }
-          }}
-          onClick={() => setCreateDialogOpen(true)}
-        >
-          <AddIcon />
-        </Avatar>
-      </Tooltip>
-
-      {/* Create Server Dialog */}
-      <CreateServerDialog
-        open={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
-        onSuccess={handleCreateServer}
-      />
-    </Box>
+      {isLoading && <CircularProgress size={24} sx={{ position: 'absolute', top: '50%', left: '50%', marginTop: '-12px', marginLeft: '-12px' }} />}
+      {error && <Typography color="error">{error}</Typography>}
+    </SidebarWrapper>
   );
-} 
+};
+
+export default memo(ServersSidebar); 

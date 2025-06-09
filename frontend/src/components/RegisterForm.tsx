@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import {
   Box,
   TextField,
@@ -7,25 +7,32 @@ import {
   Paper,
   Alert,
 } from '@mui/material';
-import { authAPI } from '../services/api';
+import { styled } from '@mui/material/styles';
+import { useAuth } from '../contexts/AuthContext';
 
 interface RegisterFormProps {
   onSuccess: () => void;
 }
 
-export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(4),
+  maxWidth: 400,
+  margin: 'auto',
+  marginTop: theme.spacing(8),
+}));
+
+const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
+  const { register, isLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     
-    // Валидация
     if (password !== confirmPassword) {
       setError('Пароли не совпадают');
       return;
@@ -36,34 +43,17 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
       return;
     }
     
-    setIsLoading(true);
-    
     try {
-      const response = await authAPI.register(email, username, password);
-      
-      if (response.success && response.data) {
-        // Сохраняем токен
-        localStorage.setItem('authToken', response.data.token);
-        onSuccess();
-      } else {
-        setError(response.error || 'Ошибка регистрации');
-      }
+      await register(email, username, password);
+      onSuccess();
     } catch (err: any) {
-      setError(err.response?.data?.error || err.message || 'Ошибка регистрации');
-    } finally {
-      setIsLoading(false);
+      setError(err.message || 'Ошибка регистрации');
     }
-  };
+  }, [email, username, password, confirmPassword, register, onSuccess]);
 
   return (
-    <Paper 
+    <StyledPaper
       elevation={3}
-      sx={{
-        padding: 4,
-        maxWidth: 400,
-        margin: 'auto',
-        mt: 8,
-      }}
     >
       <Typography variant="h4" component="h1" align="center" gutterBottom>
         Регистрация
@@ -138,6 +128,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
           {isLoading ? 'Регистрация...' : 'Зарегистрироваться'}
         </Button>
       </Box>
-    </Paper>
+    </StyledPaper>
   );
-}; 
+};
+
+export default memo(RegisterForm); 

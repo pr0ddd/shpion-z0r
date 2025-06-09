@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button, Paper } from '@mui/material';
-import { LoginForm } from './LoginForm';
-import { RegisterForm } from './RegisterForm';
+import LoginForm from './LoginForm';
+import RegisterForm from './RegisterForm';
 
 export const AuthPage: React.FC = () => {
   const [isLoginMode, setIsLoginMode] = useState(true);
@@ -33,7 +33,7 @@ export const AuthPage: React.FC = () => {
           bgcolor: 'transparent',
         }}
       >
-        <Typography variant="h2" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
+        <Typography variant="h2" component="h1" gutterBottom>
           🎮 Shpion
         </Typography>
         <Typography variant="h6" color="text.secondary">
@@ -56,7 +56,6 @@ export const AuthPage: React.FC = () => {
         <Button
           variant="text"
           onClick={() => setIsLoginMode(!isLoginMode)}
-          sx={{ textTransform: 'none' }}
         >
           {isLoginMode ? 'Зарегистрироваться' : 'Войти'}
         </Button>

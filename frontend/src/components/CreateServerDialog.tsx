@@ -9,6 +9,7 @@ import {
   Alert,
   Box,
 } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import { serverAPI } from '../services/api';
 
 interface CreateServerDialogProps {
@@ -16,6 +17,24 @@ interface CreateServerDialogProps {
   onClose: () => void;
   onSuccess: (newServer: any) => void;
 }
+
+const StyledDialog = styled(Dialog)(({ theme }) => ({
+  '& .MuiDialog-paper': {
+    backgroundColor: theme.palette.background.paper,
+  },
+}));
+
+const StyledDialogTitle = styled(DialogTitle)({
+  paddingBottom: 1,
+});
+
+const StyledDialogContent = styled(DialogContent)({
+  paddingBottom: 2,
+});
+
+const StyledDialogActions = styled(DialogActions)(({ theme }) => ({
+  padding: theme.spacing(0, 3, 2, 3),
+}));
 
 export const CreateServerDialog: React.FC<CreateServerDialogProps> = ({
   open,
@@ -62,23 +81,18 @@ export const CreateServerDialog: React.FC<CreateServerDialogProps> = ({
   };
 
   return (
-    <Dialog 
+    <StyledDialog 
       open={open} 
       onClose={handleClose}
       maxWidth="sm"
       fullWidth
-      PaperProps={{
-        sx: {
-          bgcolor: 'background.paper',
-        }
-      }}
     >
-      <DialogTitle sx={{ pb: 1 }}>
+      <StyledDialogTitle>
         Создать сервер
-      </DialogTitle>
+      </StyledDialogTitle>
       
       <Box component="form" onSubmit={handleSubmit}>
-        <DialogContent sx={{ pb: 2 }}>
+        <StyledDialogContent>
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
@@ -92,7 +106,6 @@ export const CreateServerDialog: React.FC<CreateServerDialogProps> = ({
             label="Название сервера"
             type="text"
             fullWidth
-            variant="outlined"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -106,7 +119,6 @@ export const CreateServerDialog: React.FC<CreateServerDialogProps> = ({
             label="Описание (необязательно)"
             type="text"
             fullWidth
-            variant="outlined"
             multiline
             rows={3}
             value={description}
@@ -114,9 +126,9 @@ export const CreateServerDialog: React.FC<CreateServerDialogProps> = ({
             placeholder="Краткое описание сервера..."
             helperText="Расскажите, о чем ваш сервер"
           />
-        </DialogContent>
+        </StyledDialogContent>
         
-        <DialogActions sx={{ px: 3, pb: 2 }}>
+        <StyledDialogActions>
           <Button 
             onClick={handleClose}
             disabled={isLoading}
@@ -130,8 +142,8 @@ export const CreateServerDialog: React.FC<CreateServerDialogProps> = ({
           >
             {isLoading ? 'Создание...' : 'Создать сервер'}
           </Button>
-        </DialogActions>
+        </StyledDialogActions>
       </Box>
-    </Dialog>
+    </StyledDialog>
   );
 }; 
