@@ -15,13 +15,14 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('authToken'));
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check auth on mount
   useEffect(() => {
-    const checkAuth = async () => {
-      if (token) {
+    const initialAuthCheck = async () => {
+      const storedToken = localStorage.getItem('authToken');
+      if (storedToken) {
+        setToken(storedToken);
         try {
           const response = await authAPI.me();
           if (response.success && response.data) {
@@ -29,65 +30,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } else {
             localStorage.removeItem('authToken');
             setToken(null);
-            setUser(null);
           }
         } catch (error) {
-          console.error('Auth check failed:', error);
+          console.error('Initial auth check failed, removing token', error);
           localStorage.removeItem('authToken');
           setToken(null);
-          setUser(null);
         }
       }
       setIsLoading(false);
     };
 
-    checkAuth();
+    initialAuthCheck();
+  }, []); // Empty array ensures this runs only once on mount
+
+  const handleAuthSuccess = useCallback((data: LoginResponse['data']) => {
+    if (data) {
+      const { user, token: newToken } = data;
+      localStorage.setItem('authToken', newToken);
+      setUser(user);
+      setToken(newToken);
+    }
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    setIsLoading(true);
     try {
-      const response = await authAPI.login(email, password) as LoginResponse;
-      if (response.success && response.data) {
-        const { user, token: newToken } = response.data;
-        setUser(user);
-        setToken(newToken);
-        localStorage.setItem('authToken', newToken);
+      const response = await authAPI.login(email, password);
+      if (response.success) {
+        handleAuthSuccess(response.data);
       } else {
         throw new Error(response.error || 'Login failed');
       }
     } catch (error) {
       console.error('Login error:', error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
-  }, []);
+  }, [handleAuthSuccess]);
 
   const register = useCallback(async (email: string, username: string, password: string) => {
-    setIsLoading(true);
     try {
       const response = await authAPI.register(email, username, password);
-      if (response.success && response.data) {
-        const { user, token: newToken } = response.data;
-        setUser(user);
-        setToken(newToken);
-        localStorage.setItem('authToken', newToken);
+      if (response.success) {
+        handleAuthSuccess(response.data);
       } else {
         throw new Error(response.error || 'Registration failed');
       }
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
-  }, []);
+  }, [handleAuthSuccess]);
 
   const logout = useCallback(() => {
+    localStorage.removeItem('authToken');
     setUser(null);
     setToken(null);
-    localStorage.removeItem('authToken');
   }, []);
 
   const value = useMemo(() => ({

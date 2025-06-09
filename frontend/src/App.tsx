@@ -8,9 +8,8 @@ import {
   Button,
   CircularProgress
 } from '@mui/material';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ServerProvider } from './contexts/ServerContext';
-import { SocketProvider } from './contexts/SocketContext';
+import { useAuth } from './contexts/AuthContext';
+import { AppProviders } from './contexts/AppProviders';
 import { AuthPage } from './components/AuthPage';
 import ServersSidebar from './components/ServersSidebar';
 import ServerContent from './components/ServerContent';
@@ -18,7 +17,6 @@ import ServerMembers from './components/ServerMembers';
 import InvitePage from './components/InvitePage';
 import ProtectedAppLayout from './components/ProtectedAppLayout';
 import theme from './theme';
-import ErrorBoundary from './components/ErrorBoundary';
 
 function AppContent({ user, isLoading }: { user: any, isLoading: boolean }) {
   if (isLoading) {
@@ -59,15 +57,9 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        <AuthProvider>
-          <SocketProvider>
-            <ServerProvider>
-              <ErrorBoundary>
-                <AuthWrapper />
-              </ErrorBoundary>
-            </ServerProvider>
-          </SocketProvider>
-        </AuthProvider>
+        <AppProviders>
+          <AuthWrapper />
+        </AppProviders>
       </Router>
     </ThemeProvider>
   );
