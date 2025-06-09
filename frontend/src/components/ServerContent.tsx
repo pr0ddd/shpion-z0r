@@ -7,6 +7,31 @@ import { format } from 'date-fns';
 import ScreenShareDisplay from './ScreenShareDisplay';
 import { Track } from 'livekit-client';
 
+/* eslint-disable no-bitwise */
+const stringToColor = (str: string): string => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i += 1) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  let color = '#';
+  for (let i = 0; i < 3; i += 1) {
+    const value = (hash >> (i * 8)) & 0xFF;
+    color += `00${value.toString(16)}`.slice(-2);
+  }
+  return color;
+};
+
+const getContrastingTextColor = (hexColor: string): string => {
+    if (hexColor.startsWith('#')) {
+        hexColor = hexColor.slice(1);
+    }
+    const r = parseInt(hexColor.substring(0, 2), 16);
+    const g = parseInt(hexColor.substring(2, 4), 16);
+    const b = parseInt(hexColor.substring(4, 6), 16);
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    return (yiq >= 128) ? '#000000' : '#FFFFFF';
+}
+
 const ChatWrapper = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
@@ -69,12 +94,15 @@ const CustomChat = () => {
                 {chatMessages.map((msg, i) => {
                     const displayName = msg.from?.identity.split(':')[1] || msg.from?.identity || 'Unknown';
                     const initial = displayName.charAt(0).toUpperCase();
+                    const bgColor = stringToColor(msg.from?.identity || 'default');
+                    const textColor = getContrastingTextColor(bgColor);
+
                     return (
                         <MessageItem key={i}>
-                            <Avatar sx={{ width: 40, height: 40, mr: 2, bgcolor: theme.palette.primary.main }}>{initial}</Avatar>
+                            <Avatar sx={{ width: 40, height: 40, mr: 2, bgcolor: bgColor, color: textColor }}>{initial}</Avatar>
                             <Box>
                                 <Box display="flex" alignItems="center" mb={0.5}>
-                                    <Typography variant="body1" fontWeight="bold" color="text.primary">
+                                    <Typography variant="body1" fontWeight="bold" color={bgColor}>
                                         {displayName}
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary" sx={{ ml: 1.5 }}>

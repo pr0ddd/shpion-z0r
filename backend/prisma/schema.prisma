@@ -7,313 +7,75 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id          String     @id @default(cuid())
-  email       String     @unique
-  username    String     @unique
-  avatar      String?
-  password    String
-  status      UserStatus @default(OFFLINE)
-  lastSeen    DateTime   @default(now())
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+// ---- ENUMS ----
 
-  // Отношения
-  ownedServers     Server[]
-  serverMembers    ServerMember[]
-  messages         Message[]
-  friends          Friendship[] @relation("UserFriends")
-  friendRequests   Friendship[] @relation("UserFriendRequests")
-  streamViewers    StreamViewer[]
-  
-  // Приглашения
-  sentInvites      ServerInvite[] @relation("InviteSender")
-  receivedInvites  ServerInvite[] @relation("InviteReceiver")
-  
-  // LiveKit related
-  livekitTokens    LiveKitToken[]
-  streams          Stream[]
+enum MemberRole {
+  ADMIN
+  MEMBER
+}
+
+// ---- MODELS ----
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  password  String
+  avatar    String?  @db.Text // Storing as Base64 for now
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  servers      Member[]
+  ownedServers Server[]   @relation("ServerOwner")
+  messages     Message[]
 
   @@map("users")
 }
 
 model Server {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  icon        String?
-  ownerId     String
-  isPublic    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  name       String
+  icon       String?  @db.Text // Storing as Base64 for now
+  inviteCode String   @unique @default(cuid())
+  ownerId    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  // LiveKit room для голосового чата (один на сервер)
-  livekitVoiceRoom String @unique @default(cuid())
-  
-  // Настройки голосового чата
-  voiceChannelName String @default("Голосовой чат")
-  maxVoiceUsers    Int    @default(50)
-  
-  // Настройки текстового чата  
-  textChannelName String @default("Общий чат")
-
-  // Отношения
-  owner    User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  members  ServerMember[]
-  messages Message[]      // Все сообщения текстового чата
-  streams  Stream[]       // Стримы на сервере
-  roles    Role[]
-  invites  ServerInvite[] // Приглашения на сервер
+  owner   User      @relation("ServerOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members Member[]
+  messages Message[]
 
   @@map("servers")
 }
 
-model ServerMember {
-  id       String     @id @default(cuid())
-  userId   String
+model Member {
+  id     String     @id @default(cuid())
+  role   MemberRole @default(MEMBER)
+  userId String
   serverId String
-  roleType MemberRole @default(MEMBER)
-  joinedAt DateTime   @default(now())
-  
-  // === РАЗРЕШЕНИЯ НА ФУНКЦИИ СЕРВЕРА ===
-  canAccessTextChat  Boolean @default(true)   // Доступ к текстовому чату
-  canAccessVoiceChat Boolean @default(true)   // Доступ к голосовому чату
-  canAccessStreams   Boolean @default(false)  // Доступ к стримам
-  canCreateStreams   Boolean @default(false)  // Может создавать стримы
-  
-  // === ГОЛОСОВЫЕ СОСТОЯНИЯ (когда подключен к LiveKit) ===
-  voiceConnectedAt DateTime? // null = не в голосовом чате
-  isMuted          Boolean   @default(false)
-  isDeafened       Boolean   @default(false)
-  isSpeaking       Boolean   @default(false)
-  connectionQuality String?  // "excellent", "good", "poor"
-  
-  // Отношения
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   server Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
-  roles  RoleMember[]
 
   @@unique([userId, serverId])
-  @@map("server_members")
+  @@map("members")
 }
 
-model Role {
-  id          String   @id @default(cuid())
-  name        String
-  color       String?
-  permissions Int      @default(0) // Битовая маска разрешений
-  serverId    String
-  position    Int      @default(0)
-  createdAt   DateTime @default(now())
-
-  // Отношения
-  server  Server       @relation(fields: [serverId], references: [id], onDelete: Cascade)
-  members RoleMember[]
-
-  @@map("roles")
-}
-
-model RoleMember {
-  id           String @id @default(cuid())
-  userId       String
-  roleId       String
-  membershipId String
-
-  // Отношения
-  role       Role         @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  membership ServerMember @relation(fields: [membershipId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, roleId])
-  @@map("role_members")
-}
-
-// Система приглашений на сервер
-model ServerInvite {
-  id         String       @id @default(cuid())
-  code       String       @unique @default(cuid()) // Уникальный код приглашения
-  serverId   String
-  inviterId  String       // Кто создал приглашение
-  inviteeId  String?      // Кому адресовано (может быть null для публичных)
-  
-  status     InviteStatus @default(PENDING)
-  type       InviteType   @default(DIRECT) // Прямое или по ссылке
-  
-  // === РАЗРЕШЕНИЯ, КОТОРЫЕ ПОЛУЧИТ ПОЛЬЗОВАТЕЛЬ ===
-  grantTextChat  Boolean @default(true)   // Даем доступ к текстовому чату
-  grantVoiceChat Boolean @default(true)   // Даем доступ к голосовому чату  
-  grantStreams   Boolean @default(false)  // Даем доступ к стримам
-  grantCreateStreams Boolean @default(false) // Может создавать стримы
-  
-  maxUses    Int?         // Максимальное количество использований (null = безлимит)
-  usedCount  Int          @default(0)
-  
-  expiresAt  DateTime?    // Срок действия (null = бессрочно)
-  createdAt  DateTime     @default(now())
-  acceptedAt DateTime?
-  
-  // Отношения
-  server   Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
-  inviter  User   @relation("InviteSender", fields: [inviterId], references: [id], onDelete: Cascade)
-  invitee  User?  @relation("InviteReceiver", fields: [inviteeId], references: [id], onDelete: SetNull)
-
-  @@map("server_invites")
-}
-
-// Сообщения в текстовом чате сервера
 model Message {
-  id        String      @id @default(cuid())
-  content   String
-  type      MessageType @default(TEXT)
+  id        String   @id @default(cuid())
+  content   String   @db.Text
   authorId  String
-  serverId  String      // Привязка к серверу напрямую
-  editedAt  DateTime?
-  createdAt DateTime    @default(now())
+  serverId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // Отношения
   author User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
   server Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
 
   @@map("messages")
-}
-
-// Стримы на сервере
-model Stream {
-  id          String      @id @default(cuid())
-  title       String
-  description String?
-  streamerId  String
-  serverId    String
-  status      StreamStatus @default(OFFLINE)
-  
-  // LiveKit room для стрима
-  livekitStreamRoom String @unique @default(cuid())
-  
-  // Настройки стрима
-  maxViewers    Int     @default(100)
-  isRecording   Boolean @default(false)
-  
-  startedAt   DateTime?
-  endedAt     DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  // Отношения
-  streamer User   @relation(fields: [streamerId], references: [id], onDelete: Cascade)
-  server   Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
-  viewers  StreamViewer[]
-
-  @@map("streams")
-}
-
-// Зрители стрима
-model StreamViewer {
-  id       String   @id @default(cuid())
-  userId   String
-  streamId String
-  joinedAt DateTime @default(now())
-  leftAt   DateTime?
-
-  // Отношения
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  stream Stream @relation(fields: [streamId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, streamId])
-  @@map("stream_viewers")
-}
-
-model Friendship {
-  id         String           @id @default(cuid())
-  requesterId String
-  receiverId String
-  status     FriendshipStatus @default(PENDING)
-  createdAt  DateTime         @default(now())
-  acceptedAt DateTime?
-
-  // Отношения
-  requester User @relation("UserFriends", fields: [requesterId], references: [id], onDelete: Cascade)
-  receiver  User @relation("UserFriendRequests", fields: [receiverId], references: [id], onDelete: Cascade)
-
-  @@unique([requesterId, receiverId])
-  @@map("friendships")
-}
-
-// LiveKit токены для управления доступом к SFU
-model LiveKitToken {
-  id        String    @id @default(cuid())
-  userId    String
-  roomName  String    // voice room или stream room
-  roomType  RoomType
-  token     String
-  expiresAt DateTime
-  createdAt DateTime  @default(now())
-
-  // Отношения
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("livekit_tokens")
-}
-
-// Enums
-enum UserStatus {
-  ONLINE
-  AWAY
-  DO_NOT_DISTURB
-  INVISIBLE
-  OFFLINE
-}
-
-enum MessageType {
-  TEXT
-  IMAGE
-  FILE
-  SYSTEM
-  JOIN_SERVER
-  LEAVE_SERVER
-  START_STREAM
-  END_STREAM
-  INVITE_SENT
-  INVITE_ACCEPTED
-}
-
-enum FriendshipStatus {
-  PENDING
-  ACCEPTED
-  BLOCKED
-}
-
-enum StreamStatus {
-  OFFLINE
-  STARTING
-  LIVE
-  ENDED
-}
-
-enum RoomType {
-  VOICE    // Голосовой чат сервера
-  STREAM   // Стрим
-}
-
-// Роли участников сервера
-enum MemberRole {
-  OWNER       // Владелец сервера (создатель)
-  ADMIN       // Администратор (может приглашать, управлять ролями)
-  MODERATOR   // Модератор (может управлять чатом, стримами)
-  MEMBER      // Обычный участник
-}
-
-// Статусы приглашений
-enum InviteStatus {
-  PENDING     // Ожидает ответа
-  ACCEPTED    // Принято
-  DECLINED    // Отклонено
-  EXPIRED     // Истекло
-  CANCELLED   // Отменено создателем
-}
-
-// Типы приглашений
-enum InviteType {
-  DIRECT      // Прямое приглашение конкретному пользователю
-  LINK        // Приглашение по ссылке (может использоваться несколько раз)
 }
 
  

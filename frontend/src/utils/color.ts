@@ -22,4 +22,4 @@ export const getContrastingTextColor = (hexColor: string): string => {
     const b = parseInt(hexColor.substring(4, 6), 16);
     const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
     return (yiq >= 128) ? '#000000' : '#FFFFFF';
-} 
+}

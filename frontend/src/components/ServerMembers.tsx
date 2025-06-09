@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Box, Typography, List, ListItem, ListItemText, Paper, IconButton, Tooltip, CircularProgress, useTheme } from '@mui/material';
+import { Box, Typography, List, ListItem, ListItemText, Paper, IconButton, Tooltip, CircularProgress, useTheme, Avatar } from '@mui/material';
 import {
     useParticipants,
     useRoomContext,
@@ -22,6 +22,31 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import NoiseAwareIcon from '@mui/icons-material/NoiseAware';
 import NoiseControlOffIcon from '@mui/icons-material/NoiseControlOff';
 
+/* eslint-disable no-bitwise */
+const stringToColor = (str: string): string => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i += 1) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  let color = '#';
+  for (let i = 0; i < 3; i += 1) {
+    const value = (hash >> (i * 8)) & 0xFF;
+    color += `00${value.toString(16)}`.slice(-2);
+  }
+  return color;
+};
+
+const getContrastingTextColor = (hexColor: string): string => {
+    if (hexColor.startsWith('#')) {
+        hexColor = hexColor.slice(1);
+    }
+    const r = parseInt(hexColor.substring(0, 2), 16);
+    const g = parseInt(hexColor.substring(2, 4), 16);
+    const b = parseInt(hexColor.substring(4, 6), 16);
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    return (yiq >= 128) ? '#000000' : '#FFFFFF';
+}
+
 // ====================================================================================
 // Sub-components that DEPEND on LiveKit context (REDESIGNED)
 // ====================================================================================
@@ -36,21 +61,32 @@ const ParticipantItem: React.FC<{ participant: Participant, isDeafened: boolean 
         color: theme.palette.text.primary,
         fontWeight: 'bold',
         textShadow: `0 0 8px ${theme.palette.success.main}`,
+        transform: 'scale(1.02)'
     } : {};
+
+    const bgColor = stringToColor(participant.identity);
+    const textColor = getContrastingTextColor(bgColor);
+    const initial = displayName.charAt(0).toUpperCase();
 
     return (
         <ListItem sx={{ 
-            py: 0.5,
+            py: 1,
             borderRadius: theme.shape.borderRadius,
-            transition: 'background-color 0.2s ease-in-out',
+            transition: 'all 0.2s ease-in-out',
             '&:hover': {
                 backgroundColor: 'rgba(255, 255, 255, 0.05)',
             },
+            ...speakingStyles
         }}>
-            <ListItemText primary={displayName} primaryTypographyProps={{ sx: { ...speakingStyles, transition: 'all 0.2s' } }}/>
-            {isSpeaking && <VolumeUpIcon fontSize="small" sx={{ mr: 1, color: theme.palette.success.main }} />}
-            {isMicMuted ? <MicOffIcon fontSize="small" sx={{ color: theme.palette.error.main }} /> : <MicIcon fontSize="small" />}
-            {isDeafened && <HeadsetOffIcon titleAccess="Пользователь отключил звук" fontSize="small" sx={{ ml: 1, color: theme.palette.error.main }} />}
+            <Avatar sx={{ width: 32, height: 32, mr: 1.5, bgcolor: bgColor, color: textColor, fontSize: '0.9rem' }}>
+                {initial}
+            </Avatar>
+            <ListItemText primary={displayName} primaryTypographyProps={{ sx: { transition: 'all 0.2s', fontWeight: '500' } }}/>
+            <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center', ml: 1 }}>
+                {isSpeaking && <VolumeUpIcon fontSize="small" sx={{ mr: 1, color: theme.palette.success.main }} />}
+                {isMicMuted ? <MicOffIcon fontSize="small" sx={{ color: theme.palette.error.main }} /> : <MicIcon fontSize="small" />}
+                {isDeafened && <HeadsetOffIcon titleAccess="Пользователь отключил звук" fontSize="small" sx={{ ml: 1, color: theme.palette.error.main }} />}
+            </Box>
         </ListItem>
     );
 };
@@ -94,7 +130,7 @@ const VoiceUI: React.FC = () => {
 
     const localScreenShare = screenShareTracks.find(track => track.participant.sid === localParticipant?.sid);
     const [isMicMuted, setIsMicMuted] = useState(true);
-    const [isNoiseSuppressionEnabled, setIsNoiseSuppressionEnabled] = useState(false);
+    const [isNoiseSuppressionEnabled, setIsNoiseSuppressionEnabled] = useState(true);
 
     useEffect(() => {
         if (!localParticipant) return;
