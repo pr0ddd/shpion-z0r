@@ -143,7 +143,8 @@ const StreamPreview: React.FC<{ trackRef: TrackReference, members: Server['membe
 };
 
 const ServerContent = () => {
-    const screenShareTracks = useTracks([Track.Source.ScreenShare]);
+    const allVideoTracks = useTracks([Track.Source.ScreenShare, Track.Source.Camera]);
+    const activeVideoTracks = allVideoTracks.filter(trackRef => trackRef.publication.track && !trackRef.publication.isMuted);
     const { selectedServer: server } = useServer();
 
     if (!server) {
@@ -161,7 +162,7 @@ const ServerContent = () => {
             </Box>
 
             <AnimatePresence>
-                {screenShareTracks.length > 0 && (
+                {activeVideoTracks.length > 0 && (
                     <motion.div
                         variants={streamsSidebarVariants}
                         initial="hidden"
@@ -176,7 +177,7 @@ const ServerContent = () => {
                     >
                         <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2, height: '100%', overflowY: 'auto' }}>
                             <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>Стримы</Typography>
-                            {screenShareTracks.map(trackRef => (
+                            {activeVideoTracks.map(trackRef => (
                                 <TrackRefContext.Provider value={trackRef} key={trackRef.publication.trackSid}>
                                     <StreamPreview trackRef={trackRef} members={server.members} />
                                 </TrackRefContext.Provider>

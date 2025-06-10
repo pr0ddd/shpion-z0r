@@ -1,25 +1,30 @@
 import React from 'react';
 import { Box, Typography, Avatar, Paper, Divider, IconButton, Tooltip } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
-import { ConnectionState, Room, Track, VideoPreset } from 'livekit-client';
+import { ConnectionState, Room, Track, VideoPreset, VideoPresets } from 'livekit-client';
 import { useConnectionState, useMaybeRoomContext, useTrackMutedIndicator, useTracks } from '@livekit/components-react';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
 import CallEndIcon from '@mui/icons-material/CallEnd';
 import ScreenShareIcon from '@mui/icons-material/ScreenShare';
 import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
+import VideocamIcon from '@mui/icons-material/Videocam';
+import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 
 const ActualVoiceControls: React.FC<{ room: Room }> = ({ room }) => {
     const connectionState = useConnectionState(room);
     // We can safely assume localParticipant exists because we are connected.
     const { isMuted } = useTrackMutedIndicator({ source: Track.Source.Microphone, participant: room.localParticipant });
 
-    const screenShareTracks = useTracks([Track.Source.ScreenShare]);
+    const tracks = useTracks([Track.Source.ScreenShare, Track.Source.Camera]);
     
-    const localScreenShareTrack = screenShareTracks.find(
-        (track) => track.participant.identity === room.localParticipant.identity
+    const isScreenSharing = tracks.some(
+        (track) => track.participant.isLocal && track.source === Track.Source.ScreenShare
     );
-    const isScreenSharing = !!localScreenShareTrack;
+
+    const isCameraOn = tracks.some(
+        (track) => track.participant.isLocal && track.source === Track.Source.Camera
+    );
 
     if (connectionState !== ConnectionState.Connected) {
         return null;
@@ -32,11 +37,22 @@ const ActualVoiceControls: React.FC<{ room: Room }> = ({ room }) => {
     const onScreenShareClick = () => {
         if (!isScreenSharing) {
             const options = {
-                resolution: new VideoPreset(1920, 1080, 4_000_000, 60).resolution,
+                resolution: new VideoPreset(1920, 1080, 3_000_000, 30).resolution,
             }
             room.localParticipant.setScreenShareEnabled(true, options);
         } else {
             room.localParticipant.setScreenShareEnabled(false);
+        }
+    }
+
+    const onCameraClick = () => {
+        if (!isCameraOn) {
+            const options = {
+                resolution: VideoPresets.h720.resolution,
+            }
+            room.localParticipant.setCameraEnabled(true, options);
+        } else {
+            room.localParticipant.setCameraEnabled(false);
         }
     }
 
@@ -51,6 +67,11 @@ const ActualVoiceControls: React.FC<{ room: Room }> = ({ room }) => {
                 <Tooltip title={isMuted ? "Unmute" : "Mute"}>
                     <IconButton onClick={onMuteClick}>
                         {isMuted ? <MicOffIcon /> : <MicIcon />}
+                    </IconButton>
+                </Tooltip>
+                <Tooltip title={isCameraOn ? "Turn Off Camera" : "Turn On Camera"}>
+                    <IconButton onClick={onCameraClick}>
+                        {isCameraOn ? <VideocamOffIcon /> : <VideocamIcon />}
                     </IconButton>
                 </Tooltip>
                 <Tooltip title={isScreenSharing ? "Stop Sharing" : "Share Screen"}>
