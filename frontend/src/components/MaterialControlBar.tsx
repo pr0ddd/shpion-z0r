@@ -13,8 +13,10 @@ import {
   useMediaDeviceSelect,
 } from '@livekit/components-react';
 import { Track } from 'livekit-client';
+import { useServer } from '../contexts/ServerContext';
 
 export const MaterialControlBar = () => {
+  const { selectServer } = useServer();
   const { buttonProps: micButtonProps, track: micTrack } = useTrackToggle({
     source: Track.Source.Microphone,
   });
@@ -31,6 +33,13 @@ export const MaterialControlBar = () => {
   });
 
   const { buttonProps: disconnectButtonProps } = useDisconnectButton({});
+
+  const handleDisconnect = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (disconnectButtonProps.onClick) {
+      disconnectButtonProps.onClick(e);
+    }
+    selectServer(null);
+  };
 
   return (
     <Box
@@ -60,7 +69,7 @@ export const MaterialControlBar = () => {
         </IconButton>
       </Tooltip>
       <Tooltip title="Покинуть комнату">
-        <IconButton {...disconnectButtonProps} color="default" sx={{ color: '#f44336' }}>
+        <IconButton onClick={handleDisconnect} color="default" sx={{ color: '#f44336' }}>
           <CallEndIcon />
         </IconButton>
       </Tooltip>

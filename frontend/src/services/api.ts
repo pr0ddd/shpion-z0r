@@ -5,7 +5,8 @@ import {
   Server, 
   LoginResponseData, 
   PublicInviteInfo,
-  Message
+  Message,
+  Member
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
@@ -84,7 +85,7 @@ export const serverAPI = {
     api.post(`/servers/${serverId}/leave`).then(res => res.data), // Changed from DELETE to POST for consistency, check backend route
   
   // Note: getServerMembers might be redundant if servers are fetched with members included
-  getServerMembers: (serverId: string): Promise<ApiResponse<User[]>> =>
+  getServerMembers: (serverId: string): Promise<ApiResponse<Member[]>> =>
     api.get(`/servers/${serverId}/members`).then(res => res.data),
 };
 

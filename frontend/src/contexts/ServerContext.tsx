@@ -1,9 +1,8 @@
 import React, { createContext, useContext, useCallback, useMemo, useState, ReactNode, useEffect, useRef } from 'react';
-import { serverAPI, messageAPI, userAPI } from '../services/api';
+import { serverAPI, messageAPI } from '../services/api';
 import { useAuth } from './AuthContext';
 import { useSocket } from './SocketContext';
-import { Server, Message, Member } from '../types';
-import { Participant } from 'livekit-client';
+import { Server, Message, User, Member } from '../types';
 
 interface ServerContextType {
     servers: Server[];
@@ -12,13 +11,13 @@ interface ServerContextType {
     members: Member[];
     messages: Message[];
     isLoading: boolean;
+    areMembersLoading: boolean;
     error: string | null;
     selectServer: (server: Server | null) => void;
     fetchServers: () => Promise<void>;
     addMessage: (message: Message) => void;
     updateMessage: (message: Message) => void;
     removeMessage: (messageId: string) => void;
-    updateMembersFromLiveKit: (participants: Participant[]) => void;
     setOptimisticMessageStatus: (messageId: string, status: 'failed') => void;
 }
 
@@ -40,6 +39,7 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const [members, setMembers] = useState<Member[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [areMembersLoading, setAreMembersLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const selectedServerRef = useRef<Server | null>(null);
@@ -62,23 +62,36 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         
         setSelectedServer(server);
         if (server) {
-            // Members are now handled by LiveKitPresence, so we just clear the list initially.
-            setMembers([]);
+            setAreMembersLoading(true);
             try {
-                const res = await messageAPI.getMessages(server.id);
-                if (res.success && res.data) {
-                    setMessages(res.data);
+                const [messagesRes, membersRes] = await Promise.all([
+                    messageAPI.getMessages(server.id),
+                    serverAPI.getServerMembers(server.id)
+                ]);
+
+                if (messagesRes.success && messagesRes.data) {
+                    setMessages(messagesRes.data);
                 } else {
                     console.error("Failed to fetch messages for server", server.id);
                     setMessages([]);
                 }
+
+                if (membersRes.success && membersRes.data) {
+                    setMembers(membersRes.data);
+                } else {
+                    console.error("Failed to fetch members for server", server.id);
+                    setMembers([]);
+                }
             } catch (error) {
-                console.error("Error fetching messages:", error);
+                console.error("Error fetching server data:", error);
                 setMessages([]);
+                setMembers([]);
+            } finally {
+                setAreMembersLoading(false);
             }
         } else {
-            setMembers([]);
             setMessages([]);
+            setMembers([]);
         }
     }, [socket]);
 
@@ -106,48 +119,6 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             setIsLoading(false);
         }
     }, [user, selectServer]);
-    
-    const updateMembersFromLiveKit = useCallback(async (participants: Participant[]) => {
-        const currentServerId = selectedServerRef.current?.id;
-        if (!currentServerId || participants.length === 0) {
-            setMembers([]);
-            return;
-        }
-
-        const userIds = participants.map(p => p.identity);
-        
-        try {
-            const res = await userAPI.getUsersByIds(userIds);
-            if (res.success && res.data) {
-                const usersData = res.data;
-                const memberMap = new Map(usersData.map(u => [u.id, u]));
-
-                const newMembers: Member[] = participants.map(p => {
-                    const user = memberMap.get(p.identity);
-                    return {
-                        id: p.sid, // Use LiveKit SID as the unique key for the member entry
-                        userId: p.identity,
-                        serverId: currentServerId,
-                        role: 'MEMBER', // Role management can be added later if needed
-                        user: user || { id: p.identity, email: '', username: p.name || 'Unknown', avatar: null, createdAt: new Date().toISOString() }
-                    };
-                });
-                
-                setMembers(newMembers);
-            }
-        } catch (error) {
-            console.error("Failed to fetch user details for members:", error);
-            // Fallback to basic info from LiveKit
-            const fallbackMembers: Member[] = participants.map(p => ({
-                id: p.sid,
-                userId: p.identity,
-                serverId: currentServerId,
-                role: 'MEMBER',
-                user: { id: p.identity, email: '', username: p.name || 'Unknown', avatar: null, createdAt: new Date().toISOString() }
-            }));
-            setMembers(fallbackMembers);
-        }
-    }, []);
 
     useEffect(() => {
         if (user) {
@@ -155,8 +126,8 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         } else {
             setServers([]);
             setSelectedServer(null);
-            setMembers([]);
             setMessages([]);
+            setMembers([]);
         }
     }, [user, fetchServers]);
 
@@ -164,20 +135,14 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         if (message.serverId !== selectedServerRef.current?.id) return;
 
         setMessages(prev => {
-            // This is the message coming from the socket, after being saved in the DB.
-            // If it's from the current user, we try to replace the optimistic message.
             if (message.authorId === user?.id && !message.status) {
                 const optimisticIndex = prev.findLastIndex(m => m.status === 'sending' && m.authorId === user.id);
-                
                 if (optimisticIndex !== -1) {
                     const newMessages = [...prev];
-                    newMessages[optimisticIndex] = message; // Replace optimistic with final
+                    newMessages[optimisticIndex] = message;
                     return newMessages;
                 }
             }
-            
-            // If it's an optimistic message (has a status) or a message from another user,
-            // we add it, but first check for duplicates.
             if (prev.some(m => m.id === message.id)) {
                 return prev;
             }
@@ -220,19 +185,19 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         members,
         messages,
         isLoading,
+        areMembersLoading,
         error,
         selectServer,
         fetchServers,
         addMessage,
         updateMessage,
         removeMessage,
-        updateMembersFromLiveKit,
         setOptimisticMessageStatus,
-    }), [servers, selectedServer, members, messages, isLoading, error, selectServer, fetchServers, addMessage, updateMessage, removeMessage, updateMembersFromLiveKit, setOptimisticMessageStatus]);
+    }), [servers, selectedServer, members, messages, isLoading, areMembersLoading, error, selectServer, fetchServers, addMessage, updateMessage, removeMessage, setOptimisticMessageStatus]);
 
     return (
         <ServerContext.Provider value={contextValue}>
             {children}
         </ServerContext.Provider>
     );
-}; 
+};

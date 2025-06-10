@@ -6,6 +6,7 @@ import {
   CircularProgress,
   Divider,
   Typography,
+  Skeleton,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
@@ -85,6 +86,14 @@ const ActionButtons = styled(Box)({
   paddingBottom: 8,
 });
 
+const ServerListSkeleton = () => (
+  <>
+    {[...Array(3)].map((_, index) => (
+      <Skeleton key={index} variant="circular" width={48} height={48} sx={{ bgcolor: 'grey.800' }} />
+    ))}
+  </>
+);
+
 const ServersSidebar: React.FC = () => {
   const { servers, selectedServer, isLoading, error, selectServer } = useServer();
   const { logout } = useAuth();
@@ -103,15 +112,20 @@ const ServersSidebar: React.FC = () => {
           </ServerButton>
         </Tooltip>
         <StyledDivider />
-        {servers.map(server => (
-          <ServerItem
-            key={server.id}
-            server={server}
-            isSelected={selectedServer?.id === server.id}
-            onClick={handleServerClick}
-          />
-        ))}
-        {isLoading && <CircularProgress size={24} sx={{marginTop: 2}}/>}
+        
+        {isLoading ? (
+          <ServerListSkeleton />
+        ) : (
+          servers.map(server => (
+            <ServerItem
+              key={server.id}
+              server={server}
+              isSelected={selectedServer?.id === server.id}
+              onClick={handleServerClick}
+            />
+          ))
+        )}
+        
         {error && <Typography color="error" sx={{maxWidth: '60px', overflowWrap: 'break-word', fontSize: '10px'}}>{error}</Typography>}
         
         <ActionButtons>
