@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import { Box, TextField, IconButton, List, ListItem, ListItemText, ListItemAvatar, Avatar, Typography, Paper, CircularProgress, GlobalStyles } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import MoodIcon from '@mui/icons-material/Mood';
@@ -7,6 +7,7 @@ import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import { useServer } from '../contexts/ServerContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
+import 'emoji-picker-element';
 
 const scrollbarStyles = (
     <GlobalStyles
@@ -57,116 +58,141 @@ export const CustomChat = () => {
         inputRef.current?.focus();
     };
 
-    const handleSendMessage = async () => {
-        if (!inputValue.trim() || !selectedServer || !user || !socket) return;
+    const submitMessage = () => {
+        if (inputValue.trim() && selectedServer && user && socket) {
+            const tempId = `temp_${Date.now()}`;
+            const optimisticMessage = {
+                id: tempId,
+                content: inputValue,
+                authorId: user.id,
+                serverId: selectedServer.id,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                author: {
+                    id: user.id,
+                    username: user.username,
+                    avatar: user.avatar
+                },
+                status: 'sending' as const
+            };
+            addMessage(optimisticMessage);
+            socket.emit('message:send', { serverId: selectedServer.id, content: inputValue }, (ack: { success: boolean }) => {
+                if (!ack.success) {
+                    setOptimisticMessageStatus(tempId, 'failed');
+                }
+                // On success, we do nothing. The broadcasted WebSocket event will handle the update.
+            });
+            setInputValue('');
+        }
+    };
 
-        const tempId = `temp_${Date.now()}`;
-        const optimisticMessage = {
-            id: tempId,
-            content: inputValue,
-            authorId: user.id,
-            serverId: selectedServer.id,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            author: {
-                id: user.id,
-                username: user.username,
-                avatar: user.avatar,
-            },
-            status: 'sending' as const,
-        };
+    const handleSendMessage = (e: React.FormEvent) => {
+        e.preventDefault();
+        submitMessage();
+    };
 
-        addMessage(optimisticMessage);
-        
-        socket.emit('message:send', { serverId: selectedServer.id, content: inputValue }, (ack: { success: boolean }) => {
-            if (!ack.success) {
-                setOptimisticMessageStatus(tempId, 'failed');
-            }
-            // On success, we do nothing. The broadcasted WebSocket event will handle the update.
-        });
-
-        setInputValue('');
-        inputRef.current?.focus();
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            submitMessage();
+        }
     };
 
     return (
         <>
             {scrollbarStyles}
             <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#36393f', color: 'white' }}>
-                <Box sx={{ p: 2, borderBottom: '1px solid #202225' }}>
-                    <Typography variant="h6" sx={{ color: 'white' }}>
-                        {selectedServer?.name || 'Server'}
-                    </Typography>
-                </Box>
-                <List sx={{ flexGrow: 1, overflowY: 'auto', p: 2 }}>
-                    {messages.map(msg => (
-                        <ListItem 
-                            key={msg.id} 
-                            sx={{ 
-                                alignItems: 'flex-start',
-                                backgroundColor: msg.status === 'failed' ? 'rgba(255, 0, 0, 0.1)' : 'transparent',
-                                borderRadius: '8px',
-                                mb: 0.5
-                            }}
-                        >
-                            <ListItemAvatar>
-                                <Avatar src={msg.author?.avatar || undefined} />
-                            </ListItemAvatar>
-                            <ListItemText
-                                primary={
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                                            {msg.author?.username || 'Unknown User'}
-                                        </Typography>
-                                        {msg.status === 'failed' && <ErrorIcon color="error" sx={{ fontSize: 16 }} />}
+                <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 2 }}>
+                    <List>
+                        {messages.map(msg => {
+                            const isMe = msg.authorId === user?.id;
+                            const time = new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                            return (
+                                <ListItem key={msg.id} sx={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', p: 0, mb: 1 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1, flexDirection: isMe ? 'row-reverse' : 'row' }}>
+                                        {!isMe && (
+                                            <ListItemAvatar sx={{ minWidth: 'auto', alignSelf: 'flex-start' }}>
+                                                <Avatar alt={msg.author?.username} src={msg.author?.avatar || undefined} sx={{ width: 40, height: 40 }}/>
+                                            </ListItemAvatar>
+                                        )}
+                                        <Box
+                                            sx={{
+                                                px: 1.5,
+                                                py: 1,
+                                                borderRadius: '20px',
+                                                backgroundColor: isMe ? '#005c4b' : '#2f3136',
+                                                maxWidth: '70%',
+                                            }}
+                                        >
+                                            {!isMe && (
+                                                 <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#8e9297', mb: 0.5 }}>
+                                                    {msg.author?.username || 'Неизвестный'}
+                                                 </Typography>
+                                            )}
+                                            <Box sx={{ display: 'flex', alignItems: 'flex-end', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                                <Typography component="p" variant="body1" sx={{ color: 'white', wordBreak: 'break-word', whiteSpace: 'pre-wrap', minWidth: '50px' }}>
+                                                    {msg.content}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ color: '#8e9297', ml: 1, whiteSpace: 'nowrap' }}>
+                                                    {time}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
                                     </Box>
-                                }
-                                secondary={
-                                    <Typography variant="body2" sx={{ color: msg.status === 'failed' ? '#ff8a80' : '#dcddde', whiteSpace: 'pre-wrap' }}>
-                                        {msg.content}
-                                    </Typography>
-                                }
-                                secondaryTypographyProps={{ component: 'div' }}
-                            />
-                        </ListItem>
-                    ))}
-                    <div ref={messagesEndRef} />
-                </List>
-                <Box sx={{ p: 2, backgroundColor: '#40444b', position: 'relative' }}>
-                    <Paper component="form" sx={{ display: 'flex', alignItems: 'center', width: '100%', backgroundColor: '#2f3136' }}
-                        onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
+                                </ListItem>
+                            );
+                        })}
+                        <div ref={messagesEndRef} />
+                    </List>
+                </Box>
+                <Box sx={{ p: 2, borderTop: '1px solid #202225', flexShrink: 0, mt: 'auto' }}>
+                    <Box 
+                        component="form" 
+                        onSubmit={handleSendMessage} 
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            backgroundColor: '#40444b',
+                            borderRadius: '6px',
+                            p: '2px 4px',
+                        }}
                     >
+                        <IconButton sx={{ p: '10px', color: '#b9bbbe' }}>
+                            <MoodIcon />
+                        </IconButton>
                         <TextField
                             fullWidth
                             variant="standard"
-                            placeholder={`Message in #${selectedServer?.name || 'server'}`}
+                            placeholder={selectedServer ? `Написать в #${selectedServer.name}` : 'Выберите канал'}
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
-                            inputRef={inputRef}
-                            sx={{ 
-                                ml: 2, 
-                                color: 'white',
-                                '& .MuiInputBase-input': {
-                                    color: 'white',
+                            onKeyDown={handleKeyPress}
+                            disabled={!selectedServer}
+                            multiline
+                            maxRows={4}
+                            sx={{
+                                color: '#dcddde',
+                                flexGrow: 1,
+                                '& .MuiInputBase-root': {
+                                    padding: '8px',
                                 },
-                            }}
-                            InputProps={{
-                                disableUnderline: true,
+                                '& .MuiInput-underline:before, & .MuiInput-underline:after, & .MuiInput-underline:hover:not(.Mui-disabled):before': {
+                                    borderBottom: 'none',
+                                },
+                                '& .MuiInputBase-input': { color: '#dcddde' }
                             }}
                         />
-                        <IconButton onClick={() => setShowEmojiPicker(val => !val)}>
-                            <MoodIcon sx={{ color: 'white' }} />
+                         <IconButton type="submit" sx={{ p: '10px', color: '#b9bbbe' }} disabled={!inputValue.trim()}>
+                            <SendIcon />
                         </IconButton>
-                        <IconButton type="submit" sx={{ p: '10px' }} aria-label="send">
-                            <SendIcon sx={{ color: 'white' }} />
-                        </IconButton>
-                    </Paper>
-                    {showEmojiPicker && (
-                        <Box sx={{ position: 'absolute', bottom: '80px', right: '20px' }}>
-                            <EmojiPicker onEmojiClick={handleEmojiClick} />
-                        </Box>
-                    )}
+                    </Box>
                 </Box>
+                {showEmojiPicker && (
+                    <Box sx={{ position: 'absolute', bottom: '80px', right: '20px' }}>
+                        <EmojiPicker onEmojiClick={handleEmojiClick} />
+                    </Box>
+                )}
             </Box>
         </>
     );

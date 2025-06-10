@@ -109,7 +109,6 @@ const App: React.FC = () => {
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: 'background.default' }}>
-        <CircularProgress />
       </Box>
     );
   }

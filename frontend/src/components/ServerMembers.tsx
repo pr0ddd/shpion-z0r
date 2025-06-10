@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Box, Typography, List, ListItem, ListItemText, ListItemAvatar, Avatar, Skeleton, Slider, Stack } from '@mui/material';
+import { Box, Typography, List, ListItem, ListItemText, ListItemAvatar, Avatar, Skeleton, Slider, Stack, IconButton, Dialog, DialogTitle, DialogContent, TextField, Button } from '@mui/material';
 import { useParticipants, useIsSpeaking, useIsMuted, useTracks, AudioTrack } from '@livekit/components-react';
 import { useServer } from '../contexts/ServerContext';
 import { MaterialControlBar } from './MaterialControlBar';
@@ -9,6 +9,8 @@ import Mic from '@mui/icons-material/Mic';
 import MicOff from '@mui/icons-material/MicOff';
 import VolumeDown from '@mui/icons-material/VolumeDown';
 import VolumeUp from '@mui/icons-material/VolumeUp';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 const MemberSkeleton = () => (
   <ListItem>
@@ -73,9 +75,46 @@ const MemberListItem: React.FC<{ participant: Participant, user: User }> = ({ pa
     );
 };
 
+const InviteDialog = ({ open, onClose, inviteCode }: { open: boolean, onClose: () => void, inviteCode: string }) => {
+    const inviteLink = `${window.location.origin}/invite/${inviteCode}`;
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(inviteLink).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        });
+    };
+
+    return (
+        <Dialog open={open} onClose={onClose} PaperProps={{ sx: { bgcolor: '#2f3136', color: 'white' } }}>
+            <DialogTitle>Пригласить друзей</DialogTitle>
+            <DialogContent>
+                <Typography sx={{ mb: 2 }}>Поделитесь этой ссылкой, чтобы пригласить кого-нибудь на этот сервер.</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <TextField
+                        fullWidth
+                        value={inviteLink}
+                        InputProps={{ readOnly: true }}
+                        variant="filled"
+                    />
+                    <Button
+                        onClick={handleCopy}
+                        variant="contained"
+                        startIcon={<ContentCopyIcon />}
+                    >
+                        {copied ? 'Скопировано!' : 'Копировать'}
+                    </Button>
+                </Box>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
 export const ServerMembers = () => {
-  const { members: allServerMembers, areMembersLoading } = useServer();
+  const { selectedServer, members: allServerMembers, areMembersLoading } = useServer();
   const participants = useParticipants();
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
   const onlineMembers = useMemo(() => {
     const memberMap = new Map(allServerMembers.map(m => [m.user.id, m.user]));
@@ -98,7 +137,15 @@ export const ServerMembers = () => {
       display: 'flex',
       flexDirection: 'column'
     }}>
-      <Typography variant="h6" sx={{ marginBottom: '1rem', flexShrink: 0 }}>Участники ({onlineMembers.length})</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 1, flexShrink: 0 }}>
+            <Button 
+                variant="contained" 
+                startIcon={<PersonAddIcon />}
+                onClick={() => setInviteDialogOpen(true)}
+            >
+                Пригласить
+            </Button>
+        </Box>
       <Box sx={{ flexGrow: 1, overflowY: 'auto', minHeight: 0 }}>
         <List>
           {areMembersLoading && onlineMembers.length === 0 ? (
@@ -116,6 +163,13 @@ export const ServerMembers = () => {
       <Box sx={{ flexShrink: 0, pt: 2 }}>
         <MaterialControlBar />
       </Box>
+      {selectedServer && (
+          <InviteDialog 
+            open={inviteDialogOpen}
+            onClose={() => setInviteDialogOpen(false)}
+            inviteCode={selectedServer.inviteCode}
+          />
+      )}
     </Box>
   );
 }; 
