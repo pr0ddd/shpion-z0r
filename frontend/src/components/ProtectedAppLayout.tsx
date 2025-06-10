@@ -67,7 +67,11 @@ const ProtectedAppLayout: React.FC = () => {
                 serverUrl={process.env.REACT_APP_LIVEKIT_URL}
                 connect={true}
                 video={false}
-                audio={true}
+                audio={{
+                  autoGainControl: true,
+                  echoCancellation: true,
+                  noiseSuppression: true,
+                }}
                 style={{ display: 'flex', flexGrow: 1, minWidth: 0 }}
               >
                 <ServerMembers />
