@@ -106,9 +106,9 @@ const ServersSidebar: React.FC = () => {
   return (
     <>
       <SidebarWrapper>
-        <Tooltip title="Личные сообщения (скоро)" placement="right">
+        <Tooltip title="Космическое пространство" placement="right">
           <ServerButton isselected={(selectedServer === null).toString()} onClick={() => selectServer(null)}>
-              <Typography sx={{fontWeight: 'bold'}}>DM</Typography>
+              <Typography sx={{fontWeight: 'bold'}}>@</Typography>
           </ServerButton>
         </Tooltip>
         <StyledDivider />

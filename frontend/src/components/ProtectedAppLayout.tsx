@@ -8,6 +8,7 @@ import { livekitAPI } from '../services/api';
 import { LiveKitRoom } from '@livekit/components-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ServerTransition } from './ServerTransition';
+import ServerPlaceholder from './ServerPlaceholder';
 
 const layoutVariants = {
   initial: { opacity: 0 },
@@ -72,6 +73,10 @@ const ProtectedAppLayout: React.FC = () => {
                   echoCancellation: true,
                   noiseSuppression: true,
                 }}
+                options={{
+                  adaptiveStream: true,
+                  dynacast: true,
+                }}
                 style={{ display: 'flex', flexGrow: 1, minWidth: 0 }}
               >
                 <ServerMembers />
@@ -89,8 +94,7 @@ const ProtectedAppLayout: React.FC = () => {
                   background: '#2f3136',
                   height: '100vh'
                 }} />
-                {/* Placeholder for ServerContent */}
-                <Box sx={{ flexGrow: 1, background: '#36393f' }} />
+                <ServerPlaceholder />
               </>
             )}
           </Box>

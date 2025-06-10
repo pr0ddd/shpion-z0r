@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography, Avatar, Paper, Divider, IconButton, Tooltip } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
-import { ConnectionState, Room, Track } from 'livekit-client';
+import { ConnectionState, Room, Track, VideoPreset } from 'livekit-client';
 import { useConnectionState, useMaybeRoomContext, useTrackMutedIndicator, useTracks } from '@livekit/components-react';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
@@ -30,7 +30,14 @@ const ActualVoiceControls: React.FC<{ room: Room }> = ({ room }) => {
     };
 
     const onScreenShareClick = () => {
-        room.localParticipant.setScreenShareEnabled(!isScreenSharing);
+        if (!isScreenSharing) {
+            const options = {
+                resolution: new VideoPreset(1920, 1080, 4_000_000, 60).resolution,
+            }
+            room.localParticipant.setScreenShareEnabled(true, options);
+        } else {
+            room.localParticipant.setScreenShareEnabled(false);
+        }
     }
 
     const onDisconnectClick = () => {

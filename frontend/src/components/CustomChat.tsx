@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
-import { Box, TextField, IconButton, List, ListItem, ListItemText, ListItemAvatar, Avatar, Typography, Paper, CircularProgress, GlobalStyles } from '@mui/material';
+import { Box, TextField, IconButton, List, ListItem, ListItemText, ListItemAvatar, Avatar, Typography, Paper, CircularProgress, GlobalStyles, Popper, ClickAwayListener } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import MoodIcon from '@mui/icons-material/Mood';
 import ErrorIcon from '@mui/icons-material/Error';
-import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import { useServer } from '../contexts/ServerContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
-import 'emoji-picker-element';
+import Picker from '@emoji-mart/react';
+import data from '@emoji-mart/data';
+import { Interweave } from 'interweave';
 
 const scrollbarStyles = (
     <GlobalStyles
@@ -38,11 +39,7 @@ export const CustomChat = () => {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const messagesEndRef = useRef<null | HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        // Dynamically import and define the custom element
-        import('emoji-picker-element');
-    }, []);
+    const emojiButtonRef = useRef(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -52,10 +49,10 @@ export const CustomChat = () => {
         scrollToBottom();
     }, [messages]);
 
-    const handleEmojiClick = (emojiData: EmojiClickData) => {
-        setInputValue(prev => prev + emojiData.emoji);
+    const handleEmojiSelect = (emojiData: { native: string }) => {
+        setInputValue(prev => prev + emojiData.native);
         setShowEmojiPicker(false);
-        inputRef.current?.focus();
+        setTimeout(() => inputRef.current?.focus(), 0);
     };
 
     const submitMessage = () => {
@@ -131,8 +128,8 @@ export const CustomChat = () => {
                                                  </Typography>
                                             )}
                                             <Box sx={{ display: 'flex', alignItems: 'flex-end', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                                                <Typography component="p" variant="body1" sx={{ color: 'white', wordBreak: 'break-word', whiteSpace: 'pre-wrap', minWidth: '50px' }}>
-                                                    {msg.content}
+                                                <Typography component="div" variant="body1" sx={{ color: 'white', wordBreak: 'break-word', whiteSpace: 'pre-wrap', minWidth: '50px' }}>
+                                                   <Interweave content={msg.content} />
                                                 </Typography>
                                                 <Typography variant="caption" sx={{ color: '#8e9297', ml: 1, whiteSpace: 'nowrap' }}>
                                                     {time}
@@ -158,7 +155,7 @@ export const CustomChat = () => {
                             p: '2px 4px',
                         }}
                     >
-                        <IconButton sx={{ p: '10px', color: '#b9bbbe' }}>
+                        <IconButton ref={emojiButtonRef} sx={{ p: '10px', color: '#b9bbbe' }} onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
                             <MoodIcon />
                         </IconButton>
                         <TextField
@@ -171,6 +168,7 @@ export const CustomChat = () => {
                             disabled={!selectedServer}
                             multiline
                             maxRows={4}
+                            inputRef={inputRef}
                             sx={{
                                 color: '#dcddde',
                                 flexGrow: 1,
@@ -188,11 +186,18 @@ export const CustomChat = () => {
                         </IconButton>
                     </Box>
                 </Box>
-                {showEmojiPicker && (
-                    <Box sx={{ position: 'absolute', bottom: '80px', right: '20px' }}>
-                        <EmojiPicker onEmojiClick={handleEmojiClick} />
-                    </Box>
-                )}
+                <Popper
+                    open={showEmojiPicker}
+                    anchorEl={emojiButtonRef.current}
+                    placement="top-start"
+                    sx={{ zIndex: 10 }}
+                >
+                    <ClickAwayListener onClickAway={() => setShowEmojiPicker(false)}>
+                        <div>
+                            <Picker data={data} onEmojiSelect={handleEmojiSelect} />
+                        </div>
+                    </ClickAwayListener>
+                </Popper>
             </Box>
         </>
     );
