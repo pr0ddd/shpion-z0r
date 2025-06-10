@@ -1,33 +1,27 @@
-import { Prisma } from '@prisma/client';
-import { MemberWithUser } from '../services/SocketService';
+import { Message } from '@prisma/client';
 
-// A simplified user object for socket events
+// A simplified user object for socket events on the client
 export interface SocketUser {
-  id: string;
-  username: string;
-  avatar?: string | null;
+    id: string;
+    username: string;
+    avatar?: string | null;
 }
-
-const messageWithAuthor = Prisma.validator<Prisma.MessageDefaultArgs>()({
-  include: { author: { select: { id: true, username: true, avatar: true } } },
-});
-
-export type MessageWithAuthor = Prisma.MessageGetPayload<typeof messageWithAuthor>;
-
+  
 // Server to Client Events
 export interface ServerToClientEvents {
-  'user:joined': (member: MemberWithUser, serverId: string) => void;
-  'user:left': (userId: string, serverId: string) => void;
-  'server:state': (data: { serverId: string, users: SocketUser[] }) => void;
-  'message:new': (message: MessageWithAuthor) => void;
-  'message:updated': (message: MessageWithAuthor) => void;
-  'message:deleted': (messageId: string, serverId: string) => void;
+    'server:state': (data: { serverId: string, users: SocketUser[] }) => void;
+    'user:joined': (member: any, serverId: string) => void; // Using 'any' for member for now
+    'user:left': (userId: string, serverId: string) => void;
+    'message:new': (message: Message & { author: { id: string, username: string, avatar: string | null }}) => void;
+    'message:updated': (message: Message) => void;
+    'message:deleted': (messageId: string, serverId: string) => void;
 }
-
+  
 // Client to Server Events
 export interface ClientToServerEvents {
-  'server:join': (serverId: string) => void;
-  'server:leave': (serverId: string) => void;
+    'server:join': (serverId: string) => void;
+    'server:leave': (serverId:string) => void;
+    'message:send': (data: { serverId: string; content: string; }, callback: (ack: { success: boolean }) => void) => void;
 }
 
 // Socket data attached to each connection

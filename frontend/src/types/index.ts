@@ -55,6 +55,7 @@ export interface Message {
     username: string;
     avatar: string | null;
   };
+  status?: 'sending' | 'failed';
 }
 
 // =================================

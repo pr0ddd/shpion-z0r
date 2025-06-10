@@ -6,7 +6,6 @@ import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
-import jwt from 'jsonwebtoken';
 
 // Routes
 import authRoutes from './routes/auth';
@@ -34,82 +33,45 @@ const httpServer = createServer(app);
 // Initialize Prisma
 export const prisma = new PrismaClient();
 
-// Initialize Socket.IO with CORS, types, and a specific path
-const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents, any, SocketData>(httpServer, {
+// Initialize Socket.IO
+const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents, {}, SocketData>(httpServer, {
   path: '/api/socket.io',
   cors: {
-    origin: process.env.SOCKETIO_CORS_ORIGIN || "http://localhost:3000",
-    methods: ["GET", "POST"],
-    credentials: true
-  }
-});
-
-// Middleware
-app.use(helmet({
-  crossOriginEmbedderPolicy: false,
-  contentSecurityPolicy: {
-    directives: {
-      imgSrc: [`'self'`, "data:", "https:"],
-    },
+    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    methods: ['GET', 'POST'],
   },
-}));
-
-app.use(cors({
-  origin: process.env.SOCKETIO_CORS_ORIGIN || "http://localhost:3000",
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
-app.use(compression());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    service: 'shpion-backend',
-    timestamp: new Date().toISOString(),
-    version: '1.0.0'
-  });
 });
 
-// API Routes
+// Apply Middleware
+app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000' }));
+app.use(helmet());
+app.use(compression());
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
+
+
+// Apply Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/servers', authMiddleware, serverRoutes);
 app.use('/api/messages', authMiddleware, messageRoutes);
 app.use('/api/livekit', authMiddleware, livekitRoutes);
-app.use('/api/invites', authMiddleware, inviteProtectedRoutes);
+app.use('/api/invite', invitePublicRoutes);
+app.use('/api/invite', authMiddleware, inviteProtectedRoutes);
 app.use('/api/users', authMiddleware, userRoutes);
 
-// Публичные роуты (без авторизации)
-app.use('/api/invites', invitePublicRoutes);
 
-// Socket.IO authentication middleware
+// Socket.IO connection handling
 io.use(socketAuthMiddleware);
 
 // Initialize Socket Service
 const socketService = new SocketService(io, prisma);
 
-// Export for use in controllers  
+// Export for use in controllers
 export { socketService };
 
-// Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Error:', err);
-  res.status(500).json({ 
-    error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
-  });
-});
-
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ 
-    error: 'Route not found',
-    path: req.originalUrl
-  });
+httpServer.listen(process.env.PORT || 3001, () => {
+    console.log(`🚀 Server ready at http://localhost:${process.env.PORT || 3001}`);
+    console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
 const PORT = process.env.PORT || 3001;
@@ -133,11 +95,4 @@ const gracefulShutdown = async () => {
 };
 
 process.on('SIGTERM', gracefulShutdown);
-process.on('SIGINT', gracefulShutdown);
-
-// Start server
-httpServer.listen(PORT, () => {
-  console.log(`🚀 Shpion backend server running on port ${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/health`);
-  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-}); 
+process.on('SIGINT', gracefulShutdown); 

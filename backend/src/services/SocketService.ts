@@ -51,6 +51,39 @@ export class SocketService {
         this.notifyUserLeft(userId, serverId);
       });
 
+      socket.on('message:send', async ({ serverId, content }, callback) => {
+        const userId = socket.data.user?.id;
+        if (!userId) {
+            return callback({ success: false });
+        }
+
+        try {
+            const message = await this.prisma.message.create({
+                data: {
+                    content,
+                    serverId,
+                    authorId: userId,
+                },
+                include: {
+                    author: {
+                        select: {
+                            id: true,
+                            username: true,
+                            avatar: true,
+                        },
+                    },
+                },
+            });
+
+            this.io.to(`server:${serverId}`).emit('message:new', message);
+            callback({ success: true });
+
+        } catch (error) {
+            console.error("Error sending message via socket:", error);
+            callback({ success: false });
+        }
+      });
+
       socket.on('disconnect', () => {
         const userId = socket.data.user?.id;
         if (userId) {

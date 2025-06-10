@@ -19,6 +19,7 @@ interface ServerContextType {
     updateMessage: (message: Message) => void;
     removeMessage: (messageId: string) => void;
     updateMembersFromLiveKit: (participants: Participant[]) => void;
+    setOptimisticMessageStatus: (messageId: string, status: 'failed') => void;
 }
 
 const ServerContext = createContext<ServerContextType | undefined>(undefined);
@@ -53,6 +54,9 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }
             if (server) {
                 socket.emit('server:join', server.id);
+                localStorage.setItem('lastSelectedServerId', server.id);
+            } else {
+                localStorage.removeItem('lastSelectedServerId');
             }
         }
         
@@ -86,8 +90,12 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             const response = await serverAPI.getServers();
             if (response.success && response.data) {
                 setServers(response.data);
-                if (response.data.length > 0 && !selectedServerRef.current) {
-                    selectServer(response.data[0]);
+                const lastSelectedId = localStorage.getItem('lastSelectedServerId');
+                if (lastSelectedId) {
+                    const serverToSelect = response.data.find(s => s.id === lastSelectedId);
+                    if (serverToSelect && !selectedServerRef.current) {
+                        selectServer(serverToSelect);
+                    }
                 }
             } else {
                 setError(response.error || 'Failed to fetch servers');
@@ -153,10 +161,29 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }, [user, fetchServers]);
 
     const addMessage = useCallback((message: Message) => {
-        if (message.serverId === selectedServerRef.current?.id) {
-            setMessages(prev => [...prev, message]);
-        }
-    }, []);
+        if (message.serverId !== selectedServerRef.current?.id) return;
+
+        setMessages(prev => {
+            // This is the message coming from the socket, after being saved in the DB.
+            // If it's from the current user, we try to replace the optimistic message.
+            if (message.authorId === user?.id && !message.status) {
+                const optimisticIndex = prev.findLastIndex(m => m.status === 'sending' && m.authorId === user.id);
+                
+                if (optimisticIndex !== -1) {
+                    const newMessages = [...prev];
+                    newMessages[optimisticIndex] = message; // Replace optimistic with final
+                    return newMessages;
+                }
+            }
+            
+            // If it's an optimistic message (has a status) or a message from another user,
+            // we add it, but first check for duplicates.
+            if (prev.some(m => m.id === message.id)) {
+                return prev;
+            }
+            return [...prev, message];
+        });
+    }, [user]);
 
     const updateMessage = useCallback((updatedMessage: Message) => {
         if (updatedMessage.serverId === selectedServerRef.current?.id) {
@@ -182,6 +209,10 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         };
     }, [socket, addMessage, updateMessage, removeMessage]);
 
+    const setOptimisticMessageStatus = useCallback((messageId: string, status: 'failed') => {
+        setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, status } : msg));
+    }, []);
+
     const contextValue = useMemo(() => ({
         servers,
         setServers,
@@ -196,7 +227,8 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         updateMessage,
         removeMessage,
         updateMembersFromLiveKit,
-    }), [servers, selectedServer, members, messages, isLoading, error, selectServer, fetchServers, addMessage, updateMessage, removeMessage, updateMembersFromLiveKit]);
+        setOptimisticMessageStatus,
+    }), [servers, selectedServer, members, messages, isLoading, error, selectServer, fetchServers, addMessage, updateMessage, removeMessage, updateMembersFromLiveKit, setOptimisticMessageStatus]);
 
     return (
         <ServerContext.Provider value={contextValue}>

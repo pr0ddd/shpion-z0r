@@ -21,4 +21,5 @@ export interface ServerToClientEvents {
 export interface ClientToServerEvents {
     'server:join': (serverId: string) => void;
     'server:leave': (serverId:string) => void;
+    'message:send': (data: { serverId: string; content: string; }, callback: (ack: { success: boolean }) => void) => void;
 } 
