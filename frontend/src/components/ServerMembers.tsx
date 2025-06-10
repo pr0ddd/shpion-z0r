@@ -1,12 +1,14 @@
-import React, { useMemo } from 'react';
-import { Box, Typography, List, ListItem, ListItemText, ListItemAvatar, Avatar, Skeleton } from '@mui/material';
-import { useParticipants, useIsSpeaking, useIsMuted } from '@livekit/components-react';
+import React, { useMemo, useState } from 'react';
+import { Box, Typography, List, ListItem, ListItemText, ListItemAvatar, Avatar, Skeleton, Slider, Stack } from '@mui/material';
+import { useParticipants, useIsSpeaking, useIsMuted, useTracks, AudioTrack } from '@livekit/components-react';
 import { useServer } from '../contexts/ServerContext';
 import { MaterialControlBar } from './MaterialControlBar';
 import { Participant, Track } from 'livekit-client';
 import { User } from '../types';
 import Mic from '@mui/icons-material/Mic';
 import MicOff from '@mui/icons-material/MicOff';
+import VolumeDown from '@mui/icons-material/VolumeDown';
+import VolumeUp from '@mui/icons-material/VolumeUp';
 
 const MemberSkeleton = () => (
   <ListItem>
@@ -20,29 +22,53 @@ const MemberSkeleton = () => (
 const MemberListItem: React.FC<{ participant: Participant, user: User }> = ({ participant, user }) => {
     const isSpeaking = useIsSpeaking(participant);
     const isMuted = useIsMuted({ source: Track.Source.Microphone, participant });
+    const [volume, setVolume] = useState(1);
+    const tracks = useTracks([Track.Source.Microphone]);
+    
+    const audioTrack = useMemo(
+        () => tracks.find(track => track.participant.identity === participant.identity),
+        [tracks, participant.identity]
+    );
   
     return (
-      <ListItem key={user.id}>
-        <ListItemAvatar>
-          <Avatar 
-            src={user.avatar || undefined} 
-            sx={{
-              border: isSpeaking ? '2px solid #4ade80' : '2px solid transparent',
-              boxShadow: isSpeaking ? '0 0 8px #4ade80' : 'none',
-              transition: 'all 0.2s ease-in-out',
-            }}
-          />
-        </ListItemAvatar>
-        <ListItemText 
-          primary={
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="body1" component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {user.username}
-              </Typography>
-              {isMuted ? <MicOff sx={{ fontSize: 16, color: 'text.secondary' }} /> : <Mic sx={{ fontSize: 16, color: 'text.secondary' }} />}
-            </Box>
-          } 
-        />
+      <ListItem key={user.id} sx={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+        {audioTrack && (
+            <AudioTrack trackRef={audioTrack} volume={volume} />
+        )}
+        <Box sx={{ display: 'flex', width: '100%', alignItems: 'center' }}>
+            <ListItemAvatar>
+              <Avatar 
+                src={user.avatar || undefined} 
+                sx={{
+                  border: isSpeaking ? '2px solid #4ade80' : '2px solid transparent',
+                  boxShadow: isSpeaking ? '0 0 8px #4ade80' : 'none',
+                  transition: 'all 0.2s ease-in-out',
+                }}
+              />
+            </ListItemAvatar>
+            <ListItemText 
+              primary={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body1" component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {user.username}
+                  </Typography>
+                  {isMuted ? <MicOff sx={{ fontSize: 16, color: 'text.secondary' }} /> : <Mic sx={{ fontSize: 16, color: 'text.secondary' }} />}
+                </Box>
+              } 
+            />
+        </Box>
+        <Stack spacing={2} direction="row" sx={{ width: '100%', px: 2, pt: 1 }} alignItems="center">
+            <VolumeDown />
+            <Slider 
+                aria-label="Volume" 
+                value={volume} 
+                onChange={(e, newValue) => setVolume(newValue as number)}
+                min={0}
+                max={1}
+                step={0.01}
+            />
+            <VolumeUp />
+        </Stack>
       </ListItem>
     );
 };

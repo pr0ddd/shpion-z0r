@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Box, TextField, IconButton, List, ListItem, ListItemText, ListItemAvatar, Avatar, Typography, Paper, CircularProgress } from '@mui/material';
+import { Box, TextField, IconButton, List, ListItem, ListItemText, ListItemAvatar, Avatar, Typography, Paper, CircularProgress, GlobalStyles } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import MoodIcon from '@mui/icons-material/Mood';
 import ErrorIcon from '@mui/icons-material/Error';
@@ -7,7 +7,27 @@ import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import { useServer } from '../contexts/ServerContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
-import { messageAPI } from '../services/api';
+
+const scrollbarStyles = (
+    <GlobalStyles
+        styles={{
+            '*::-webkit-scrollbar': {
+                width: '8px',
+            },
+            '*::-webkit-scrollbar-track': {
+                background: '#2f3136',
+            },
+            '*::-webkit-scrollbar-thumb': {
+                backgroundColor: '#202225',
+                borderRadius: '4px',
+                border: '2px solid #2f3136',
+            },
+            '*::-webkit-scrollbar-thumb:hover': {
+                backgroundColor: '#1a1b1e',
+            },
+        }}
+    />
+);
 
 export const CustomChat = () => {
     const { user } = useAuth();
@@ -17,6 +37,11 @@ export const CustomChat = () => {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const messagesEndRef = useRef<null | HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        // Dynamically import and define the custom element
+        import('emoji-picker-element');
+    }, []);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -65,76 +90,84 @@ export const CustomChat = () => {
     };
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#36393f', color: 'white' }}>
-            <List sx={{ flexGrow: 1, overflowY: 'auto', p: 2 }}>
-                {messages.map(msg => (
-                    <ListItem 
-                        key={msg.id} 
-                        sx={{ 
-                            alignItems: 'flex-start',
-                            backgroundColor: msg.status === 'failed' ? 'rgba(255, 0, 0, 0.1)' : 'transparent',
-                            borderRadius: '8px',
-                            mb: 0.5
-                        }}
-                    >
-                        <ListItemAvatar>
-                            <Avatar src={msg.author?.avatar || undefined} />
-                        </ListItemAvatar>
-                        <ListItemText
-                            primary={
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                                        {msg.author?.username || 'Unknown User'}
+        <>
+            {scrollbarStyles}
+            <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#36393f', color: 'white' }}>
+                <Box sx={{ p: 2, borderBottom: '1px solid #202225' }}>
+                    <Typography variant="h6" sx={{ color: 'white' }}>
+                        {selectedServer?.name || 'Server'}
+                    </Typography>
+                </Box>
+                <List sx={{ flexGrow: 1, overflowY: 'auto', p: 2 }}>
+                    {messages.map(msg => (
+                        <ListItem 
+                            key={msg.id} 
+                            sx={{ 
+                                alignItems: 'flex-start',
+                                backgroundColor: msg.status === 'failed' ? 'rgba(255, 0, 0, 0.1)' : 'transparent',
+                                borderRadius: '8px',
+                                mb: 0.5
+                            }}
+                        >
+                            <ListItemAvatar>
+                                <Avatar src={msg.author?.avatar || undefined} />
+                            </ListItemAvatar>
+                            <ListItemText
+                                primary={
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                                            {msg.author?.username || 'Unknown User'}
+                                        </Typography>
+                                        {msg.status === 'failed' && <ErrorIcon color="error" sx={{ fontSize: 16 }} />}
+                                    </Box>
+                                }
+                                secondary={
+                                    <Typography variant="body2" sx={{ color: msg.status === 'failed' ? '#ff8a80' : '#dcddde', whiteSpace: 'pre-wrap' }}>
+                                        {msg.content}
                                     </Typography>
-                                    {msg.status === 'failed' && <ErrorIcon color="error" sx={{ fontSize: 16 }} />}
-                                </Box>
-                            }
-                            secondary={
-                                <Typography variant="body2" sx={{ color: msg.status === 'failed' ? '#ff8a80' : '#dcddde', whiteSpace: 'pre-wrap' }}>
-                                    {msg.content}
-                                </Typography>
-                            }
-                            secondaryTypographyProps={{ component: 'div' }}
-                        />
-                    </ListItem>
-                ))}
-                <div ref={messagesEndRef} />
-            </List>
-            <Box sx={{ p: 2, backgroundColor: '#40444b', position: 'relative' }}>
-                <Paper component="form" sx={{ display: 'flex', alignItems: 'center', width: '100%', backgroundColor: '#2f3136' }}
-                    onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
-                >
-                    <TextField
-                        fullWidth
-                        variant="standard"
-                        placeholder={`Message in #${selectedServer?.name || 'server'}`}
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        inputRef={inputRef}
-                        sx={{ 
-                            ml: 2, 
-                            color: 'white',
-                            '& .MuiInputBase-input': {
+                                }
+                                secondaryTypographyProps={{ component: 'div' }}
+                            />
+                        </ListItem>
+                    ))}
+                    <div ref={messagesEndRef} />
+                </List>
+                <Box sx={{ p: 2, backgroundColor: '#40444b', position: 'relative' }}>
+                    <Paper component="form" sx={{ display: 'flex', alignItems: 'center', width: '100%', backgroundColor: '#2f3136' }}
+                        onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
+                    >
+                        <TextField
+                            fullWidth
+                            variant="standard"
+                            placeholder={`Message in #${selectedServer?.name || 'server'}`}
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            inputRef={inputRef}
+                            sx={{ 
+                                ml: 2, 
                                 color: 'white',
-                            },
-                        }}
-                        InputProps={{
-                            disableUnderline: true,
-                        }}
-                    />
-                    <IconButton onClick={() => setShowEmojiPicker(val => !val)}>
-                        <MoodIcon sx={{ color: 'white' }} />
-                    </IconButton>
-                    <IconButton type="submit" sx={{ p: '10px' }} aria-label="send">
-                        <SendIcon sx={{ color: 'white' }} />
-                    </IconButton>
-                </Paper>
-                {showEmojiPicker && (
-                    <Box sx={{ position: 'absolute', bottom: '80px', right: '20px' }}>
-                        <EmojiPicker onEmojiClick={handleEmojiClick} />
-                    </Box>
-                )}
+                                '& .MuiInputBase-input': {
+                                    color: 'white',
+                                },
+                            }}
+                            InputProps={{
+                                disableUnderline: true,
+                            }}
+                        />
+                        <IconButton onClick={() => setShowEmojiPicker(val => !val)}>
+                            <MoodIcon sx={{ color: 'white' }} />
+                        </IconButton>
+                        <IconButton type="submit" sx={{ p: '10px' }} aria-label="send">
+                            <SendIcon sx={{ color: 'white' }} />
+                        </IconButton>
+                    </Paper>
+                    {showEmojiPicker && (
+                        <Box sx={{ position: 'absolute', bottom: '80px', right: '20px' }}>
+                            <EmojiPicker onEmojiClick={handleEmojiClick} />
+                        </Box>
+                    )}
+                </Box>
             </Box>
-        </Box>
+        </>
     );
 }; 

@@ -18,6 +18,7 @@
     "@types/react-dom": "~19.1.6",
     "axios": "^1.9.0",
     "date-fns": "^4.1.0",
+    "emoji-picker-element": "^1.26.3",
     "emoji-picker-react": "^4.12.2",
     "framer-motion": "^12.16.0",
     "livekit-client": "^2.13.3",
