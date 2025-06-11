@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  backend:
+    image: ghcr.io/${{ github.repository_owner }}/shpion-backend:latest
+    container_name: shpion-backend-prod
+    restart: unless-stopped
+    env_file:
+      - ./backend-prod.env
+    ports:
+      - "3001:3001"
+    depends_on:
+      - db
+    networks:
+      - shpion-net
+
+  frontend:
+    image: ghcr.io/${{ github.repository_owner }}/shpion-frontend:latest
+    container_name: shpion-frontend-prod
+    restart: unless-stopped
+    ports:
+      # Map container's 8080 to host's 8080. You can change the host port if needed.
+      - "8080:8080"
+    networks:
+      - shpion-net
+
+  db:
+    image: postgres:15-alpine
+    container_name: shpion-db-prod
+    restart: unless-stopped
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    env_file:
+      - ./backend-prod.env
+    networks:
+      - shpion-net
+    # Note: Port 5432 is not exposed to the host for security.
+    # The backend will connect to it via the internal docker network.
+
+networks:
+  shpion-net:
+    driver: bridge
+
+volumes:
+  postgres_prod_data:
+    driver: local 

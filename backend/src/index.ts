@@ -5,7 +5,6 @@ import compression from 'compression';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { PrismaClient } from '@prisma/client';
-import dotenv from 'dotenv';
 
 // Routes
 import authRoutes from './routes/auth';
@@ -24,11 +23,18 @@ import { socketAuthMiddleware } from './middleware/socketAuth';
 import { ServerToClientEvents, ClientToServerEvents, SocketData } from './types/socket';
 import { SocketService } from './services/SocketService';
 
-// Load environment variables
-dotenv.config();
+// Validate essential environment variables
+const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET', 'LIVEKIT_URL', 'LIVEKIT_API_KEY', 'LIVEKIT_API_SECRET', 'CLIENT_URL', 'PORT'];
+for (const varName of requiredEnvVars) {
+  if (!process.env[varName]) {
+    throw new Error(`Environment variable ${varName} is not set. Please check your .env file.`);
+  }
+}
 
 const app = express();
 const httpServer = createServer(app);
+const PORT = process.env.PORT;
+const CLIENT_URL = process.env.CLIENT_URL;
 
 // Initialize Prisma
 export const prisma = new PrismaClient();
@@ -37,13 +43,13 @@ export const prisma = new PrismaClient();
 const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents, {}, SocketData>(httpServer, {
   path: '/api/socket.io',
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: CLIENT_URL,
     methods: ['GET', 'POST'],
   },
 });
 
 // Apply Middleware
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000' }));
+app.use(cors({ origin: CLIENT_URL }));
 app.use(helmet());
 app.use(compression());
 app.use(express.json({ limit: '5mb' }));
@@ -69,12 +75,10 @@ const socketService = new SocketService(io, prisma);
 // Export for use in controllers
 export { socketService };
 
-httpServer.listen(process.env.PORT || 3001, () => {
-    console.log(`🚀 Server ready at http://localhost:${process.env.PORT || 3001}`);
+httpServer.listen(PORT, () => {
+    console.log(`🚀 Server ready at http://localhost:${PORT}`);
     console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
-
-const PORT = process.env.PORT || 3001;
 
 // Graceful shutdown
 const gracefulShutdown = async () => {

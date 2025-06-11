@@ -3,7 +3,11 @@ import io, { Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { ServerToClientEvents, ClientToServerEvents } from '../types/socket';
 
-const SOCKET_HOST = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:3001';
+const SOCKET_HOST = process.env.REACT_APP_API_URL;
+
+if (!SOCKET_HOST) {
+  throw new Error('REACT_APP_API_URL is not defined. Please check your .env file.');
+}
 
 type AppSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
