@@ -142,6 +142,7 @@ cd shpion-z0r
     -   **Forward Port:** `3001`
     -   **Включите `Websockets Support`**.
 
+
 3.  **LiveKit:**
     -   Добавьте **Location** к существующему хосту `shpion.pr0d.ru`.
     -   **Path:** `/livekit`
