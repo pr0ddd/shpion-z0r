@@ -46,6 +46,7 @@ jobs:
           labels: ${{ steps.meta_backend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          no-cache: true
 
       - name: Extract metadata for Frontend Docker image
         id: meta_frontend
