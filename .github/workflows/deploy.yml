@@ -1,4 +1,4 @@
-name: Deploy to Production (Self-Hosted Runner)
+name: Deploy to Production
 
 on:
   push:
@@ -8,11 +8,10 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_OWNER: ${{ github.repository_owner }}
-  APP_DIR: /var/www/shpion-z0r
 
 jobs:
-  build-and-deploy:
-    runs-on: self-hosted
+  build-and-push:
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
@@ -21,10 +20,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
+      - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -66,46 +62,24 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Deploy Services on Server
+  deploy:
+    needs: build-and-push
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Deploy to server
         run: |
-          echo "Ensuring project directory exists: ${{ env.APP_DIR }}"
-          sudo mkdir -p ${{ env.APP_DIR }}
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > backend-prod.env
+          echo "LIVEKIT_URL=${{ secrets.LIVEKIT_URL }}" >> backend-prod.env
+          echo "LIVEKIT_API_KEY=${{ secrets.LIVEKIT_API_KEY }}" >> backend-prod.env
+          echo "LIVEKIT_API_SECRET=${{ secrets.LIVEKIT_API_SECRET }}" >> backend-prod.env
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> backend-prod.env
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> backend-prod.env
+          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> backend-prod.env
+          sudo docker-compose -f docker-compose.prod.yml pull
+          sudo docker-compose -f docker-compose.prod.yml up -d --force-recreate
           
-          echo "Copying docker-compose file from repository checkout..."
-          sudo cp ${{ github.workspace }}/docker-compose.prod.yml ${{ env.APP_DIR }}/
-
-          cd ${{ env.APP_DIR }}
-
-          echo "Creating backend production environment file..."
-          # Use sudo with tee to write file with root permissions
-          echo "
-          # Database Connection for Backend Service
-          DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@db:5432/${{ secrets.POSTGRES_DB }}?schema=public
-
-          # Database Credentials for DB Service Initialization
-          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_DB=${{ secrets.POSTGRES_DB }}
-
-          # App Secrets
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
-          LIVEKIT_URL=${{ secrets.LIVEKIT_URL }}
-          LIVEKIT_API_KEY=${{ secrets.LIVEKIT_API_KEY }}
-          LIVEKIT_API_SECRET=${{ secrets.LIVEKIT_API_SECRET }}
-          CLIENT_URL=${{ vars.REACT_APP_API_URL }}
-          PORT=3001
-          NODE_ENV=production
-          " | sudo tee backend-prod.env > /dev/null
-
-          echo "Exporting environment variables for Docker Compose..."
-          export REGISTRY=${{ env.REGISTRY }}
-          export IMAGE_OWNER=${{ env.IMAGE_OWNER }}
-          
-          echo "Pulling latest images from GHCR..."
-          sudo -E docker-compose -f docker-compose.prod.yml pull
-
-          echo "Restarting services with new images..."
-          sudo -E docker-compose -f docker-compose.prod.yml up -d
-
-          echo "Cleaning up unused docker images..."
-          sudo docker image prune -af 
+      - name: Clean up
+        run: sudo docker image prune -af 
