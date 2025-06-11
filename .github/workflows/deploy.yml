@@ -77,15 +77,18 @@ jobs:
           REGISTRY: ${{ env.REGISTRY }}
           IMAGE_OWNER: ${{ env.IMAGE_OWNER }}
         run: |
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > backend-prod.env
+          echo "NODE_ENV=production" > backend-prod.env
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> backend-prod.env
           echo "LIVEKIT_URL=${{ secrets.LIVEKIT_URL }}" >> backend-prod.env
           echo "LIVEKIT_API_KEY=${{ secrets.LIVEKIT_API_KEY }}" >> backend-prod.env
           echo "LIVEKIT_API_SECRET=${{ secrets.LIVEKIT_API_SECRET }}" >> backend-prod.env
           echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> backend-prod.env
           echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> backend-prod.env
           echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> backend-prod.env
-          sudo -E docker compose -f docker-compose.prod.yml pull
-          sudo -E docker compose -f docker-compose.prod.yml up -d --force-recreate
+          
+          sudo -E docker compose -f docker-compose.yml pull
+          sudo -E docker compose -f docker-compose.yml down
+          sudo -E docker compose -f docker-compose.yml up -d
           
       - name: Clean up
         run: sudo docker image prune -af 
