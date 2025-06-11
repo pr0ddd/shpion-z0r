@@ -73,6 +73,9 @@ jobs:
         uses: actions/checkout@v4
         
       - name: Deploy to server
+        env:
+          REGISTRY: ${{ env.REGISTRY }}
+          IMAGE_OWNER: ${{ env.IMAGE_OWNER }}
         run: |
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > backend-prod.env
           echo "LIVEKIT_URL=${{ secrets.LIVEKIT_URL }}" >> backend-prod.env
