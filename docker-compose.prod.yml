@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend:
-    image: ghcr.io/${{ github.repository_owner }}/shpion-backend:latest
+    image: ${REGISTRY}/${IMAGE_OWNER}/shpion-backend:latest
     container_name: shpion-backend-prod
     restart: unless-stopped
     env_file:
@@ -15,7 +15,7 @@ services:
       - shpion-net
 
   frontend:
-    image: ghcr.io/${{ github.repository_owner }}/shpion-frontend:latest
+    image: ${REGISTRY}/${IMAGE_OWNER}/shpion-frontend:latest
     container_name: shpion-frontend-prod
     restart: unless-stopped
     ports:

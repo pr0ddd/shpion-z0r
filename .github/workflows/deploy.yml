@@ -97,11 +97,15 @@ jobs:
           NODE_ENV=production
           " | sudo tee backend-prod.env > /dev/null
 
+          echo "Exporting environment variables for Docker Compose..."
+          export REGISTRY=${{ env.REGISTRY }}
+          export IMAGE_OWNER=${{ env.IMAGE_OWNER }}
+          
           echo "Pulling latest images from GHCR..."
-          sudo docker-compose -f docker-compose.prod.yml pull
+          sudo -E docker-compose -f docker-compose.prod.yml pull
 
           echo "Restarting services with new images..."
-          sudo docker-compose -f docker-compose.prod.yml up -d
+          sudo -E docker-compose -f docker-compose.prod.yml up -d
 
           echo "Cleaning up unused docker images..."
           sudo docker image prune -af 
