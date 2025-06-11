@@ -38,6 +38,5 @@ COPY --from=builder /app/prisma ./prisma
 # Expose the application port
 EXPOSE 3001
 
-# The command to run the application
-# We use the production start script defined in package.json
-CMD [ "npm", "run", "start" ] 
+# Run the application
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"] 
