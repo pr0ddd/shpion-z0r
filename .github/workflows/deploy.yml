@@ -69,11 +69,16 @@ jobs:
       - name: Deploy Services on Server
         run: |
           echo "Ensuring project directory exists: ${{ env.APP_DIR }}"
-          mkdir -p ${{ env.APP_DIR }}
+          sudo mkdir -p ${{ env.APP_DIR }}
+          
+          echo "Copying docker-compose file from repository checkout..."
+          sudo cp ${{ github.workspace }}/docker-compose.prod.yml ${{ env.APP_DIR }}/
+
           cd ${{ env.APP_DIR }}
 
           echo "Creating backend production environment file..."
-          cat << EOF > backend-prod.env
+          # Use sudo with tee to write file with root permissions
+          echo "
           # Database Connection for Backend Service
           DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@db:5432/${{ secrets.POSTGRES_DB }}?schema=public
 
@@ -90,16 +95,13 @@ jobs:
           CLIENT_URL=${{ vars.REACT_APP_API_URL }}
           PORT=3001
           NODE_ENV=production
-          EOF
-          
-          echo "Copying docker-compose file from repository checkout..."
-          cp ${{ github.workspace }}/docker-compose.prod.yml .
+          " | sudo tee backend-prod.env > /dev/null
 
           echo "Pulling latest images from GHCR..."
-          docker-compose -f docker-compose.prod.yml pull
+          sudo docker-compose -f docker-compose.prod.yml pull
 
           echo "Restarting services with new images..."
-          docker-compose -f docker-compose.prod.yml up -d
+          sudo docker-compose -f docker-compose.prod.yml up -d
 
           echo "Cleaning up unused docker images..."
-          docker image prune -af 
+          sudo docker image prune -af 
