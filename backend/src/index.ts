@@ -56,6 +56,15 @@ app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 // Apply Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/servers', authMiddleware, serverRoutes);
@@ -75,9 +84,11 @@ const socketService = new SocketService(io, prisma);
 // Export for use in controllers
 export { socketService };
 
-httpServer.listen(PORT, () => {
-    console.log(`🚀 Server ready at http://localhost:${PORT}`);
+httpServer.listen(Number(PORT), '0.0.0.0', () => {
+    console.log(`🚀 Server ready at http://0.0.0.0:${PORT}`);
     console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔗 CORS allowed origin: ${CLIENT_URL}`);
+    console.log(`🗄️  Database: ${process.env.DATABASE_URL ? 'Connected' : 'Not configured'}`);
 });
 
 // Graceful shutdown

@@ -7,11 +7,18 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm install --legacy-peer-deps
 
+# Accept build arguments for React environment variables
+ARG REACT_APP_API_URL
+ARG REACT_APP_LIVEKIT_URL
+
+# Set environment variables from build arguments
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+ENV REACT_APP_LIVEKIT_URL=$REACT_APP_LIVEKIT_URL
+
 # Copy the rest of the application source code
 COPY . .
 
 # Build the application
-# Environment variables can be passed here if needed for the build process
 RUN npm run build
 
 # Stage 2: Serve the application with Nginx
