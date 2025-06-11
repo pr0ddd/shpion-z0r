@@ -86,9 +86,9 @@ jobs:
           echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> backend-prod.env
           echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> backend-prod.env
           
-          sudo -E docker compose -f docker-compose.yml pull
-          sudo -E docker compose -f docker-compose.yml down
-          sudo -E docker compose -f docker-compose.yml up -d
+          sudo -E docker compose -f docker-compose.prod.yml pull
+          sudo -E docker compose -f docker-compose.prod.yml down
+          sudo -E docker compose -f docker-compose.prod.yml up -d
           
       - name: Clean up
         run: sudo docker image prune -af 
