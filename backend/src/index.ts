@@ -39,17 +39,39 @@ const CLIENT_URL = process.env.CLIENT_URL;
 // Initialize Prisma
 export const prisma = new PrismaClient();
 
+// Define allowed origins
+const allowedOrigins = [
+  CLIENT_URL,
+  'http://10.10.3.1:8080',
+  'http://localhost:3000',
+  'https://shpion.pr0d.ru'
+].filter(Boolean) as string[];
+
 // Initialize Socket.IO
 const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents, {}, SocketData>(httpServer, {
   path: '/api/socket.io',
   cors: {
-    origin: CLIENT_URL,
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
+    credentials: true
   },
 });
 
 // Apply Middleware
-app.use(cors({ origin: CLIENT_URL }));
+
+app.use(cors({ 
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true
+}));
 app.use(helmet());
 app.use(compression());
 app.use(express.json({ limit: '5mb' }));
