@@ -2,21 +2,33 @@ import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { useTracks, TrackRefContext } from '@livekit/components-react';
 import { Track } from 'livekit-client';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, Variants } from 'framer-motion';
 import { CustomChat } from './CustomChat';
 import { useServer } from '../contexts/ServerContext';
 import { StreamPreview } from './StreamPreview';
-
-const streamsSidebarVariants = {
-  hidden: { x: '100%', width: 0 },
-  visible: { x: 0, width: '300px', transition: { x: { duration: 0.3, ease: 'easeInOut' } } },
-  exit: { x: '100%', width: 0, transition: { x: { duration: 0.3, ease: 'easeInOut' } } }
-};
 
 const ServerContent = () => {
     const allVideoTracks = useTracks([Track.Source.ScreenShare, Track.Source.Camera]);
     const activeVideoTracks = allVideoTracks.filter(trackRef => trackRef.publication.track && !trackRef.publication.isMuted);
     const { selectedServer: server } = useServer();
+
+    const streamsSidebarVariants: Variants = {
+        hidden: { x: "100%", width: 0 },
+        visible: {
+            x: 0,
+            width: "300px",
+            transition: {
+                x: { duration: 0.3, ease: 'easeInOut' },
+            },
+        },
+        exit: {
+            x: "100%",
+            width: 0,
+            transition: {
+                x: { duration: 0.3, ease: 'easeInOut' },
+            },
+        },
+    };
 
     if (!server) {
         return (
