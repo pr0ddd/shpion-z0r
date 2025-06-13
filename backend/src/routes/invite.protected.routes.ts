@@ -5,7 +5,7 @@ import { catchAsync } from '../utils/catchAsync';
 const router = Router();
 
 // Использовать приглашение для вступления в сервер
-router.post('/:inviteCode/join', catchAsync(InviteController.joinServerWithInviteCode));
+router.post('/:inviteCode', catchAsync(InviteController.joinServerWithInviteCode));
 
 // Сгенерировать новый код приглашения для сервера
 router.patch('/:serverId/refresh-code', catchAsync(InviteController.refreshInviteCodeForServer));
