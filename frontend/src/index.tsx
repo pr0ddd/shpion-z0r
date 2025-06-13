@@ -1,12 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import './index.css';
 import App from './App';
 import { BrowserRouter } from 'react-router-dom';
+import { ThemeProvider, CssBaseline, GlobalStyles } from '@mui/material';
 import { AuthProvider } from './contexts/AuthContext';
-import { ServerProvider } from './contexts/ServerContext';
 import { SocketProvider } from './contexts/SocketContext';
-import { ThemeProvider } from '@mui/material/styles';
-import { CssBaseline, GlobalStyles } from '@mui/material';
+import { ServerProvider } from './contexts/ServerContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import { theme } from './theme';
 import reportWebVitals from './reportWebVitals';
 
@@ -39,7 +40,9 @@ const root = ReactDOM.createRoot(
         <AuthProvider>
           <SocketProvider>
             <ServerProvider>
-              <App />
+              <NotificationProvider>
+                <App />
+              </NotificationProvider>
             </ServerProvider>
           </SocketProvider>
         </AuthProvider>
