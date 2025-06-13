@@ -38,6 +38,17 @@
     },
     "mac": {
       "target": "dmg"
+    },
+    "npmRebuild": false,
+    "files": [
+      "main.js",
+      "dist/",
+      "node_modules/",
+      "package.json",
+      "../frontend/build"
+    ],
+    "directories": {
+      "output": "dist"
     }
   },
   "dependencies": {
