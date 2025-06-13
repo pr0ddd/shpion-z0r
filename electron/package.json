@@ -1,7 +1,7 @@
 {
-  "name": "shpion-z0r-desktop",
+  "name": "electron-app",
   "version": "1.0.0",
-  "description": "Desktop client for Shpion-Z0R",
+  "description": "Shpion-Z0r Desktop Application",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -9,10 +9,12 @@
     "start-react": "cd ../frontend && npm start",
     "start-electron": "wait-on http://localhost:3000 && electron .",
     "build": "npm run build-react && electron-builder",
-    "build-react": "cd ../frontend && npm run build"
+    "build-react": "cd ../frontend && npm run build",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "YourName",
+  "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
@@ -37,5 +39,8 @@
     "mac": {
       "target": "dmg"
     }
+  },
+  "dependencies": {
+    "electron-is-dev": "^3.0.1"
   }
 }
