@@ -23,7 +23,8 @@
     "wait-on": "^7.2.0"
   },
   "build": {
-    "appId": "com.shpion-z0r.desktop",
+    "appId": "com.shpion-z0r.app",
+    "electronVersion": "31.2.1",
     "productName": "Shpion-Z0R",
     "files": [
       "main.js",
