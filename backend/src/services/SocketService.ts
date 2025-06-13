@@ -1,5 +1,6 @@
-import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Prisma, PrismaClient } from '@prisma/client';
+import { Server as SocketIOServer, Socket } from 'socket.io';
+import { DefaultEventsMap } from 'socket.io/dist/typed-events';
 import { ServerToClientEvents, ClientToServerEvents, SocketData, SocketUser } from '../types/socket';
 
 // This is the type we'll get when we query for a Member and include the User

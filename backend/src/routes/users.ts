@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import { UserController } from '../controllers/UserController';
-import { authMiddleware } from '../middleware/auth';
+import { catchAsync } from '../utils/catchAsync';
 
 const router = Router();
 
-// GET /api/users/me - получить информацию о текущем пользователе
-router.get('/me', authMiddleware, UserController.getCurrentUser);
+// GET /api/users/ - получить список всех пользователей
+router.get('/', catchAsync(UserController.getAllUsers));
 
-// POST /api/users/by-ids - получить пользователей по массиву ID
-router.post('/by-ids', authMiddleware, UserController.getUsersByIds);
+// GET /api/users/:userId - получить информацию о пользователе по ID
+router.get('/:userId', catchAsync(UserController.getUserById));
 
 export default router; 

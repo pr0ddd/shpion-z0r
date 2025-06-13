@@ -1,4 +1,4 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme, ThemeOptions } from '@mui/material/styles';
 
 // Расширяем интерфейс PaletteOptions для TypeScript
 declare module '@mui/material/styles' {
@@ -17,6 +17,20 @@ declare module '@mui/material/styles' {
       purple: string;
       yellow: string;
     };
+    chat: {
+      myMessage: string;
+      theirMessage: string;
+      background: string;
+      textPrimary: string;
+      textSecondary: string;
+      inputBackground: string;
+      inputPlaceholder: string;
+      border: string;
+    };
+    sidebar: {
+      background: string;
+      border: string;
+    };
   }
   interface PaletteOptions {
     discord?: Partial<Palette['discord']>;
@@ -26,11 +40,24 @@ declare module '@mui/material/styles' {
       purple?: string;
       yellow?: string;
     };
+    chat?: {
+      myMessage?: string;
+      theirMessage?: string;
+      background?: string;
+      textPrimary?: string;
+      textSecondary?: string;
+      inputBackground?: string;
+      inputPlaceholder?: string;
+      border?: string;
+    };
+    sidebar?: {
+      background?: string;
+      border?: string;
+    };
   }
 }
 
-// Создаем нашу кастомную тему
-const theme = createTheme({
+const themeOptions: ThemeOptions = {
   palette: {
     mode: 'dark', // Используем темную тему, как это часто бывает в игровых приложениях
     primary: {
@@ -67,6 +94,20 @@ const theme = createTheme({
       purple: '#B589D6',
       yellow: '#FEE75C',
     },
+    chat: {
+      myMessage: '#005c4b',
+      theirMessage: '#2f3136',
+      background: '#36393f',
+      textPrimary: '#ffffff',
+      textSecondary: '#8e9297',
+      inputBackground: '#40444b',
+      inputPlaceholder: '#b9bbbe',
+      border: '#202225',
+    },
+    sidebar: {
+        background: '#2f3136',
+        border: 'rgba(255, 255, 255, 0.12)',
+    }
   },
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
@@ -147,20 +188,40 @@ const theme = createTheme({
     MuiTooltip: {
         styleOverrides: {
             tooltip: {
-                backgroundColor: '#111214',
-                color: '#f2f3f5',
-                border: '1px solid #2b2d31',
+                backgroundColor: '#1a1b1e',
+                color: '#dcddde',
+                fontSize: '0.8rem',
             },
             arrow: {
-                color: '#111214',
+                color: '#1a1b1e',
             }
         }
-    }
+    },
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          '*::-webkit-scrollbar': {
+            width: '8px',
+          },
+          '*::-webkit-scrollbar-track': {
+            background: '#2f3136',
+          },
+          '*::-webkit-scrollbar-thumb': {
+            backgroundColor: '#202225',
+            borderRadius: '4px',
+            border: '2px solid #2f3136',
+          },
+          '*::-webkit-scrollbar-thumb:hover': {
+            backgroundColor: '#1a1b1e',
+          },
+        },
+      },
+    },
   },
-});
+};
 
 // Manually add the custom palette because createTheme strips unknown properties.
-(theme.palette as any).discord = {
+(themeOptions.palette as any).discord = {
   sidebar: '#202225',
   blurple: '#5865f2',
   green: '#43b581',
@@ -169,4 +230,4 @@ const theme = createTheme({
   chat_bg: '#36393f',
 };
 
-export default theme; 
+export const theme = createTheme(themeOptions); 

@@ -1,6 +1,8 @@
-import { Response } from 'express';
-import { prisma } from '../index';
+import prisma from '../lib/prisma';
+import { Request, Response } from 'express';
 import { AuthenticatedRequest, ApiResponse } from '../types';
+import { ApiError } from '../utils/ApiError';
+import { v4 as uuidv4 } from 'uuid';
 
 export class InviteController {
   // Использовать код-приглашение для вступления в сервер
@@ -69,55 +71,31 @@ export class InviteController {
   }
 
   // Получить публичную информацию о сервере по коду приглашения
-  static async getPublicInviteInfo(req: any, res: Response<ApiResponse>) {
-    try {
+  static async getPublicInviteInfo(req: Request, res: Response<ApiResponse>) {
       const { inviteCode } = req.params;
-
-      if (!inviteCode) {
-        return res.status(400).json({
-          success: false,
-          error: 'Invite code is required'
-        });
-      }
-
       const server = await prisma.server.findUnique({
         where: { inviteCode },
         select: {
           id: true,
           name: true,
           icon: true,
-          _count: {
-            select: {
-              members: true,
-            }
-          }
-        }
+        _count: { select: { members: true } },
+      },
       });
 
       if (!server) {
-        return res.status(404).json({
-          success: false,
-          error: 'Invite code is invalid'
-        });
+      throw new ApiError(404, 'Invalid invite code');
       }
 
-      return res.json({
+    res.json({
         success: true,
         data: {
           id: server.id,
           name: server.name,
           icon: server.icon,
           memberCount: server._count.members,
-        }
+      },
       });
-
-    } catch (error) {
-      console.error('Error fetching public invite info:', error);
-      return res.status(500).json({
-        success: false,
-        error: 'Internal server error'
-      });
-    }
   }
   
   // Сгенерировать новый код приглашения
@@ -171,5 +149,50 @@ export class InviteController {
         error: 'Internal server error'
       });
     }
+  }
+
+  static async joinServerWithInviteCode(req: AuthenticatedRequest, res: Response<ApiResponse>) {
+    const { inviteCode } = req.params;
+    const userId = req.user!.id;
+
+    const serverToJoin = await prisma.server.findUnique({
+      where: { inviteCode },
+      include: { members: { where: { userId } } },
+    });
+
+    if (!serverToJoin) {
+      throw new ApiError(404, 'Invalid invite code');
+    }
+
+    if (serverToJoin.members.length > 0) {
+      throw new ApiError(400, 'You are already a member of this server');
+    }
+
+    const updatedServer = await prisma.server.update({
+      where: { id: serverToJoin.id },
+      data: { members: { create: { userId } } },
+    });
+
+    res.json({ success: true, data: updatedServer });
+  }
+
+  static async refreshInviteCodeForServer(req: AuthenticatedRequest, res: Response<ApiResponse>) {
+    const { serverId } = req.params;
+    const userId = req.user!.id;
+
+    const server = await prisma.server.findUnique({
+      where: { id: serverId, ownerId: userId },
+    });
+
+    if (!server) {
+      throw new ApiError(403, 'You are not the owner of this server or server does not exist');
+    }
+
+    const updatedServer = await prisma.server.update({
+      where: { id: serverId },
+      data: { inviteCode: uuidv4() },
+    });
+
+    res.json({ success: true, data: updatedServer });
   }
 } 

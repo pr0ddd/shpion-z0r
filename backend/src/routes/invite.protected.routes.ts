@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { InviteController } from '../controllers/InviteController';
+import { catchAsync } from '../utils/catchAsync';
 
 const router = Router();
 
 // Использовать приглашение для вступления в сервер
-router.post('/:inviteCode', InviteController.useInvite);
+router.post('/:inviteCode/join', catchAsync(InviteController.joinServerWithInviteCode));
 
 // Сгенерировать новый код приглашения для сервера
-router.post('/:serverId/regenerate', InviteController.regenerateInviteCode);
+router.patch('/:serverId/refresh-code', catchAsync(InviteController.refreshInviteCodeForServer));
 
 export default router; 

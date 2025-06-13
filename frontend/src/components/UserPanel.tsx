@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography, Avatar, Paper, Divider, IconButton, Tooltip } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
-import { ConnectionState, Room, Track, VideoPreset, VideoPresets } from 'livekit-client';
+import { ConnectionState, Room, Track, VideoPresets, createLocalVideoTrack, createLocalScreenTracks, LocalTrack } from 'livekit-client';
 import { useConnectionState, useMaybeRoomContext, useTrackMutedIndicator, useTracks } from '@livekit/components-react';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
@@ -35,25 +35,11 @@ const ActualVoiceControls: React.FC<{ room: Room }> = ({ room }) => {
     };
 
     const onScreenShareClick = () => {
-        if (!isScreenSharing) {
-            const options = {
-                resolution: new VideoPreset(1920, 1080, 3_000_000, 30).resolution,
-            }
-            room.localParticipant.setScreenShareEnabled(true, options);
-        } else {
-            room.localParticipant.setScreenShareEnabled(false);
-        }
+        room.localParticipant.setScreenShareEnabled(!isScreenSharing);
     }
 
     const onCameraClick = () => {
-        if (!isCameraOn) {
-            const options = {
-                resolution: VideoPresets.h720.resolution,
-            }
-            room.localParticipant.setCameraEnabled(true, options);
-        } else {
-            room.localParticipant.setCameraEnabled(false);
-        }
+        room.localParticipant.setCameraEnabled(!isCameraOn);
     }
 
     const onDisconnectClick = () => {

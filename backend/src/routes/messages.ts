@@ -1,18 +1,19 @@
 import { Router } from 'express';
 import { MessageController } from '../controllers/MessageController';
+import { catchAsync } from '../utils/catchAsync';
 
 const router = Router();
 
 // Get messages for a server
-router.get('/:serverId', MessageController.getMessages);
+router.get('/:serverId', catchAsync(MessageController.getMessages));
 
 // Send a message to a server
-router.post('/:serverId', MessageController.sendMessage);
+router.post('/:serverId', catchAsync(MessageController.sendMessage));
 
 // Edit a message
-router.patch('/:messageId', MessageController.editMessage);
+router.patch('/:messageId', catchAsync(MessageController.editMessage));
 
 // Delete a message
-router.delete('/:messageId', MessageController.deleteMessage);
+router.delete('/:messageId', catchAsync(MessageController.deleteMessage));
 
 export default router; 

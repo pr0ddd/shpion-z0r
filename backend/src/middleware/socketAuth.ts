@@ -1,6 +1,6 @@
 import { Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../index';
+import prisma from '../lib/prisma';
 import { SocketData } from '../types/socket'; // Убедитесь, что путь правильный
 import { ExtendedError } from 'socket.io/dist/namespace';
 
@@ -14,9 +14,13 @@ export const socketAuthMiddleware = async (
       return next(new Error('Authentication token required'));
     }
 
+    if (!process.env.JWT_SECRET) {
+        return next(new Error('JWT_SECRET is not configured on the server.'));
+    }
+
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || 'your-secret-key'
+      process.env.JWT_SECRET
     ) as any;
 
     const user = await prisma.user.findUnique({

@@ -19,6 +19,7 @@ interface ServerContextType {
     updateMessage: (message: Message) => void;
     removeMessage: (messageId: string) => void;
     setOptimisticMessageStatus: (messageId: string, status: 'failed') => void;
+    sendMessage: (content: string) => void;
 }
 
 const ServerContext = createContext<ServerContextType | undefined>(undefined);
@@ -178,6 +179,35 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, status } : msg));
     }, []);
 
+    const sendMessage = useCallback((content: string) => {
+        const server = selectedServerRef.current;
+        if (content.trim() && server && user && socket) {
+            const tempId = `temp_${Date.now()}`;
+            const optimisticMessage: Message = {
+                id: tempId,
+                content: content,
+                authorId: user.id,
+                serverId: server.id,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                author: {
+                    id: user.id,
+                    username: user.username,
+                    avatar: user.avatar,
+                },
+                status: 'sending' as const,
+            };
+            
+            addMessage(optimisticMessage);
+            
+            socket.emit('message:send', { serverId: server.id, content: content }, (ack: { success: boolean }) => {
+                if (!ack.success) {
+                    setOptimisticMessageStatus(tempId, 'failed');
+                }
+            });
+        }
+    }, [user, socket, addMessage, setOptimisticMessageStatus]);
+
     const contextValue = useMemo(() => ({
         servers,
         setServers,
@@ -193,7 +223,8 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         updateMessage,
         removeMessage,
         setOptimisticMessageStatus,
-    }), [servers, selectedServer, members, messages, isLoading, areMembersLoading, error, selectServer, fetchServers, addMessage, updateMessage, removeMessage, setOptimisticMessageStatus]);
+        sendMessage,
+    }), [servers, selectedServer, members, messages, isLoading, areMembersLoading, error, selectServer, fetchServers, addMessage, updateMessage, removeMessage, setOptimisticMessageStatus, sendMessage]);
 
     return (
         <ServerContext.Provider value={contextValue}>
