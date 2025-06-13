@@ -28,6 +28,7 @@ jobs:
         run: npm install --force
 
       - name: Build application
+        shell: bash
         run: |
           if [ "$RUNNER_OS" == "macOS" ]; then
             npm run build:electron:mac
