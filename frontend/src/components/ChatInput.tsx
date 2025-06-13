@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Box, TextField, IconButton, Popper, ClickAwayListener } from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
-import MoodIcon from '@mui/icons-material/Mood';
+import { Send, Mood as MoodIcon } from '@mui/icons-material';
 import { useServer } from '../contexts/ServerContext';
-import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
+import Picker from '@emoji-mart/react';
 
 const ChatInput = () => {
     const { selectedServer, sendMessage } = useServer();
@@ -19,8 +18,8 @@ const ChatInput = () => {
         }
     }, [showEmojiPicker]);
 
-    const handleEmojiSelect = (emojiData: { native: string }) => {
-        setInputValue(prev => prev + emojiData.native);
+    const handleEmojiSelect = (emoji: any) => {
+        setInputValue(prev => prev + emoji.native);
         setShowEmojiPicker(false);
     };
 
@@ -81,14 +80,14 @@ const ChatInput = () => {
                     }}
                 />
                  <IconButton type="submit" sx={{ p: '10px', color: 'chat.inputPlaceholder' }} disabled={!inputValue.trim()}>
-                    <SendIcon />
+                    <Send />
                 </IconButton>
             </Box>
             <Popper
                 open={showEmojiPicker}
                 anchorEl={emojiButtonRef.current}
-                placement="top-start"
-                sx={{ zIndex: 10 }}
+                placement="top-end"
+                style={{ zIndex: 1301 }}
             >
                 <ClickAwayListener onClickAway={() => setShowEmojiPicker(false)}>
                     <div>
