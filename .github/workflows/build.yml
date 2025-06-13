@@ -31,9 +31,9 @@ jobs:
         shell: bash
         run: |
           if [ "$RUNNER_OS" == "macOS" ]; then
-            npm run build:electron:mac
+            CI=false npm run build:electron:mac
           elif [ "$RUNNER_OS" == "Windows" ]; then
-            npm run build:electron:win
+            CI=false npm run build:electron:win
           fi
       
       - name: Upload Artifact

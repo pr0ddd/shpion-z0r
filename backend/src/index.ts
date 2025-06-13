@@ -142,6 +142,6 @@ httpServer.listen(PORT, () => {
         console.log('🗄️  Database: Connected');
     }).catch(e => {
         console.error('🗄️  Database: Connection failed', e);
-        process.exit(1);
+    process.exit(1);
     });
 }); 
