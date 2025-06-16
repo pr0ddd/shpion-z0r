@@ -1,0 +1,31 @@
+{
+  "name": "backend",
+  "projectType": "application",
+  "root": "apps/backend",
+  "targets": {
+    "serve": {
+      "command": "npx prisma generate --schema=prisma/schema.prisma && dotenv -e .env.development -- nodemon src/index.ts",
+      "options": {
+        "cwd": "apps/backend"
+      }
+    },
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "main": "apps/backend/src/index.ts",
+        "outputPath": "dist/apps/backend",
+        "tsConfig": "apps/backend/tsconfig.json",
+        "platform": "node",
+        "external": ["@prisma/client", "bcrypt", "argon2", "utf-8-validate", "bufferutil"],
+        "target": "es2020"
+      }
+    },
+    "start": {
+      "command": "dotenv -e .env.development -- node dist/index.js",
+      "options": {
+        "cwd": "apps/backend"
+      }
+    }
+  }
+} 

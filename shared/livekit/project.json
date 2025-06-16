@@ -1,0 +1,16 @@
+{
+  "name": "shared-livekit",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{workspaceRoot}/dist/{projectRoot}"]
+    },
+    "lint": {
+      "executor": "@nx/linter:eslint",
+      "options": {
+        "lintFilePatterns": ["shared/livekit/**/*.ts", "shared/livekit/**/*.tsx"]
+      }
+    }
+  },
+  "tags": ["type:lib", "scope:shared", "domain:livekit"]
+} 

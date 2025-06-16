@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@shared/ui": ["../../shared/ui/src/index.ts"],
+      "@shared/hooks": ["../../shared/hooks/src/index.ts"],
+      "@shared/data": ["../../shared/data/src/index.ts"],
+      "@shared/types": ["../../shared/types/src/index.ts"]
+    },
+    "useUnknownInCatchVariables": false
+  },
+  "include": [
+    "src"
+  ]
+}

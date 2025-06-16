@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/out-tsc",
+    "declaration": false,
+    "types": ["node", "react"],
+    "module": "esnext",
+    "jsx": "react-jsx",
+    "moduleResolution": "node",
+    "rootDir": "../../"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "electron",
+  "projectType": "application",
+  "root": "apps/electron",
+  "targets": {
+    "serve": {
+      "command": "npm start",
+      "options": {
+        "cwd": "apps/electron"
+      }
+    },
+    "build": {
+      "command": "npm run build",
+      "options": {
+        "cwd": "apps/electron"
+      }
+    },
+    "package": {
+      "command": "npm run build:win",
+      "options": {
+        "cwd": "apps/electron"
+      }
+    }
+  }
+} 

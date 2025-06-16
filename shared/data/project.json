@@ -1,0 +1,36 @@
+{
+  "name": "shared-data",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "root": "shared/data",
+  "sourceRoot": "shared/data/src",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:data"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "outputPath": "dist/shared/data",
+        "main": "shared/data/src/index.ts",
+        "tsConfig": "shared/data/tsconfig.lib.json",
+        "assets": []
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["shared/data/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["coverage/shared/data"],
+      "options": {
+        "jestConfig": "shared/data/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}
