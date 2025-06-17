@@ -27,11 +27,12 @@ import {
 import { useServer } from '@shared/hooks';
 import { VoiceControlBar } from '@shared/ui';
 import { Participant, Track } from 'livekit-client';
-import { User } from '@shared/types';
+import { User, Member } from '@shared/types';
 import Mic from '@mui/icons-material/Mic';
 import MicOff from '@mui/icons-material/MicOff';
 import VolumeDown from '@mui/icons-material/VolumeDown';
 import VolumeUp from '@mui/icons-material/VolumeUp';
+import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { dicebearAvatar } from '../lib/ui';
@@ -45,9 +46,10 @@ const MemberSkeleton = () => (
   </ListItem>
 );
 
-const MemberListItem: React.FC<{ participant: Participant; user: User }> = ({
+const MemberListItem: React.FC<{ participant: Participant; user: User; isDeafened: boolean }> = ({
   participant,
   user,
+  isDeafened,
 }) => {
   const room = useRoomContext();
   const isSpeaking = useIsSpeaking(participant);
@@ -87,7 +89,9 @@ const MemberListItem: React.FC<{ participant: Participant; user: User }> = ({
               >
                 {user.username}
               </Typography>
-              {isMuted ? (
+              {isDeafened ? (
+                <VolumeOffIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+              ) : isMuted ? (
                 <MicOff sx={{ fontSize: 16, color: 'text.secondary' }} />
               ) : (
                 <Mic sx={{ fontSize: 16, color: 'text.secondary' }} />
@@ -150,12 +154,12 @@ const InviteDialog = ({
 };
 
 export const ServerMembers = () => {
-  const { selectedServer, members: allServerMembers, areMembersLoading } = useServer();
+  const { selectedServer, members: allServerMembers, areMembersLoading, listeningStates = {} } = useServer() as any;
   const participants = useParticipants();
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
   const onlineMembers = useMemo(() => {
-    const memberMap = new Map(allServerMembers.map((m) => [m.user.id, m.user]));
+    const memberMap = new Map(allServerMembers.map((m: Member) => [m.user.id, m.user]));
     return participants
       .map((p) => ({
         participant: p,
@@ -191,7 +195,7 @@ export const ServerMembers = () => {
             </>
           ) : (
             onlineMembers.map(({ participant, user }) => (
-              <MemberListItem key={participant.sid} participant={participant} user={user} />
+              <MemberListItem key={participant.sid} participant={participant} user={user} isDeafened={listeningStates?.[user.id] === false} />
             ))
           )}
         </List>

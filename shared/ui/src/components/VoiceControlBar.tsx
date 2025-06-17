@@ -3,7 +3,7 @@ import { Box, IconButton, Tooltip, Typography, Menu, MenuItem } from '@mui/mater
 import { useRoomContext, useMediaDeviceSelect } from '@livekit/components-react';
 import { useEffect, useState } from 'react';
 import { useScreenShare } from '@shared/livekit';
-import { useServer, useNotification } from '@shared/hooks';
+import { useServer, useNotification, useSocket } from '@shared/hooks';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
 import VideocamIcon from '@mui/icons-material/Videocam';
@@ -12,6 +12,7 @@ import ScreenShareIcon from '@mui/icons-material/ScreenShare';
 import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
 import CallEndIcon from '@mui/icons-material/CallEnd';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 interface VoiceControlBarProps {
@@ -195,11 +196,29 @@ const ScreenShareToggle = () => {
   );
 };
 
-const SpeakerSelector = () => {
+const SpeakerControl = () => {
   const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({ kind: 'audiooutput' });
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [listening, setListening] = useState(true);
+  const { socket } = useSocket();
 
-  const openMenu = (e: React.MouseEvent<HTMLElement>) => setAnchorEl(e.currentTarget);
+  useEffect(() => {
+    const audios = document.querySelectorAll('audio');
+    audios.forEach((el) => {
+      (el as HTMLMediaElement).muted = !listening;
+    });
+  }, [listening]);
+
+  const toggleListening = () => {
+    const newVal = !listening;
+    setListening(newVal);
+    socket?.emit('user:listening', newVal);
+  };
+
+  const openMenu = (e: React.MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    setAnchorEl(e.currentTarget);
+  };
   const closeMenu = () => setAnchorEl(null);
   const handleSelect = async (id: string) => {
     await setActiveMediaDevice(id);
@@ -207,12 +226,19 @@ const SpeakerSelector = () => {
   };
 
   return (
-    <>
-      <Tooltip title="Вывод звука">
-        <IconButton size="small" onClick={openMenu} sx={{ color: 'white' }}>
-          <VolumeUpIcon />
+    <Box sx={{ position: 'relative' }}>
+      <Tooltip title={listening ? 'Выключить звук' : 'Включить звук'}>
+        <IconButton size="small" onClick={toggleListening} sx={{ color: listening ? 'white' : '#f04747' }}>
+          {listening ? <VolumeUpIcon /> : <VolumeOffIcon />}
         </IconButton>
       </Tooltip>
+      <IconButton
+        size="small"
+        onClick={openMenu}
+        sx={{ position: 'absolute', bottom: -4, right: -4, bgcolor: '#2f3136', p: '2px', '&:hover': { bgcolor: '#43454a' } }}
+      >
+        <ArrowDropDownIcon fontSize="inherit" sx={{ color: 'white', fontSize: 14 }} />
+      </IconButton>
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -227,7 +253,7 @@ const SpeakerSelector = () => {
         ))}
         {devices.length === 0 && <MenuItem disabled>Нет устройств</MenuItem>}
       </Menu>
-    </>
+    </Box>
   );
 };
 
@@ -261,7 +287,7 @@ export const VoiceControlBar: React.FC<VoiceControlBarProps> = ({ onDisconnect }
           <MicControl />
           <CameraControl />
           <ScreenShareToggle />
-          <SpeakerSelector />
+          <SpeakerControl />
           <Tooltip title="Выйти из комнаты">
             <IconButton
               onClick={leave}

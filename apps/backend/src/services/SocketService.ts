@@ -80,6 +80,14 @@ export class SocketService {
         }
       });
 
+      socket.on('user:listening', (listening: boolean) => {
+        const userId = socket.data.user?.id;
+        if (!userId) return;
+        const serverId = this.userCurrentServer.get(userId);
+        if (!serverId) return;
+        this.io.to(`server:${serverId}`).emit('user:listening', userId, listening);
+      });
+
       socket.on('disconnect', () => {
         const userId = socket.data.user?.id;
         if (userId) {

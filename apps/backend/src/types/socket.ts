@@ -12,6 +12,7 @@ export interface ServerToClientEvents {
     'server:state': (data: { serverId: string, users: SocketUser[] }) => void;
     'user:joined': (member: any, serverId: string) => void; // Using 'any' for member for now
     'user:left': (userId: string, serverId: string) => void;
+    'user:listening': (userId: string, listening: boolean) => void;
     'message:new': (message: Message & { author: { id: string, username: string, avatar: string | null }}) => void;
     'message:updated': (message: Message) => void;
     'message:deleted': (messageId: string, serverId: string) => void;
@@ -24,6 +25,7 @@ export interface ClientToServerEvents {
     'server:join': (serverId: string) => void;
     'server:leave': (serverId:string) => void;
     'message:send': (data: { serverId: string; content: string; }, callback: (ack: { success: boolean }) => void) => void;
+    'user:listening': (listening: boolean) => void;
 }
 
 // Socket data attached to each connection

@@ -20,6 +20,7 @@ interface ServerContextType {
     removeMessage: (messageId: string) => void;
     setOptimisticMessageStatus: (messageId: string, status: 'failed') => void;
     sendMessage: (content: string) => void;
+    listeningStates: Record<string, boolean>;
 }
 
 const ServerContext = createContext<ServerContextType | undefined>(undefined);
@@ -38,6 +39,7 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const [servers, setServers] = useState<Server[]>([]);
     const [selectedServer, setSelectedServer] = useState<Server | null>(null);
     const [members, setMembers] = useState<Member[]>([]);
+    const [listeningStates, setListeningStates] = useState<Record<string, boolean>>({});
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [areMembersLoading, setAreMembersLoading] = useState(false);
@@ -168,10 +170,16 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         socket.on('message:updated', updateMessage);
         socket.on('message:deleted', removeMessage);
         
+        const handleListening = (userId: string, listening: boolean) => {
+            setListeningStates(prev => ({ ...prev, [userId]: listening }));
+        };
+        socket.on('user:listening', handleListening);
+        
         return () => {
             socket.off('message:new', addMessage);
             socket.off('message:updated', updateMessage);
             socket.off('message:deleted', removeMessage);
+            socket.off('user:listening', handleListening);
         };
     }, [socket, addMessage, updateMessage, removeMessage]);
 
@@ -213,6 +221,7 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         setServers,
         selectedServer,
         members,
+        listeningStates,
         messages,
         isLoading,
         areMembersLoading,
@@ -224,7 +233,7 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         removeMessage,
         setOptimisticMessageStatus,
         sendMessage,
-    }), [servers, selectedServer, members, messages, isLoading, areMembersLoading, error, selectServer, fetchServers, addMessage, updateMessage, removeMessage, setOptimisticMessageStatus, sendMessage]);
+    }), [servers, selectedServer, members, listeningStates, messages, isLoading, areMembersLoading, error, selectServer, fetchServers, addMessage, updateMessage, removeMessage, setOptimisticMessageStatus, sendMessage]);
 
     return (
         <ServerContext.Provider value={contextValue}>
