@@ -13,7 +13,7 @@ import {
 import { motion } from 'framer-motion';
 import { useRoomContext } from '@livekit/components-react';
 import { useEffect, useState } from 'react';
-import { useScreenShare } from '@shared/hooks';
+import { useScreenShare } from '@shared/livekit';
 import { useServer } from '@shared/hooks';
 
 interface VoiceControlBarProps {

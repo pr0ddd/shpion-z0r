@@ -20,4 +20,10 @@ router.get('/:serverId/members', catchAsync(ServerController.getServerMembers));
 // Покинуть сервер
 router.post('/:serverId/leave', catchAsync(ServerController.leaveServer));
 
+// Удалить сервер
+router.delete('/:serverId', catchAsync(ServerController.deleteServer));
+
+// Переименовать сервер
+router.patch('/:serverId', catchAsync(ServerController.renameServer));
+
 export default router; 

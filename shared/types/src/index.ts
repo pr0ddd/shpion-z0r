@@ -86,6 +86,8 @@ export interface ServerToClientEvents {
   'message:new': (message: Message) => void;
   'message:updated': (message: Message) => void;
   'message:deleted': (messageId: string, serverId: string) => void;
+  'server:deleted': (serverId: string) => void;
+  'server:updated': (server: Server) => void;
 }
 
 export interface ClientToServerEvents {

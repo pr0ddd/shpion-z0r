@@ -6,7 +6,7 @@ export const useScreenShare = () => {
   const { buttonProps, enabled } = useTrackToggle({ source: Track.Source.ScreenShare });
 
   const toggle = useCallback(() => {
-    if (buttonProps.onClick) buttonProps.onClick();
+    if (buttonProps.onClick) buttonProps.onClick({} as any);
   }, [buttonProps]);
 
   return { toggle, enabled } as const;

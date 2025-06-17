@@ -8,7 +8,6 @@ import { AuthProvider, SocketProvider, ServerProvider, NotificationProvider } fr
 import { theme } from './theme';
 import reportWebVitals from './reportWebVitals';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 const scrollbarStyles = {
   '*::-webkit-scrollbar': {
@@ -44,9 +43,6 @@ root.render(
               <ServerProvider>
                 <NotificationProvider>
                   <App />
-                  {import.meta.env.DEV && (
-                    <ReactQueryDevtools initialIsOpen={false} />
-                  )}
                 </NotificationProvider>
               </ServerProvider>
             </SocketProvider>

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Server as PrismaServer } from '@prisma/client';
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { ServerToClientEvents, ClientToServerEvents, SocketData, SocketUser } from '../types/socket';
 
@@ -45,7 +45,8 @@ export class SocketService {
         this.notifyUserLeft(userId, serverId);
       });
 
-      socket.on('message:send', async ({ serverId, content }, callback) => {
+      socket.on('message:send', async (data: any, callback) => {
+        const { serverId, content, clientNonce } = data;
         const userId = socket.data.user?.id;
         if (!userId) {
             return callback({ success: false });
@@ -69,7 +70,8 @@ export class SocketService {
                 },
             });
 
-            this.io.to(`server:${serverId}`).emit('message:new', message);
+            const payload = { ...message, clientNonce };
+            this.io.to(`server:${serverId}`).emit('message:new', payload);
             callback({ success: true });
 
         } catch (error) {
@@ -154,5 +156,21 @@ export class SocketService {
 
   public notifyDeletedMessage(serverId: string, messageId: string) {
     this.io.to(`server:${serverId}`).emit('message:deleted', messageId, serverId);
+  }
+
+  public notifyServerDeleted(serverId: string) {
+    // notify all sockets in room and make them leave
+    this.io.to(`server:${serverId}`).emit('server:deleted', serverId);
+    const room = this.io.sockets.adapter.rooms.get(`server:${serverId}`);
+    if (room) {
+      for (const sid of room) {
+        const s = this.io.sockets.sockets.get(sid);
+        s?.leave(`server:${serverId}`);
+      }
+    }
+  }
+
+  public notifyServerUpdated(server: PrismaServer) {
+    this.io.emit('server:updated', server);
   }
 }

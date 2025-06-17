@@ -19,8 +19,7 @@
       "@shared/hooks": ["shared/hooks/src/index.ts"],
       "@shared/types": ["shared/types/src/index.ts"],
       "@shared/ui": ["shared/ui/src/index.ts"],
-      "feature": ["feature/src/index.ts"],
-      "features": ["features/src/index.ts"]
+      "@shared/livekit": ["shared/livekit/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

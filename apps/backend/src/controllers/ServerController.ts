@@ -133,4 +133,45 @@ export class ServerController {
     }
     res.json({ success: true, data: server.members });
   }
+
+  // Удалить сервер (owner only)
+  static async deleteServer(req: AuthenticatedRequest, res: Response<ApiResponse>) {
+    const { serverId } = req.params;
+    const userId = req.user!.id;
+
+    const server = await prisma.server.findUnique({ where: { id: serverId } });
+    if (!server) throw new ApiError(404, 'Server not found');
+    if (server.ownerId !== userId) throw new ApiError(403, 'Only owner can delete server');
+
+    await prisma.server.delete({ where: { id: serverId } });
+
+    // notify via socket
+    const { socketService } = await import('../index');
+    socketService.notifyServerDeleted(serverId);
+
+    res.json({ success: true, message: 'Server deleted' });
+  }
+
+  // Переименовать сервер (owner only)
+  static async renameServer(req: AuthenticatedRequest, res: Response<ApiResponse>) {
+    const { serverId } = req.params;
+    const { name } = req.body as { name?: string };
+    const userId = req.user!.id;
+
+    if (!name || !name.trim()) {
+      throw new ApiError(400, 'New server name is required');
+    }
+
+    const server = await prisma.server.findUnique({ where: { id: serverId } });
+    if (!server) throw new ApiError(404, 'Server not found');
+    if (server.ownerId !== userId) throw new ApiError(403, 'Only owner can rename server');
+
+    const updated = await prisma.server.update({ where: { id: serverId }, data: { name } });
+
+    // notify via socket
+    const { socketService } = await import('../index');
+    socketService.notifyServerUpdated(updated);
+
+    res.json({ success: true, data: updated });
+  }
 }

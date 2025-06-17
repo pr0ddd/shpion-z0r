@@ -2,7 +2,7 @@ import React, { PropsWithChildren, useMemo } from 'react';
 import { LiveKitRoom } from '@livekit/components-react';
 import { Room } from 'livekit-client';
 import '@livekit/components-styles';
-import { useLiveKitToken } from '@shared/hooks';
+import { useLiveKitToken } from '@shared/livekit';
 
 interface LiveKitProviderProps {
   serverId: string | null;

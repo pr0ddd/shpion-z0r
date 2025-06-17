@@ -47,13 +47,7 @@ const LoginForm: React.FC = () => {
           {error}
         </Typography>
       )}
-      <Button
-        type="submit"
-        fullWidth
-        variant="contained"
-        sx={{ mt: 3, mb: 2 }}
-        disabled={loading}
-      >
+      <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }} disabled={loading}>
         {loading ? <CircularProgress size={24} color="inherit" /> : 'Войти'}
       </Button>
     </Box>

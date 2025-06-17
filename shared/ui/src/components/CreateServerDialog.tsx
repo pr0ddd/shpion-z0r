@@ -1,15 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  Alert,
-  Box,
-  CircularProgress
-} from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Alert, Box, CircularProgress } from '@mui/material';
 import { serverAPI } from '@shared/data';
 import { useServer } from '@shared/hooks';
 
@@ -43,8 +33,7 @@ const CreateServerDialog: React.FC<CreateServerDialogProps> = ({ open, onClose }
     try {
       const response = await serverAPI.createServer(name);
       if (response.success && response.data) {
-        // Add the new server to the global state
-        setServers(prevServers => [...prevServers, response.data!]);
+        setServers(prev => [...prev, response.data!]);
         handleClose();
       } else {
         setError(response.error || 'Не удалось создать сервер.');
@@ -64,9 +53,7 @@ const CreateServerDialog: React.FC<CreateServerDialogProps> = ({ open, onClose }
           <TextField
             autoFocus
             margin="dense"
-            id="name"
             label="Название сервера"
-            type="text"
             fullWidth
             variant="standard"
             value={name}

@@ -3,7 +3,7 @@ import { Box, Typography } from '@mui/material';
 import { useTracks, TrackRefContext } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import { AnimatePresence, motion, Variants } from 'framer-motion';
-import { CustomChat } from './CustomChat';
+import { CustomChat } from '@shared/ui';
 import { useServer } from '@shared/hooks';
 import { ParticipantVideoTile as StreamPreview } from '@shared/ui';
 

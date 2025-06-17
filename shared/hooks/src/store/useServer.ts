@@ -9,6 +9,9 @@ import { useServersQuery } from '../query/useServersQuery';
 // Global semaphore to deduplicate parallel fetches across hook instances
 let globalLoadingServerId: string | null = null;
 
+// Map clientNonce -> tempId to patch optimistic messages
+const pendingMap: Record<string, string> = {};
+
 // Hook that exposes the same API as old context but internally uses Zustand store
 export const useServer = () => {
   // subscribe to each slice separately to keep referential stability
@@ -32,6 +35,7 @@ export const useServer = () => {
   const setOptimisticMessageStatus = useServerStore((s) => s.setOptimisticMessageStatus);
   const isServersInitialized = useServerStore((s) => s.isServersInitialized);
   const setServersInitialized = useServerStore((s) => s.setServersInitialized);
+  const addMessagesBatch = useServerStore((s) => s.addMessages);
 
   const { user } = useAuth();
   const { socket } = useSocket();
@@ -120,24 +124,76 @@ export const useServer = () => {
 
   // socket message listeners
   useEffect(() => {
-    if (!socket) return;
-    const add = (m: Message) => addMessage(m);
+    if (!socket || (socket as any)._chatListenersAttached) return;
+    (socket as any)._chatListenersAttached = true;
+
+    // Batch incoming messages within short window to avoid excessive re-renders
+    let batchBuf: Message[] = [];
+    let batchTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const flushBatch = () => {
+      if (batchBuf.length === 0) return;
+      const toInsert: Message[] = [];
+      batchBuf.forEach((m: any) => {
+        if (m.clientNonce && pendingMap[m.clientNonce]) {
+          const tempId = pendingMap[m.clientNonce];
+          delete pendingMap[m.clientNonce];
+          // merge real data into existing optimistic bubble to avoid remount
+          updateMessage({ ...m, id: tempId });
+        } else {
+          toInsert.push(m);
+        }
+      });
+      if (toInsert.length) {
+        // single bulk update
+        useServerStore.getState().addMessages(toInsert);
+      }
+      batchBuf = [];
+      batchTimer = null;
+    };
+
+    const add = (m: any) => {
+      batchBuf.push(m);
+      if (!batchTimer) {
+        batchTimer = setTimeout(flushBatch, 50);
+      }
+    };
+
     const upd = (m: Message) => updateMessage(m);
     const del = (id: string) => removeMessage(id);
+
     socket.on('message:new', add);
     socket.on('message:updated', upd);
     socket.on('message:deleted', del);
+    socket.on('server:deleted', (srvId: string) => {
+      const { setSelectedServer } = useServerStore.getState();
+      if (selectedServerRef.current?.id === srvId) {
+        setSelectedServer(null);
+      }
+      // also remove server from list
+      useServerStore.setState((state)=>({servers: state.servers.filter(s=>s.id!==srvId)}));
+    });
+
+    socket.on('server:updated', (srv: Server) => {
+      // update servers list and selected server details if relevant
+      useServerStore.setState((state) => ({
+        servers: state.servers.map((s) => (s.id === srv.id ? { ...s, name: srv.name, icon: srv.icon } : s)),
+      }));
+      if (selectedServerRef.current?.id === srv.id) {
+        useServerStore.setState({ selectedServer: { ...selectedServerRef.current, name: srv.name, icon: srv.icon } as any });
+      }
+    });
+
     return () => {
-      socket.off('message:new', add);
-      socket.off('message:updated', upd);
-      socket.off('message:deleted', del);
+      // not detaching to keep singleton listeners
     };
   }, [socket, addMessage, updateMessage, removeMessage]);
 
   const sendMessage = useCallback((content: string) => {
     const server = selectedServer;
     if (!content.trim() || !server || !user || !socket) return;
-    const tempId = `temp_${Date.now()}`;
+    const clientNonce = `${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+    const tempId = `temp_${clientNonce}`;
     const optimistic: Message = {
       id: tempId,
       content,
@@ -151,16 +207,30 @@ export const useServer = () => {
         avatar: user.avatar,
       },
       status: 'sending',
+      clientNonce,
     } as Message & { status: 'sending' };
     addMessage(optimistic);
-    socket.emit('message:send', { serverId: server.id, content }, (response: any) => {
-      if (response) {
-        updateMessage(response as Message);
-      } else {
+    pendingMap[clientNonce] = tempId;
+
+    socket.emit('message:send', { serverId: server.id, content, clientNonce } as any, (response: any) => {
+      if (!response) {
         setOptimisticMessageStatus(tempId, 'failed');
       }
+      // ack handled via message:new
     });
-  }, [socket, selectedServer, user, addMessage, updateMessage, setOptimisticMessageStatus]);
+  }, [socket, selectedServer, user, addMessage, updateMessage, setOptimisticMessageStatus, removeMessage]);
+
+  const batchQueue: Message[] = [];
+  let flushTimeout: any = null;
+  const enqueue = (msg: Message)=>{
+     batchQueue.push(msg);
+     if(!flushTimeout){
+        flushTimeout = setTimeout(()=>{
+          addMessagesBatch(batchQueue.splice(0));
+          flushTimeout=null;
+        },50);
+     }
+  };
 
   return {
     servers,

@@ -10,7 +10,6 @@ const RegisterForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // The actual registration logic is now fully handled by the context
     await register(email, username, password);
   };
 
@@ -61,13 +60,7 @@ const RegisterForm: React.FC = () => {
           {error}
         </Typography>
       )}
-      <Button
-        type="submit"
-        fullWidth
-        variant="contained"
-        sx={{ mt: 3, mb: 2 }}
-        disabled={loading}
-      >
+      <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }} disabled={loading}>
         {loading ? <CircularProgress size={24} color="inherit" /> : 'Зарегистрироваться'}
       </Button>
     </Box>

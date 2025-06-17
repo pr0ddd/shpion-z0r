@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button, Paper } from '@mui/material';
-import LoginForm from './LoginForm';
-import RegisterForm from './RegisterForm';
+import { LoginForm, RegisterForm } from '@shared/ui';
 
 const AuthPage: React.FC = () => {
   const [isLoginMode, setIsLoginMode] = useState(true);

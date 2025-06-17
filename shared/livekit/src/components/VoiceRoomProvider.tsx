@@ -1,6 +1,6 @@
 import React, { PropsWithChildren, useMemo } from 'react';
 import { LiveKitRoom } from '@livekit/components-react';
-import { useLiveKitToken } from '@shared/hooks';
+import { useLiveKitToken } from '@shared/livekit';
 
 export interface VoiceRoomProviderProps {
   serverId: string | null;

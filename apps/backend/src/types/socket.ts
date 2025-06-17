@@ -15,6 +15,8 @@ export interface ServerToClientEvents {
     'message:new': (message: Message & { author: { id: string, username: string, avatar: string | null }}) => void;
     'message:updated': (message: Message) => void;
     'message:deleted': (messageId: string, serverId: string) => void;
+    'server:deleted': (serverId: string) => void;
+    'server:updated': (server: any) => void;
 }
   
 // Client to Server Events

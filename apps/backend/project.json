@@ -4,8 +4,9 @@
   "root": "apps/backend",
   "targets": {
     "serve": {
-      "command": "npx prisma generate --schema=prisma/schema.prisma && dotenv -e .env.development -- nodemon src/index.ts",
+      "executor": "nx:run-commands",
       "options": {
+        "command": "dotenv -e .env.development -- nodemon src/index.ts",
         "cwd": "apps/backend"
       }
     },

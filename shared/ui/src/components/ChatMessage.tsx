@@ -17,8 +17,8 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }: ChatMessa
         <ListItem sx={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
             <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1, flexDirection: isMe ? 'row-reverse' : 'row' }}>
                 {!isMe && (
-                    <ListItemAvatar sx={{ minWidth: 'auto', alignSelf: 'flex-start' }}>
-                        <Avatar alt={message.author?.username} src={message.author?.avatar || undefined} sx={{ width: 40, height: 40 }}/>
+                    <ListItemAvatar sx={{ minWidth: 'auto', alignSelf: 'flex-end' }}>
+                        <Avatar alt={message.author?.username} src={message.author?.avatar || undefined} sx={{ width: 32, height: 32 }}/>
                     </ListItemAvatar>
                 )}
                 <Box
@@ -34,15 +34,15 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }: ChatMessa
                     }}
                 >
                     {!isMe && (
-                         <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'text.secondary', mb: 0.5 }}>
-                            {message.author?.username || 'Неизвестный'}
+                         <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'text.secondary', mb: 0.5, textAlign: isMe ? 'right' : 'left' }}>
+                            {message.author?.username || (isMe ? 'Я' : 'Неизвестный')}
                          </Typography>
                     )}
                     <Box sx={{ display: 'flex', alignItems: 'flex-end', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                        <Typography component="div" variant="body1" sx={{ color: 'chat.textPrimary', wordBreak: 'break-word', whiteSpace: 'pre-wrap', minWidth: '50px' }}>
+                        <Typography component="div" variant="body1" sx={{ color: 'chat.textPrimary', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
                            <Interweave content={message.content} />
                         </Typography>
-                        <Typography variant="caption" sx={{ color: 'chat.textSecondary', ml: 1, whiteSpace: 'nowrap' }}>
+                        <Typography variant="caption" sx={{ color: 'chat.textSecondary', ml: 1, alignSelf: 'flex-end', whiteSpace: 'nowrap' }}>
                             {time}
                         </Typography>
                     </Box>
