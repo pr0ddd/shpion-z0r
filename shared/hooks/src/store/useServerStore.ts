@@ -24,6 +24,8 @@ interface ServerStoreState {
   addMessages: (batch: Message[]) => void;
   removeMessage: (id: string) => void;
   setOptimisticMessageStatus: (id: string, status: 'failed') => void;
+  listeningStates: Record<string, boolean>;
+  setListeningState: (userId: string, listening: boolean) => void;
 }
 
 export const useServerStore = create<ServerStoreState>()((set) => ({
@@ -76,5 +78,10 @@ export const useServerStore = create<ServerStoreState>()((set) => ({
       messages: state.messages.map((msg) =>
         msg.id === id ? { ...msg, status } : msg,
       ),
+    })),
+  listeningStates: {},
+  setListeningState: (userId, listening) =>
+    set((state: ServerStoreState) => ({
+      listeningStates: { ...state.listeningStates, [userId]: listening },
     })),
 })); 

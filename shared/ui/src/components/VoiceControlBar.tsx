@@ -3,7 +3,7 @@ import { Box, IconButton, Tooltip, Typography, Menu, MenuItem } from '@mui/mater
 import { useRoomContext, useMediaDeviceSelect } from '@livekit/components-react';
 import { useEffect, useState } from 'react';
 import { useScreenShare } from '@shared/livekit';
-import { useServer, useNotification, useSocket } from '@shared/hooks';
+import { useServer, useServerStore, useNotification, useSocket, useAuth } from '@shared/hooks';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
 import VideocamIcon from '@mui/icons-material/Videocam';
@@ -199,19 +199,23 @@ const ScreenShareToggle = () => {
 const SpeakerControl = () => {
   const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({ kind: 'audiooutput' });
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [listening, setListening] = useState(true);
   const { socket } = useSocket();
+  const { user } = useAuth();
 
+  const listening = useServerStore((s) => (user?.id ? s.listeningStates[user.id] : true) ?? true);
+  const setListeningState = useServerStore((s) => s.setListeningState);
+
+  // keep actual audio elements in sync
   useEffect(() => {
-    const audios = document.querySelectorAll('audio');
-    audios.forEach((el) => {
+    document.querySelectorAll('audio').forEach((el) => {
       (el as HTMLMediaElement).muted = !listening;
     });
   }, [listening]);
 
   const toggleListening = () => {
+    if (!user) return;
     const newVal = !listening;
-    setListening(newVal);
+    setListeningState(user.id, newVal);
     socket?.emit('user:listening', newVal);
   };
 

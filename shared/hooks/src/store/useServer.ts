@@ -22,6 +22,7 @@ export const useServer = () => {
   const isLoadingStore = useServerStore((s) => s.isLoading);
   const areMembersLoading = useServerStore((s) => s.areMembersLoading);
   const errorStore = useServerStore((s) => s.error);
+  const listeningStates = useServerStore((s) => s.listeningStates);
 
   // actions (stable references)
   const setServers = useServerStore((s) => s.setServers);
@@ -36,6 +37,7 @@ export const useServer = () => {
   const isServersInitialized = useServerStore((s) => s.isServersInitialized);
   const setServersInitialized = useServerStore((s) => s.setServersInitialized);
   const addMessagesBatch = useServerStore((s) => s.addMessages);
+  const setListeningState = useServerStore((s) => s.setListeningState);
 
   const { user } = useAuth();
   const { socket } = useSocket();
@@ -184,10 +186,14 @@ export const useServer = () => {
       }
     });
 
+    socket.on('user:listening', (userId: string, listening: boolean) => {
+      setListeningState(userId, listening);
+    });
+
     return () => {
       // not detaching to keep singleton listeners
     };
-  }, [socket, addMessage, updateMessage, removeMessage]);
+  }, [socket, addMessage, updateMessage, removeMessage, setListeningState]);
 
   const sendMessage = useCallback((content: string) => {
     const server = selectedServer;
@@ -244,5 +250,6 @@ export const useServer = () => {
     setServers,
     fetchServers: () => {},
     sendMessage,
+    listeningStates,
   };
 }; 

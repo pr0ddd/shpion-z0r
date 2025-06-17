@@ -28,7 +28,8 @@ import Mic from '@mui/icons-material/Mic';
 import MicOff from '@mui/icons-material/MicOff';
 import VolumeDown from '@mui/icons-material/VolumeDown';
 import VolumeUp from '@mui/icons-material/VolumeUp';
-import VolumeOffIcon from '@mui/icons-material/VolumeOff';
+import HeadsetOffIcon from '@mui/icons-material/HeadsetOff';
+import HeadsetIcon from '@mui/icons-material/Headset';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { InviteDialog } from '@shared/ui';
 
@@ -80,12 +81,17 @@ const MemberListItem: React.FC<{ participant: Participant; user: User; isDeafene
               >
                 {user.username}
               </Typography>
-              {isDeafened ? (
-                <VolumeOffIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-              ) : isMuted ? (
+              {/* Mic status */}
+              {isMuted ? (
                 <MicOff sx={{ fontSize: 16, color: 'text.secondary' }} />
               ) : (
                 <Mic sx={{ fontSize: 16, color: 'text.secondary' }} />
+              )}
+              {/* Listening (headphone) status */}
+              {isDeafened ? (
+                <HeadsetOffIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+              ) : (
+                <HeadsetIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
               )}
             </Box>
           }

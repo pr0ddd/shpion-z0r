@@ -1,84 +1,148 @@
-import React, { useState, memo, useCallback } from 'react';
-import { useServer } from '@shared/hooks';
-import { useAuth } from '@shared/hooks';
-import { useServerStore } from '@shared/hooks';
+import React, { memo, useCallback, useState } from 'react';
+import {
+  Box,
+  Avatar,
+  Tooltip,
+  Divider,
+  Typography,
+  Skeleton,
+} from '@mui/material';
+import { styled } from '@mui/material/styles';
+import AddIcon from '@mui/icons-material/Add';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { useServer, useAuth } from '@shared/hooks';
+import { Server } from '@shared/types';
 import { CreateServerDialog } from '@shared/ui';
-import { ServerSidebarView } from '@shared/ui';
-import { Menu, MenuItem } from '@mui/material';
-import { serverAPI } from '@shared/data';
-import { RenameServerDialog } from '@shared/ui';
+
+const SidebarWrapper = styled(Box)(({ theme }) => ({
+  width: 72,
+  height: '100vh',
+  padding: theme.spacing(1.5, 0),
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: theme.spacing(1.5),
+  backgroundColor: theme.palette.background.default,
+  position: 'relative',
+}));
+
+const ServerButton = styled(Box)<{ isselected?: string }>(({ theme, isselected }) => ({
+  width: 48,
+  height: 48,
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  transition: 'border-radius 0.2s ease, background-color 0.2s ease, transform 0.2s ease',
+  backgroundColor: isselected === 'true' ? theme.palette.primary.main : theme.palette.background.paper,
+  color: isselected === 'true' ? theme.palette.getContrastText(theme.palette.primary.main) : theme.palette.text.secondary,
+  borderRadius: isselected === 'true' ? '16px' : '50%', // More pronounced "squircle"
+  '&:hover': {
+    borderRadius: '16px',
+    backgroundColor: theme.palette.primary.main,
+    color: theme.palette.getContrastText(theme.palette.primary.main),
+    transform: 'scale(1.05)',
+  },
+}));
+
+const StyledDivider = styled(Divider)(({ theme }) => ({
+  width: 32,
+  backgroundColor: theme.palette.background.paper,
+  margin: theme.spacing(0.5, 'auto'),
+}));
+
+interface ServerItemProps {
+  server: Server;
+  isSelected: boolean;
+  onClick: (server: Server) => void;
+}
+
+const ServerItem = memo(({ server, isSelected, onClick }: ServerItemProps) => {
+  return (
+    <Tooltip title={server.name} placement="right">
+      <ServerButton
+        isselected={isSelected.toString()}
+        onClick={() => onClick(server)}
+      >
+        {server.icon ? (
+          <Avatar src={server.icon} sx={{ width: 48, height: 48 }} />
+        ) : (
+          <Typography variant="h6" sx={{fontWeight: 'bold'}}>
+              {server.name.charAt(0).toUpperCase()}
+          </Typography>
+        )}
+      </ServerButton>
+    </Tooltip>
+  );
+});
+
+const ActionButtons = styled(Box)({
+  marginTop: 'auto',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 8,
+  paddingBottom: 8,
+});
+
+const ServerListSkeleton = () => (
+  <>
+    {[...Array(3)].map((_, index) => (
+      <Skeleton key={index} variant="circular" width={48} height={48} sx={{ bgcolor: 'grey.800' }} />
+    ))}
+  </>
+);
 
 const ServersSidebar: React.FC = () => {
   const { servers, selectedServer, isLoading, error, selectServer } = useServer();
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
-  const [menuAnchor, setMenuAnchor] = useState<{x:number;y:number}|null>(null);
-  const [contextId,setContextId]=useState<string|null>(null);
-  const [isRenameOpen,setRenameOpen]=useState(false);
 
-  const handleSelect = useCallback(
-    (id: string | null) => {
-      if (id === null) {
-        selectServer(null);
-        return;
-      }
-      const srv = servers.find((s) => s.id === id);
-      if (srv) selectServer(srv);
-    },
-    [servers, selectServer]
-  );
-
-  const handleContext = (id:string,x:number,y:number)=>{
-    setContextId(id);
-    setMenuAnchor({x,y});
-  };
-
-  const closeMenu=()=>{setMenuAnchor(null);};
-
-  const openRename=()=>{
-    setRenameOpen(true);
-    closeMenu();
-  };
-
-  const handleDelete = async ()=>{
-    if(!contextId) return;
-    try{
-      await serverAPI.deleteServer(contextId);
-      if(selectedServer?.id===contextId){
-        selectServer(null);
-      }
-      useServerStore.getState().setServers(prev=>prev.filter(s=>s.id!==contextId));
-    }finally{closeMenu();}
-  };
-
-  const currentContextServer = servers.find(s=>s.id===contextId) ?? null;
-
+  const handleServerClick = useCallback((server: Server) => {
+    selectServer(server);
+  }, [selectServer]);
+  
   return (
     <>
-      <ServerSidebarView
-        servers={servers.map(({ id, name, icon, ownerId }) => ({ id, name, icon: icon ?? undefined, canManage: ownerId===user?.id }))}
-        selectedId={selectedServer?.id ?? null}
-        loading={isLoading}
-        error={error}
-        onSelect={handleSelect}
-        onCreate={() => setCreateDialogOpen(true)}
-        onLogout={logout}
-        onContextMenu={handleContext}
-      />
-      <Menu
-        open={!!menuAnchor}
-        onClose={closeMenu}
-        anchorReference="anchorPosition"
-        anchorPosition={menuAnchor ? {top:menuAnchor.y,left:menuAnchor.x}:undefined}
-      >
-        <MenuItem onClick={openRename}>Переименовать</MenuItem>
-        <MenuItem onClick={handleDelete}>Удалить сервер</MenuItem>
-      </Menu>
-      <CreateServerDialog
+      <SidebarWrapper>
+        <Tooltip title="Космическое пространство" placement="right">
+          <ServerButton isselected={(selectedServer === null).toString()} onClick={() => selectServer(null)}>
+              <Typography sx={{fontWeight: 'bold'}}>@</Typography>
+          </ServerButton>
+        </Tooltip>
+        <StyledDivider />
+        
+        {isLoading ? (
+          <ServerListSkeleton />
+        ) : (
+          servers.map(server => (
+            <ServerItem
+              key={server.id}
+              server={server}
+              isSelected={selectedServer?.id === server.id}
+              onClick={handleServerClick}
+            />
+          ))
+        )}
+        
+        {error && <Typography color="error" sx={{maxWidth: '60px', overflowWrap: 'break-word', fontSize: '10px'}}>{error}</Typography>}
+        
+        <ActionButtons>
+          <Tooltip title="Создать сервер" placement="right">
+            <ServerButton onClick={() => setCreateDialogOpen(true)}>
+              <AddIcon />
+            </ServerButton>
+          </Tooltip>
+          <Tooltip title="Выйти" placement="right">
+            <ServerButton onClick={logout}>
+              <LogoutIcon />
+            </ServerButton>
+          </Tooltip>
+        </ActionButtons>
+      </SidebarWrapper>
+      <CreateServerDialog 
         open={isCreateDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
       />
-      <RenameServerDialog open={isRenameOpen} server={currentContextServer} onClose={()=>setRenameOpen(false)} />
     </>
   );
 };
