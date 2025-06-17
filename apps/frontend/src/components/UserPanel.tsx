@@ -12,6 +12,7 @@ import ScreenShareIcon from '@mui/icons-material/ScreenShare';
 import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
+import { dicebearAvatar } from '@shared/ui';
 
 const ActualVoiceControls: React.FC<{ room: Room }> = ({ room }) => {
     const connectionState = useConnectionState(room);
@@ -100,7 +101,7 @@ const UserPanel: React.FC = () => {
             }}
         >
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Avatar src={user.avatar || undefined} sx={{ width: 32, height: 32, mr: 1.5 }}/>
+                <Avatar src={user.avatar || dicebearAvatar(user.id)} sx={{ width: 32, height: 32, mr: 1.5 }}/>
                 <Typography variant="body1" fontWeight="bold" noWrap>
                     {user.username}
                 </Typography>

@@ -3,6 +3,7 @@ import { Box, ListItem, ListItemAvatar, Avatar, Typography } from '@mui/material
 import { useAuth } from '@shared/hooks';
 import { Message } from '@shared/types';
 import { Interweave } from 'interweave';
+import { dicebearAvatar } from '../lib/ui';
 
 interface ChatMessageProps {
     message: Message;
@@ -18,7 +19,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }: ChatMessa
             <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1, flexDirection: isMe ? 'row-reverse' : 'row' }}>
                 {!isMe && (
                     <ListItemAvatar sx={{ minWidth: 'auto', alignSelf: 'flex-end' }}>
-                        <Avatar alt={message.author?.username} src={message.author?.avatar || undefined} sx={{ width: 32, height: 32 }}/>
+                        <Avatar alt={message.author?.username} src={message.author?.avatar || dicebearAvatar(message.authorId)} sx={{ width: 32, height: 32 }}/>
                     </ListItemAvatar>
                 )}
                 <Box

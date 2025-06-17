@@ -15,6 +15,7 @@ import Mic from '@mui/icons-material/Mic';
 import MicOff from '@mui/icons-material/MicOff';
 import VolumeDown from '@mui/icons-material/VolumeDown';
 import VolumeUp from '@mui/icons-material/VolumeUp';
+import { dicebearAvatar } from '../lib/ui';
 
 export interface MemberListItemData {
   id: string;
@@ -47,7 +48,7 @@ const MemberRow: React.FC<{ member: MemberListItemData }> = ({ member }) => (
     <Box sx={{ display: 'flex', width: '100%', alignItems: 'center' }}>
       <ListItemAvatar>
         <Avatar
-          src={member.avatar || undefined}
+          src={member.avatar || dicebearAvatar(member.id)}
           sx={{
             border: member.isSpeaking ? '2px solid #4ade80' : '2px solid transparent',
             boxShadow: member.isSpeaking ? '0 0 8px #4ade80' : 'none',

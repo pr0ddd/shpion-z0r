@@ -113,7 +113,13 @@ const MicControl = () => {
       >
         <ArrowDropDownIcon fontSize="inherit" sx={{ color: 'white', fontSize: 14 }} />
       </IconButton>
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={closeMenu}>
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={closeMenu}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
         {devices.map((d: MediaDeviceInfo) => (
           <MenuItem key={d.deviceId} selected={d.deviceId === activeDeviceId} onClick={() => handleSelect(d.deviceId)}>
             {d.label || d.deviceId || 'Unknown'}
@@ -157,7 +163,13 @@ const CameraControl = () => {
       >
         <ArrowDropDownIcon fontSize="inherit" sx={{ color: 'white', fontSize: 14 }} />
       </IconButton>
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={closeMenu}>
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={closeMenu}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
         {devices.map((d: MediaDeviceInfo) => (
           <MenuItem key={d.deviceId} selected={d.deviceId === activeDeviceId} onClick={() => handleSelect(d.deviceId)}>
             {d.label || d.deviceId || 'Unknown'}
@@ -201,7 +213,13 @@ const SpeakerSelector = () => {
           <VolumeUpIcon />
         </IconButton>
       </Tooltip>
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={closeMenu}>
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={closeMenu}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
         {devices.map((d: MediaDeviceInfo) => (
           <MenuItem key={d.deviceId} selected={d.deviceId === activeDeviceId} onClick={() => handleSelect(d.deviceId)}>
             {d.label || d.deviceId || 'Unknown'}
@@ -234,6 +252,8 @@ export const VoiceControlBar: React.FC<VoiceControlBarProps> = ({ onDisconnect }
           gap: 2,
           borderRadius: 2,
           padding: 0.5,
+          pt: 1,
+          pb: 1,
           border: '1px solid #2f3136',
         }}
       >

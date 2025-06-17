@@ -34,6 +34,7 @@ import VolumeDown from '@mui/icons-material/VolumeDown';
 import VolumeUp from '@mui/icons-material/VolumeUp';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { dicebearAvatar } from '../lib/ui';
 
 const MemberSkeleton = () => (
   <ListItem>
@@ -68,7 +69,7 @@ const MemberListItem: React.FC<{ participant: Participant; user: User }> = ({
       <Box sx={{ display: 'flex', width: '100%', alignItems: 'center' }}>
         <ListItemAvatar>
           <Avatar
-            src={user.avatar || undefined}
+            src={user.avatar || dicebearAvatar(user.id)}
             sx={{
               border: isSpeaking ? '2px solid #4ade80' : '2px solid transparent',
               boxShadow: isSpeaking ? '0 0 8px #4ade80' : 'none',

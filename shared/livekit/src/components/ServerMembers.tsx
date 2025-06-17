@@ -21,7 +21,7 @@ import {
   useRoomContext,
 } from '@livekit/components-react';
 import { useServer } from '@shared/hooks';
-import { VoiceControlBar } from '@shared/ui';
+import { VoiceControlBar, dicebearAvatar } from '@shared/ui';
 import { Participant, Track } from 'livekit-client';
 import { User } from '@shared/types';
 import Mic from '@mui/icons-material/Mic';
@@ -61,7 +61,7 @@ const MemberListItem: React.FC<{ participant: Participant; user: User }> = ({ pa
       <Box sx={{ display: 'flex', width: '100%', alignItems: 'center' }}>
         <ListItemAvatar>
           <Avatar
-            src={user.avatar || undefined}
+            src={user.avatar || dicebearAvatar(user.id)}
             sx={{
               border: isSpeaking ? '2px solid #4ade80' : '2px solid transparent',
               boxShadow: isSpeaking ? '0 0 8px #4ade80' : 'none',
