@@ -1,8 +1,9 @@
 import React from 'react';
 import { Box, Typography, Avatar, Paper, Divider, IconButton, Tooltip } from '@mui/material';
 import { useAuth } from '@shared/hooks';
-import { ConnectionState, Room, Track, LocalTrack } from 'livekit-client';
+import { ConnectionState, Room, Track } from 'livekit-client';
 import { useConnectionState, useMaybeRoomContext, useTrackMutedIndicator, useTracks } from '@livekit/components-react';
+import { useScreenShare } from '@shared/livekit';
 import { useNotification } from '@shared/hooks';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
@@ -27,12 +28,17 @@ const ActualVoiceControls: React.FC<{ room: Room }> = ({ room }) => {
         return null;
     }
 
+    const { showNotification } = useNotification();
     const onMuteClick = () => {
         room.localParticipant.setMicrophoneEnabled(!isMuted);
     };
 
-    const onCameraClick = () => {
-        room.localParticipant.setCameraEnabled(!isCameraOn);
+    const onCameraClick = async () => {
+        try {
+            await room.localParticipant.setCameraEnabled(!isCameraOn);
+        } catch (err: any) {
+            showNotification(err?.message || 'Cannot access camera', 'error');
+        }
     };
 
     const onDisconnectClick = () => {
@@ -72,55 +78,9 @@ const VoiceControls: React.FC = () => {
 const UserPanel: React.FC = () => {
     const { user } = useAuth();
     const room = useMaybeRoomContext();
-    const { showNotification } = useNotification();
-
-    const screenShareTracks = useTracks([Track.Source.ScreenShare]);
-    const isScreenSharing = screenShareTracks.some(
-        (track) => track.participant.isLocal
-    );
-
-    const onScreenShareClick = async () => {
-        if (!room) {
-            // Можно будет вернуть уведомления позже, если захотите
-            console.error("Room is not available for screen sharing.");
-            return;
-        }
-
-        if (isScreenSharing) {
-            const screenTrackRef = screenShareTracks.find(
-                (trackRef) => trackRef.participant.isLocal
-            );
-            const trackToUnpublish = screenTrackRef?.publication?.track;
-            if (trackToUnpublish && trackToUnpublish instanceof LocalTrack) {
-                room.localParticipant.unpublishTrack(trackToUnpublish);
-            }
-            return;
-        }
-
-        try {
-            const stream = await navigator.mediaDevices.getDisplayMedia({
-                video: true,
-                audio: true,
-            });
-
-            const screenTrack = stream.getVideoTracks()[0];
-            const audioTrack = stream.getAudioTracks()[0];
-
-            await room.localParticipant.publishTrack(screenTrack, {
-                source: Track.Source.ScreenShare,
-                name: 'screen',
-            });
-            
-            // Публикуем аудиодорожку, если она есть
-            if (audioTrack) {
-                await room.localParticipant.publishTrack(audioTrack, {
-                    source: Track.Source.ScreenShareAudio,
-                    name: 'screen-audio',
-                });
-            }
-        } catch (e) {
-            console.error('Could not start screen share:', e);
-        }
+    const { toggle: toggleScreenShare, enabled: isScreenShareEnabled } = useScreenShare();
+    const screenShareButtonProps = {
+      onClick: toggleScreenShare,
     };
 
     if (!user) {
@@ -149,9 +109,9 @@ const UserPanel: React.FC = () => {
             <Divider />
 
             <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-around' }}>
-                <Tooltip title={isScreenSharing ? "Stop Sharing" : "Share Screen"}>
-                    <IconButton onClick={onScreenShareClick}>
-                        {isScreenSharing ? <StopScreenShareIcon /> : <ScreenShareIcon />}
+                <Tooltip title={isScreenShareEnabled ? "Stop Sharing" : "Share Screen"}>
+                    <IconButton {...screenShareButtonProps} color="default">
+                        {isScreenShareEnabled ? <StopScreenShareIcon /> : <ScreenShareIcon />}
                     </IconButton>
                 </Tooltip>
                 {/* Остальные контроли рендерятся только если есть комната */}

@@ -13,6 +13,7 @@ import {
 } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import { useServer } from '@shared/hooks';
+import { useScreenShare } from '@shared/livekit';
 
 export const MediaControlBar = () => {
   const { selectServer } = useServer();
@@ -26,10 +27,8 @@ export const MediaControlBar = () => {
   });
   const isCameraMuted = !cameraTrack || cameraTrack.isMuted;
 
-  const { buttonProps: screenShareButtonProps, enabled: isScreenShareEnabled } = useTrackToggle({
-    source: Track.Source.ScreenShare,
-    captureOptions: { audio: false },
-  });
+  const { toggle: toggleScreen, enabled: isScreenShareEnabled } = useScreenShare();
+  const screenShareButtonProps = { onClick: toggleScreen } as const;
 
   const { buttonProps: disconnectButtonProps } = useDisconnectButton({});
 

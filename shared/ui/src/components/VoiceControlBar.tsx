@@ -1,20 +1,18 @@
 import React from 'react';
-import { Box, IconButton, Tooltip, Typography } from '@mui/material';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faMicrophone,
-  faMicrophoneSlash,
-  faVideo,
-  faVideoSlash,
-  faUpRightFromSquare,
-  faCircleXmark,
-  faPhoneSlash,
-} from '@fortawesome/free-solid-svg-icons';
-import { motion } from 'framer-motion';
-import { useRoomContext } from '@livekit/components-react';
+import { Box, IconButton, Tooltip, Typography, Menu, MenuItem } from '@mui/material';
+import { useRoomContext, useMediaDeviceSelect } from '@livekit/components-react';
 import { useEffect, useState } from 'react';
 import { useScreenShare } from '@shared/livekit';
-import { useServer } from '@shared/hooks';
+import { useServer, useNotification } from '@shared/hooks';
+import MicIcon from '@mui/icons-material/Mic';
+import MicOffIcon from '@mui/icons-material/MicOff';
+import VideocamIcon from '@mui/icons-material/Videocam';
+import VideocamOffIcon from '@mui/icons-material/VideocamOff';
+import ScreenShareIcon from '@mui/icons-material/ScreenShare';
+import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
+import CallEndIcon from '@mui/icons-material/CallEnd';
+import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 interface VoiceControlBarProps {
   onDisconnect: () => void;
@@ -45,6 +43,7 @@ const ToggleButton: React.FC<{
 
 const useLocalToggle = (type: 'mic' | 'cam') => {
   const room = useRoomContext();
+  const { showNotification } = useNotification();
   // version state just to trigger re-render
   const [, force] = useState(0);
 
@@ -54,8 +53,12 @@ const useLocalToggle = (type: 'mic' | 'cam') => {
 
   const toggle = async () => {
     if (!room) return;
-    if (type === 'mic') await room.localParticipant.setMicrophoneEnabled(!enabled);
-    else await room.localParticipant.setCameraEnabled(!enabled);
+    try {
+      if (type === 'mic') await room.localParticipant.setMicrophoneEnabled(!enabled);
+      else await room.localParticipant.setCameraEnabled(!enabled);
+    } catch (err: any) {
+      showNotification(err?.message || 'Cannot access device', 'error');
+    }
   };
 
   useEffect(() => {
@@ -77,31 +80,92 @@ const useLocalToggle = (type: 'mic' | 'cam') => {
   return { enabled, toggle } as const;
 };
 
-const MicrophoneToggle = () => {
+const MicControl = () => {
   const { enabled, toggle } = useLocalToggle('mic');
+  const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({ kind: 'audioinput' });
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
+  const openMenu = (e: React.MouseEvent<HTMLElement>) => {
+    e.stopPropagation(); // prevent toggle
+    setAnchorEl(e.currentTarget);
+  };
+  const closeMenu = () => setAnchorEl(null);
+
+  const handleSelect = async (id: string) => {
+    await setActiveMediaDevice(id);
+    closeMenu();
+  };
+
   return (
-    <ToggleButton
-      enabled={enabled}
-      iconOn={<FontAwesomeIcon icon={faMicrophone} />}
-      iconOff={<FontAwesomeIcon icon={faMicrophoneSlash} color="red" />}
-      titleOn="Включить микрофон"
-      titleOff="Выключить микрофон"
-      onClick={toggle}
-    />
+    <Box sx={{ position: 'relative' }}>
+      <ToggleButton
+        enabled={enabled}
+        iconOn={<MicIcon />}
+        iconOff={<MicOffIcon color="error" />}
+        titleOn="Включить микрофон"
+        titleOff="Выключить микрофон"
+        onClick={toggle}
+      />
+      <IconButton
+        size="small"
+        onClick={openMenu}
+        sx={{ position: 'absolute', bottom: -4, right: -4, bgcolor: '#2f3136', p: '2px', '&:hover': { bgcolor: '#43454a' } }}
+      >
+        <ArrowDropDownIcon fontSize="inherit" sx={{ color: 'white', fontSize: 14 }} />
+      </IconButton>
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={closeMenu}>
+        {devices.map((d: MediaDeviceInfo) => (
+          <MenuItem key={d.deviceId} selected={d.deviceId === activeDeviceId} onClick={() => handleSelect(d.deviceId)}>
+            {d.label || d.deviceId || 'Unknown'}
+          </MenuItem>
+        ))}
+        {devices.length === 0 && <MenuItem disabled>Нет микрофонов</MenuItem>}
+      </Menu>
+    </Box>
   );
 };
 
-const CameraToggle = () => {
+const CameraControl = () => {
   const { enabled, toggle } = useLocalToggle('cam');
+  const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({ kind: 'videoinput' });
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
+  const openMenu = (e: React.MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    setAnchorEl(e.currentTarget);
+  };
+  const closeMenu = () => setAnchorEl(null);
+  const handleSelect = async (id: string) => {
+    await setActiveMediaDevice(id);
+    closeMenu();
+  };
+
   return (
-    <ToggleButton
-      enabled={enabled}
-      iconOn={<FontAwesomeIcon icon={faVideo} />}
-      iconOff={<FontAwesomeIcon icon={faVideoSlash} color="red" />}
-      titleOn="Включить камеру"
-      titleOff="Выключить камеру"
-      onClick={toggle}
-    />
+    <Box sx={{ position: 'relative' }}>
+      <ToggleButton
+        enabled={enabled}
+        iconOn={<VideocamIcon />}
+        iconOff={<VideocamOffIcon color="error" />}
+        titleOn="Включить камеру"
+        titleOff="Выключить камеру"
+        onClick={toggle}
+      />
+      <IconButton
+        size="small"
+        onClick={openMenu}
+        sx={{ position: 'absolute', bottom: -4, right: -4, bgcolor: '#2f3136', p: '2px', '&:hover': { bgcolor: '#43454a' } }}
+      >
+        <ArrowDropDownIcon fontSize="inherit" sx={{ color: 'white', fontSize: 14 }} />
+      </IconButton>
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={closeMenu}>
+        {devices.map((d: MediaDeviceInfo) => (
+          <MenuItem key={d.deviceId} selected={d.deviceId === activeDeviceId} onClick={() => handleSelect(d.deviceId)}>
+            {d.label || d.deviceId || 'Unknown'}
+          </MenuItem>
+        ))}
+        {devices.length === 0 && <MenuItem disabled>Нет камер</MenuItem>}
+      </Menu>
+    </Box>
   );
 };
 
@@ -110,12 +174,42 @@ const ScreenShareToggle = () => {
   return (
     <ToggleButton
       enabled={enabled}
-      iconOn={<FontAwesomeIcon icon={faCircleXmark} />}
-      iconOff={<FontAwesomeIcon icon={faUpRightFromSquare} />}
+      iconOn={<StopScreenShareIcon />}
+      iconOff={<ScreenShareIcon />}
       titleOn="Остановить трансляцию экрана"
       titleOff="Поделиться экраном"
       onClick={toggle}
     />
+  );
+};
+
+const SpeakerSelector = () => {
+  const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({ kind: 'audiooutput' });
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
+  const openMenu = (e: React.MouseEvent<HTMLElement>) => setAnchorEl(e.currentTarget);
+  const closeMenu = () => setAnchorEl(null);
+  const handleSelect = async (id: string) => {
+    await setActiveMediaDevice(id);
+    closeMenu();
+  };
+
+  return (
+    <>
+      <Tooltip title="Вывод звука">
+        <IconButton size="small" onClick={openMenu} sx={{ color: 'white' }}>
+          <VolumeUpIcon />
+        </IconButton>
+      </Tooltip>
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={closeMenu}>
+        {devices.map((d: MediaDeviceInfo) => (
+          <MenuItem key={d.deviceId} selected={d.deviceId === activeDeviceId} onClick={() => handleSelect(d.deviceId)}>
+            {d.label || d.deviceId || 'Unknown'}
+          </MenuItem>
+        ))}
+        {devices.length === 0 && <MenuItem disabled>Нет устройств</MenuItem>}
+      </Menu>
+    </>
   );
 };
 
@@ -130,34 +224,31 @@ export const VoiceControlBar: React.FC<VoiceControlBarProps> = ({ onDisconnect }
   };
 
   return (
-    <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+    <Box sx={{ display: 'flex', justifyContent: 'center', p: 1 }}>
       <Box
         sx={{
           bgcolor: '#1e1f22',
-          borderRadius: 2,
-          px: 2,
-          py: 1,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 1,
+          gap: 2,
+          borderRadius: 2,
+          padding: 0.5,
           border: '1px solid #2f3136',
         }}
       >
-        <Typography variant="body2" color="success.main" sx={{ fontWeight: 'bold' }}>
-          Voice Connected
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <MicrophoneToggle />
-          <CameraToggle />
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'nowrap', justifyContent: 'center', minWidth: 220, '& ul': { listStyle: 'none', p: 0, m: 0 } }}>
+          <MicControl />
+          <CameraControl />
           <ScreenShareToggle />
+          <SpeakerSelector />
           <Tooltip title="Выйти из комнаты">
             <IconButton
               onClick={leave}
               size="small"
               sx={{ color: '#f04747', transition: 'color .2s', '&:hover': { color: '#ff7878' } }}
             >
-              <FontAwesomeIcon icon={faPhoneSlash} />
+              <CallEndIcon />
             </IconButton>
           </Tooltip>
         </Box>

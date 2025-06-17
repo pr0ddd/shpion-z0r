@@ -35,12 +35,18 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       socketRef.current = socket;
 
       socket.on('connect', () => {
-        console.log('🔌 Socket connected:', socket.id);
+        if ((import.meta as any).env?.DEV) {
+          // eslint-disable-next-line no-console
+          console.debug('🔌 Socket connected:', socket.id);
+        }
         setIsConnected(true);
       });
 
       socket.on('disconnect', () => {
-        console.log('🔌 Socket disconnected');
+        if ((import.meta as any).env?.DEV) {
+          // eslint-disable-next-line no-console
+          console.debug('🔌 Socket disconnected');
+        }
         setIsConnected(false);
       });
 

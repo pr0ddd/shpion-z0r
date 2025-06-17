@@ -61,7 +61,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initialAuthCheck();
 
     const handleAuthError = () => {
-      console.log("Auth error detected, logging out.");
+      if ((import.meta as any).env?.DEV) {
+        // eslint-disable-next-line no-console
+        console.debug('Auth error detected, logging out.');
+      }
       logout();
     };
 

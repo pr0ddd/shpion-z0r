@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { Box } from '@mui/material';
 import AuthPage from './components/AuthPage';
 import InvitePage from './components/InvitePage';
-import ProtectedAppLayout from './components/ProtectedAppLayout';
+import AppLayout from './components/AppLayout';
 import { useAuth } from '@shared/hooks';
 import { MediaSourceSelector as SourcePicker, Source } from '@shared/ui';
 import './App.css';
@@ -59,7 +59,7 @@ const App: React.FC = () => {
     <>
       {isPickerVisible && <SourcePicker sources={sources} onSelect={handleSelectSource} onCancel={handleCancelPicker} />}
       <Routes>
-        <Route path="/" element={user ? <ProtectedAppLayout /> : <Navigate to="/auth" />} />
+        <Route path="/" element={user ? <AppLayout /> : <Navigate to="/auth" />} />
         <Route path="/auth" element={!user ? <AuthPage /> : <Navigate to="/" />} />
         <Route path="/invite/:inviteCode" element={<InvitePage />} />
         <Route path="*" element={<Navigate to="/" />} />
