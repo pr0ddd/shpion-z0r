@@ -167,8 +167,9 @@ export class SocketService {
   }
 
   public notifyServerDeleted(serverId: string) {
-    // notify all sockets in room and make them leave
-    this.io.to(`server:${serverId}`).emit('server:deleted', serverId);
+    // broadcast to everyone so список серверов обновился у всех клиентов
+    this.io.emit('server:deleted', serverId);
+    // Additionally, make sockets that are currently in the room leave it
     const room = this.io.sockets.adapter.rooms.get(`server:${serverId}`);
     if (room) {
       for (const sid of room) {
@@ -180,5 +181,15 @@ export class SocketService {
 
   public notifyServerUpdated(server: PrismaServer) {
     this.io.emit('server:updated', server);
+  }
+
+  public notifyServerCreated(server: PrismaServer & { members?: { userId: string }[] }) {
+    // Notify only those users who are already members (typically только владелец сразу после создания)
+    const memberIds = (server.members?.map((m) => m.userId) ?? [server.ownerId]).filter(Boolean);
+    for (const socket of this.io.sockets.sockets.values()) {
+      if (socket.data.user && memberIds.includes(socket.data.user.id)) {
+        socket.emit('server:created', server);
+      }
+    }
   }
 }

@@ -186,6 +186,16 @@ export const useServer = () => {
       }
     });
 
+    socket.on('server:created', (srv: Server) => {
+      const uid = user?.id;
+      if (!uid) return;
+      // check membership list: if owner matches current user or members includes current user
+      if (srv.ownerId !== uid && !(srv as any).members?.some?.((m: any) => m.userId === uid)) return;
+      useServerStore.setState((state) => ({
+        servers: state.servers.some((s) => s.id === srv.id) ? state.servers : [...state.servers, srv],
+      }));
+    });
+
     socket.on('user:listening', (userId: string, listening: boolean) => {
       setListeningState(userId, listening);
     });

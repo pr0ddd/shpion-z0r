@@ -8,6 +8,13 @@ import { LiveKitRoom, useRoomContext } from '@livekit/components-react';
 import { ServerPlaceholder } from '@shared/ui';
 import { useLiveKitToken } from '@shared/livekit';
 import { VideoPresets, AudioPresets, RoomEvent } from 'livekit-client';
+import { useContextMenuGuard } from '@shared/ui';
+
+// Use LiveKit 1080p preset for encoding parameters (30fps, ~4.5-6 Mbps)
+const motion1080p30 = VideoPresets.h1080;
+
+// Override preset to force 60 FPS
+const screenShare60fps = { ...motion1080p30.encoding, maxFramerate: 60 } as const;
 
 const CenteredLoader: React.FC = () => (
   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', flexGrow: 1 }}>
@@ -39,6 +46,9 @@ const AppLayout: React.FC = () => {
   const { token: livekitToken, isLoading: isTokenLoading } = useLiveKitToken(selectedServer);
   const [isConnected, setConnected] = useState(false);
 
+  // disable default context menu globally, allow only whitelisted elements
+  useContextMenuGuard();
+
   if (isServerListLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100vw', height: '100vh', backgroundColor: '#202225' }}>
@@ -64,23 +74,16 @@ const AppLayout: React.FC = () => {
           options={{
             adaptiveStream: false,
             dynacast: false,
-            videoCaptureDefaults: {
-              resolution: { ...VideoPresets.h720.resolution, frameRate: 30 },
-            },
             publishDefaults: {
               videoCodec: 'av1',
-              videoEncoding: {
-                maxBitrate: 3_000_000,
-                maxFramerate: 30,
+              screenShareEncoding: screenShare60fps,
+              backupCodec: {
+                codec: 'vp8',
+                encoding: { ...screenShare60fps, maxBitrate: 8_000_000 },
               },
-              backupCodec: { codec: 'h264', encoding: { maxBitrate: 3_000_000, maxFramerate: 30 } },
-              screenShareEncoding: {
-                maxBitrate: 3_000_000,
-                maxFramerate: 30,
-              },
-              audioPreset: AudioPresets.music,
+              audioPreset: AudioPresets.speech,
               dtx: true,
-              red: true,
+              red: false,
             },
           }}
           style={{ display: 'flex', flexGrow: 1, minWidth: 0, position: 'relative' }}

@@ -32,7 +32,12 @@ export class ServerController {
         inviteCode: uuidv4(),
         members: { create: [{ userId, role: 'ADMIN' }] },
       },
+      include: { members: { select: { userId: true } } },
     });
+
+    const { socketService } = await import('../index');
+    socketService.notifyServerCreated(server);
+
     res.status(201).json({ success: true, data: server });
   }
 

@@ -6,13 +6,21 @@ import {
   Divider,
   Typography,
   Skeleton,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import LogoutIcon from '@mui/icons-material/Logout';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useServer, useAuth } from '@shared/hooks';
 import { Server } from '@shared/types';
 import { CreateServerDialog } from '@shared/ui';
+import { serverAPI } from '@shared/data';
+import { useServerStore } from '@shared/hooks';
+import { useQueryClient } from '@tanstack/react-query';
 
 const SidebarWrapper = styled(Box)(({ theme }) => ({
   width: 72,
@@ -29,7 +37,7 @@ const SidebarWrapper = styled(Box)(({ theme }) => ({
 const ServerButton = styled(Box)<{ isselected?: string }>(({ theme, isselected }) => ({
   width: 48,
   height: 48,
-  cursor: 'pointer',
+  cursor: 'context-menu',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -55,14 +63,22 @@ interface ServerItemProps {
   server: Server;
   isSelected: boolean;
   onClick: (server: Server) => void;
+  currentUserId: string | undefined;
+  onOpenMenu: (serverId: string, pos: {x:number; y:number})=>void;
 }
 
-const ServerItem = memo(({ server, isSelected, onClick }: ServerItemProps) => {
+const ServerItem = memo(({ server, isSelected, onClick, currentUserId, onOpenMenu }: ServerItemProps) => {
   return (
     <Tooltip title={server.name} placement="right">
       <ServerButton
+        className="allow-context"
         isselected={isSelected.toString()}
         onClick={() => onClick(server)}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          if (server.ownerId !== currentUserId) return;
+          onOpenMenu(server.id, {x: e.clientX, y: e.clientY});
+        }}
       >
         {server.icon ? (
           <Avatar src={server.icon} sx={{ width: 48, height: 48 }} />
@@ -94,13 +110,28 @@ const ServerListSkeleton = () => (
 
 const ServersSidebar: React.FC = () => {
   const { servers, selectedServer, isLoading, error, selectServer } = useServer();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const queryClient = useQueryClient();
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
+  const [menu, setMenu] = useState<{id: string; x: number; y: number} | null>(null);
 
   const handleServerClick = useCallback((server: Server) => {
     selectServer(server);
   }, [selectServer]);
-  
+
+  const handleDeleteServer = async () => {
+    if (!menu) return;
+    if (!confirm('Удалить сервер безвозвратно?')) { setMenu(null); return; }
+    try {
+      await serverAPI.deleteServer(menu.id);
+      useServerStore.setState(state=>({servers: state.servers.filter(s=>s.id!==menu.id)}));
+      queryClient.setQueryData(['servers'], (old: any)=> Array.isArray(old) ? old.filter((s:any)=>s.id!==menu.id) : old);
+      if (selectedServer?.id === menu.id) selectServer(null);
+    } finally {
+      setMenu(null);
+    }
+  };
+
   return (
     <>
       <SidebarWrapper>
@@ -120,6 +151,8 @@ const ServersSidebar: React.FC = () => {
               server={server}
               isSelected={selectedServer?.id === server.id}
               onClick={handleServerClick}
+              currentUserId={user?.id}
+              onOpenMenu={(id,pos)=>setMenu({id, ...pos})}
             />
           ))
         )}
@@ -143,6 +176,17 @@ const ServersSidebar: React.FC = () => {
         open={isCreateDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
       />
+      <Menu
+        open={Boolean(menu)}
+        onClose={()=>setMenu(null)}
+        anchorReference="anchorPosition"
+        anchorPosition={menu ? { top: menu.y, left: menu.x } : undefined}
+      >
+        <MenuItem onClick={handleDeleteServer}>
+          <ListItemIcon><DeleteIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Удалить сервер</ListItemText>
+        </MenuItem>
+      </Menu>
     </>
   );
 };

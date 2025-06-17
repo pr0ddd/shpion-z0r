@@ -33,7 +33,6 @@ const CreateServerDialog: React.FC<CreateServerDialogProps> = ({ open, onClose }
     try {
       const response = await serverAPI.createServer(name);
       if (response.success && response.data) {
-        setServers(prev => [...prev, response.data!]);
         handleClose();
       } else {
         setError(response.error || 'Не удалось создать сервер.');

@@ -17,7 +17,7 @@ export const StatsOverlay: React.FC<StatsOverlayProps> = ({ room }) => {
     <div
       style={{
         position: 'fixed',
-        bottom: 8,
+        bottom: 90,
         right: 8,
         fontSize: 12,
         background: 'rgba(0,0,0,0.6)',

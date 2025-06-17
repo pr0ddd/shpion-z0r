@@ -6,37 +6,21 @@ import {
   ListItem,
   ListItemText,
   ListItemAvatar,
-  Avatar,
   Skeleton,
-  Slider,
-  Stack,
   Dialog,
   DialogTitle,
   DialogContent,
   TextField,
   Button,
 } from '@mui/material';
-import {
-  useParticipants,
-  useIsSpeaking,
-  useIsMuted,
-  useTracks,
-  AudioTrack,
-  useRoomContext,
-} from '@livekit/components-react';
+import { useParticipants } from '@livekit/components-react';
 import { useServer } from '@shared/hooks';
 import { VoiceControlBar } from '@shared/ui';
-import { Participant, Track } from 'livekit-client';
+import { Participant } from 'livekit-client';
 import { User, Member } from '@shared/types';
-import Mic from '@mui/icons-material/Mic';
-import MicOff from '@mui/icons-material/MicOff';
-import VolumeDown from '@mui/icons-material/VolumeDown';
-import VolumeUp from '@mui/icons-material/VolumeUp';
-import HeadsetOffIcon from '@mui/icons-material/HeadsetOff';
-import HeadsetIcon from '@mui/icons-material/Headset';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import { dicebearAvatar } from '../lib/ui';
+import { MemberRow } from '@shared/ui';
 
 const MemberSkeleton = () => (
   <ListItem>
@@ -46,81 +30,6 @@ const MemberSkeleton = () => (
     <ListItemText primary={<Skeleton variant="text" width="80%" />} />
   </ListItem>
 );
-
-const MemberListItem: React.FC<{ participant: Participant; user: User; isDeafened: boolean }> = ({
-  participant,
-  user,
-  isDeafened,
-}) => {
-  const room = useRoomContext();
-  const isSpeaking = useIsSpeaking(participant);
-  const isSelf = participant.isLocal;
-  const isMuted = isSelf
-    ? !(room?.localParticipant.isMicrophoneEnabled ?? true)
-    : useIsMuted({ source: Track.Source.Microphone, participant });
-  const [volume, setVolume] = useState(1);
-  const tracks = useTracks([Track.Source.Microphone]);
-
-  const audioTrack = useMemo(
-    () => tracks.find((track) => track.participant.identity === participant.identity),
-    [tracks, participant.identity],
-  );
-
-  return (
-    <ListItem key={user.id} sx={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-      {audioTrack && <AudioTrack trackRef={audioTrack} volume={volume} />}
-      <Box sx={{ display: 'flex', width: '100%', alignItems: 'center' }}>
-        <ListItemAvatar>
-          <Avatar
-            src={user.avatar || dicebearAvatar(user.id)}
-            sx={{
-              border: isSpeaking ? '2px solid #4ade80' : '2px solid transparent',
-              boxShadow: isSpeaking ? '0 0 8px #4ade80' : 'none',
-              transition: 'all 0.2s ease-in-out',
-            }}
-          />
-        </ListItemAvatar>
-        <ListItemText
-          primary={
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography
-                variant="body1"
-                component="span"
-                sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-              >
-                {user.username}
-              </Typography>
-              {/* Mic status */}
-              {isMuted ? (
-                <MicOff sx={{ fontSize: 16, color: 'text.secondary' }} />
-              ) : (
-                <Mic sx={{ fontSize: 16, color: 'text.secondary' }} />
-              )}
-              {/* Listening status */}
-              {isDeafened ? (
-                <HeadsetOffIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-              ) : (
-                <HeadsetIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-              )}
-            </Box>
-          }
-        />
-      </Box>
-      <Stack spacing={2} direction="row" sx={{ width: '100%', px: 2, pt: 1 }} alignItems="center">
-        <VolumeDown />
-        <Slider
-          aria-label="Volume"
-          value={volume}
-          onChange={(e, newValue) => setVolume(newValue as number)}
-          min={0}
-          max={1}
-          step={0.01}
-        />
-        <VolumeUp />
-      </Stack>
-    </ListItem>
-  );
-};
 
 const InviteDialog = ({
   open,
@@ -201,7 +110,7 @@ export const ServerMembers = () => {
             </>
           ) : (
             onlineMembers.map(({ participant, user }) => (
-              <MemberListItem key={participant.sid} participant={participant} user={user} isDeafened={listeningStates?.[user.id] === false} />
+              <MemberRow key={participant.sid} participant={participant} user={user} isDeafened={listeningStates?.[user.id] === false} />
             ))
           )}
         </List>

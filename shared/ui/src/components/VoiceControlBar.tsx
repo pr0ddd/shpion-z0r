@@ -27,14 +27,17 @@ const ToggleButton: React.FC<{
   titleOff: string;
   onClick: () => void;
 }> = ({ enabled, iconOn, iconOff, titleOn, titleOff, onClick }) => (
-  <Tooltip title={enabled ? titleOff : titleOn}>
+  <Tooltip
+    title={enabled ? titleOff : titleOn}
+    placement="top"
+    arrow
+    slotProps={{ popper: { modifiers: [{ name: 'offset', options: { offset: [0, -80] } }] } }}>
     <IconButton
       onClick={onClick}
       size="small"
       sx={{
         color: enabled ? 'white' : '#f04747',
         transition: 'color .2s ease',
-        '&:hover': { color: '#5865F2' },
       }}
     >
       {enabled ? iconOn : iconOff}
@@ -107,13 +110,19 @@ const MicControl = () => {
         titleOff="Выключить микрофон"
         onClick={toggle}
       />
-      <IconButton
-        size="small"
-        onClick={openMenu}
-        sx={{ position: 'absolute', bottom: -4, right: -4, bgcolor: '#2f3136', p: '2px', '&:hover': { bgcolor: '#43454a' } }}
-      >
-        <ArrowDropDownIcon fontSize="inherit" sx={{ color: 'white', fontSize: 14 }} />
-      </IconButton>
+      <Tooltip
+        title="Устройства"
+        placement="top"
+        arrow
+        slotProps={{ popper: { modifiers: [{ name: 'offset', options: { offset: [0, -60] } }] } }}>
+        <IconButton
+          size="small"
+          onClick={openMenu}
+          sx={{ position: 'absolute', bottom: -4, right: -4, bgcolor: '#2f3136', p: '2px', '&:hover': { bgcolor: '#43454a' } }}
+        >
+          <ArrowDropDownIcon fontSize="inherit" sx={{ color: 'white', fontSize: 14 }} />
+        </IconButton>
+      </Tooltip>
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -157,13 +166,19 @@ const CameraControl = () => {
         titleOff="Выключить камеру"
         onClick={toggle}
       />
-      <IconButton
-        size="small"
-        onClick={openMenu}
-        sx={{ position: 'absolute', bottom: -4, right: -4, bgcolor: '#2f3136', p: '2px', '&:hover': { bgcolor: '#43454a' } }}
-      >
-        <ArrowDropDownIcon fontSize="inherit" sx={{ color: 'white', fontSize: 14 }} />
-      </IconButton>
+      <Tooltip
+        title="Устройства"
+        placement="top"
+        arrow
+        slotProps={{ popper: { modifiers: [{ name: 'offset', options: { offset: [0, -60] } }] } }}>
+        <IconButton
+          size="small"
+          onClick={openMenu}
+          sx={{ position: 'absolute', bottom: -4, right: -4, bgcolor: '#2f3136', p: '2px', '&:hover': { bgcolor: '#43454a' } }}
+        >
+          <ArrowDropDownIcon fontSize="inherit" sx={{ color: 'white', fontSize: 14 }} />
+        </IconButton>
+      </Tooltip>
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -231,18 +246,28 @@ const SpeakerControl = () => {
 
   return (
     <Box sx={{ position: 'relative' }}>
-      <Tooltip title={listening ? 'Выключить звук' : 'Включить звук'}>
+      <Tooltip
+        title={listening ? 'Выключить звук' : 'Включить звук'}
+        placement="top"
+        arrow
+        slotProps={{ popper: { modifiers:[{name:'offset',options:{offset:[0,-80]}}] } }}>
         <IconButton size="small" onClick={toggleListening} sx={{ color: listening ? 'white' : '#f04747' }}>
           {listening ? <VolumeUpIcon /> : <VolumeOffIcon />}
         </IconButton>
       </Tooltip>
-      <IconButton
-        size="small"
-        onClick={openMenu}
-        sx={{ position: 'absolute', bottom: -4, right: -4, bgcolor: '#2f3136', p: '2px', '&:hover': { bgcolor: '#43454a' } }}
-      >
-        <ArrowDropDownIcon fontSize="inherit" sx={{ color: 'white', fontSize: 14 }} />
-      </IconButton>
+      <Tooltip
+        title="Устройства"
+        placement="top"
+        arrow
+        slotProps={{ popper: { modifiers: [{ name: 'offset', options: { offset: [0, -60] } }] } }}>
+        <IconButton
+          size="small"
+          onClick={openMenu}
+          sx={{ position: 'absolute', bottom: -4, right: -4, bgcolor: '#2f3136', p: '2px', '&:hover': { bgcolor: '#43454a' } }}
+        >
+          <ArrowDropDownIcon fontSize="inherit" sx={{ color: 'white', fontSize: 14 }} />
+        </IconButton>
+      </Tooltip>
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -272,7 +297,7 @@ export const VoiceControlBar: React.FC<VoiceControlBarProps> = ({ onDisconnect }
   };
 
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', p: 1 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'center'}}>
       <Box
         sx={{
           bgcolor: '#1e1f22',
@@ -281,7 +306,6 @@ export const VoiceControlBar: React.FC<VoiceControlBarProps> = ({ onDisconnect }
           alignItems: 'center',
           gap: 2,
           borderRadius: 2,
-          padding: 0.5,
           pt: 1,
           pb: 1,
           border: '1px solid #2f3136',
@@ -289,10 +313,10 @@ export const VoiceControlBar: React.FC<VoiceControlBarProps> = ({ onDisconnect }
       >
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'nowrap', justifyContent: 'center', minWidth: 220, '& ul': { listStyle: 'none', p: 0, m: 0 } }}>
           <MicControl />
-          <CameraControl />
-          <ScreenShareToggle />
           <SpeakerControl />
-          <Tooltip title="Выйти из комнаты">
+          <CameraControl />   
+          <ScreenShareToggle />
+          <Tooltip title="Выйти из комнаты" placement="top" arrow slotProps={{ popper: { modifiers:[{name:'offset',options:{offset:[0,-80]}}] } }}>
             <IconButton
               onClick={leave}
               size="small"

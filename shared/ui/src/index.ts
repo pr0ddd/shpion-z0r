@@ -19,3 +19,5 @@ export { default as RenameServerDialog } from './components/RenameServerDialog';
 export { default as CreateServerDialog } from './components/CreateServerDialog';
 export { default as MessageList } from './components/MessageList';
 export { CustomChat } from './components/CustomChat';
+export * from './components/MemberRow';
+export * from './hooks/useContextMenuGuard';
