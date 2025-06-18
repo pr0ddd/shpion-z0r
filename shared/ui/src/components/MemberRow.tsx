@@ -47,8 +47,8 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
   // context-menu (right-click) handling
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const openMenu = (e: React.MouseEvent<HTMLElement>) => {
-    if (isSelf) return; // не показываем меню для себя
-    e.preventDefault();
+    e.preventDefault(); // блокируем стандартное меню всегда
+    if (isSelf) return; // не открываем наше меню для себя
     setAnchorEl(e.currentTarget);
   };
   const closeMenu = () => setAnchorEl(null);
@@ -61,12 +61,15 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
         alignItems: 'center',
         px: 1,
         py: 0.5,
+        mb: 0.7,
         borderRadius: 1,
         cursor: 'context-menu',
+        border: '1px solid rgba(255,255,255,0.05)',
         '&:hover': {
           bgcolor: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.15)',
         },
-        transition: 'background-color .15s',
+        transition: 'background-color .15s, border-color .15s',
       }}
     >
       {audioTrack && <AudioTrack trackRef={audioTrack} volume={volume} />}
@@ -107,9 +110,22 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
       </Box>
 
       {/* контекстное меню с ползунком громкости */}
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={closeMenu}>
-        <Box sx={{ width: 180, px: 2, py: 1 }}>
-          <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={closeMenu}
+        MenuListProps={{ disablePadding: true }}
+        PaperProps={{
+          sx: {
+            bgcolor: 'background.paper',
+            borderRadius: 2,
+            p: 1,
+            minWidth: 220,
+          },
+        }}
+      >
+        <Box sx={{ px: 1.5, py: 1 }}>
+          <Typography variant="caption" sx={{ display: 'block', mb: 1, color: 'text.secondary' }}>
             Громкость
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -120,12 +136,16 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
               max={1}
               step={0.01}
               onChange={(_, v) => setVolume(v as number)}
-              sx={{ mx: 1 }}
+              color="primary"
+              size="small"
+              sx={{ mx: 1, flex: 1 }}
             />
             <VolumeUpIcon fontSize="small" sx={{ color: 'text.secondary' }} />
           </Box>
         </Box>
-        <MenuItem onClick={() => { navigator.clipboard.writeText(user.id); closeMenu(); }}>Копировать ID</MenuItem>
+        <MenuItem onClick={() => { navigator.clipboard.writeText(user.id); closeMenu(); }}>
+          Копировать ID
+        </MenuItem>
       </Menu>
     </Box>
   );

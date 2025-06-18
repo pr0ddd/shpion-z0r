@@ -61,21 +61,21 @@ const themeOptions: ThemeOptions = {
   palette: {
     mode: 'dark', // Используем темную тему, как это часто бывает в игровых приложениях
     primary: {
-      main: '#2B2D31', // Базовый акцент — тёмно-серый C
-      light: lighten('#2B2D31', 0.25),
-      dark: '#1F2023',
-      contrastText: '#E2E3E5',
+      main: '#5865F2', // Discord blurple
+      light: lighten('#5865F2', 0.2),
+      dark: '#4752c4',
+      contrastText: '#ffffff',
     },
     secondary: {
-      main: '#B9BBBE', // Светло-серый D
+      main: '#B9BBBE', // light grey for secondary text/icons
     },
     background: {
-      default: '#141517', // Почти чёрный A
-      paper: '#1F2023',  // Тёмный B (панели/сайдбар)
+      default: '#1E1F22', // dark background
+      paper: '#2B2D31', // slightly lighter panels
     },
     text: {
-      primary: '#E2E3E5', // Очень светлый серый (E)
-      secondary: '#B9BBBE', // Светлый серый D
+      primary: '#F2F3F5',
+      secondary: '#B8B9BF',
     },
     success: {
         main: '#2DC770', // Яркий зеленый
@@ -85,7 +85,7 @@ const themeOptions: ThemeOptions = {
     },
     discord: {
       sidebar: '#202225',
-      blurple: '#2B2D31', // используем базовый акцент
+      blurple: '#537A5A', // new primary
       green: '#43b581',
       grey: '#36393f',
       members_bg: '#2f3136',
@@ -108,12 +108,12 @@ const themeOptions: ThemeOptions = {
       border: '#202225',
     },
     sidebar: {
-        background: '#1F2023',
-        border: 'rgba(255, 255, 255, 0.08)',
+        background: '#2F3136',
+        border: 'rgba(255, 255, 255, 0.12)',
     },
     action: {
-      hover: lighten('#2B2D31', 0.08),
-      selected: lighten('#2B2D31', 0.25),
+      hover: '#40444B',
+      selected: '#5865F2',
       selectedOpacity: 0.24,
     },
   },
@@ -239,9 +239,9 @@ const themeOptions: ThemeOptions = {
         root: ({ theme }) => ({
           marginInline: theme.spacing(1),
           borderRadius: 5,
-          '&:hover': { backgroundColor: lighten('#2B2D31', 0.08) },
-          '&.Mui-selected': { backgroundColor: lighten('#2B2D31', 0.25) },
-          '&.Mui-selected:hover': { backgroundColor: lighten('#2B2D31', 0.35) },
+          '&:hover': { backgroundColor: '#40444B' },
+          '&.Mui-selected': { backgroundColor: '#5865F2', color: '#fff' },
+          '&.Mui-selected:hover': { backgroundColor: lighten('#5865F2', 0.15) },
           '& + .MuiMenuItem-root': { marginTop: theme.spacing(1) },
         }),
       },

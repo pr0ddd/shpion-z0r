@@ -40,20 +40,28 @@ export const ServerButton = styled(Box, {
   cursor: 'context-menu',
   transition: 'transform .2s',
   borderRadius: 12,
+  pb: 2,
   // default non-selected state
   backgroundColor: theme.palette.background.paper,
   color: theme.palette.text.secondary,
 
   // gradient styles for selected
   ...(isselected === 'true' && {
-    backgroundColor: theme.palette.primary.light,
-    color: theme.palette.text.primary,
+    backgroundColor: theme.palette.primary.main,
+    color: theme.palette.primary.contrastText,
   }),
 
   '&:hover': {
-    backgroundColor: theme.palette.primary.main,
-    color: theme.palette.getContrastText(theme.palette.primary.main),
     transform: 'scale(1.05)',
+    ...(isselected === 'true'
+      ? {
+          backgroundColor: lighten(theme.palette.primary.main, 0.15),
+          color: theme.palette.primary.contrastText,
+        }
+      : {
+          backgroundColor: lighten(theme.palette.background.paper, 0.1),
+          color: theme.palette.text.primary,
+        }),
   },
 }));
 
