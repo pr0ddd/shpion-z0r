@@ -9,20 +9,37 @@ export class MessageController {
   static async getMessages(req: AuthenticatedRequest, res: Response<ApiResponse>) {
     const { serverId } = req.params;
     const userId = req.user!.id;
-    
-      const member = await prisma.member.findUnique({
+    const { before } = req.query as { before?: string };
+
+    const PAGE_SIZE = 50;
+
+    const member = await prisma.member.findUnique({
       where: { userId_serverId: { userId, serverId } },
-      });
-
-      if (!member) {
-      throw new ApiError(403, "You are not a member of this server");
-      }
-
-      const messages = await prisma.message.findMany({
-      where: { serverId },
-      include: { author: { select: { id: true, username: true, avatar: true } } },
-      orderBy: { createdAt: 'asc' },
     });
+
+    if (!member) {
+      throw new ApiError(403, "You are not a member of this server");
+    }
+
+    const where: any = { serverId };
+    if (before) {
+      // fetch messages strictly older than provided cursor
+      where.createdAt = { lt: new Date(before) };
+    }
+
+    const fetched = await prisma.message.findMany({
+      where,
+      include: {
+        author: {
+          select: { id: true, username: true, avatar: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: PAGE_SIZE,
+    });
+
+    // Return in chronological (asc) order so UI can simply append/prepend.
+    const messages = fetched.reverse();
 
     res.json({ success: true, data: messages });
   }

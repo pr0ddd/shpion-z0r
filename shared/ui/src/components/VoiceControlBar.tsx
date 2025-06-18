@@ -118,7 +118,7 @@ const MicControl = () => {
         <IconButton
           size="small"
           onClick={openMenu}
-          sx={{ position: 'absolute', bottom: -4, right: -4, bgcolor: '#2f3136', p: '2px', '&:hover': { bgcolor: '#43454a' } }}
+          sx={{cursor: 'context-menu', position: 'absolute', bottom: -4, right: -4, bgcolor: '#2f3136', p: '2px', '&:hover': { bgcolor: '#43454a' } }}
         >
           <ArrowDropDownIcon fontSize="inherit" sx={{ color: 'white', fontSize: 14 }} />
         </IconButton>

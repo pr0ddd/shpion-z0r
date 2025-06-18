@@ -5,6 +5,7 @@ import { useSocket } from '../contexts/SocketContext';
 import { serverAPI, messageAPI } from '@shared/data';
 import { Message, Server } from '@shared/types';
 import { useServersQuery } from '../query/useServersQuery';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Global semaphore to deduplicate parallel fetches across hook instances
 let globalLoadingServerId: string | null = null;
@@ -38,9 +39,11 @@ export const useServer = () => {
   const setServersInitialized = useServerStore((s) => s.setServersInitialized);
   const addMessagesBatch = useServerStore((s) => s.addMessages);
   const setListeningState = useServerStore((s) => s.setListeningState);
+  const setTransitioning = useServerStore((s) => s.setTransitioning);
 
   const { user } = useAuth();
   const { socket } = useSocket();
+  const queryClient = useQueryClient();
 
   // Ref for selectedServer to avoid stale closures
   const selectedServerRef = useRef<Server | null>(null);
@@ -80,6 +83,7 @@ export const useServer = () => {
     if (server?.id === selectedServerRef.current?.id) return; // already selected
     if (server && (loadingServerIdRef.current === server.id || globalLoadingServerId === server.id)) return; // fetch in progress
     loadingServerIdRef.current = server ? server.id : null;
+    setTransitioning(!!server);
     globalLoadingServerId = server ? server.id : null;
     if (socket) {
       if (selectedServerRef.current) {
@@ -98,6 +102,7 @@ export const useServer = () => {
       setMessages([]);
       loadingServerIdRef.current = null;
       globalLoadingServerId = null;
+      setTransitioning(false);
       return;
     }
     setMembersLoading(true);
@@ -112,8 +117,9 @@ export const useServer = () => {
       setMembersLoading(false);
       loadingServerIdRef.current = null;
       globalLoadingServerId = null;
+      setTransitioning(false);
     }
-  }, [socket, _setSelectedServer, setMembers, setMessages, setMembersLoading]);
+  }, [socket, _setSelectedServer, setMembers, setMessages, setMembersLoading, setTransitioning]);
 
   // clean up on logout
   useEffect(() => {
@@ -172,28 +178,52 @@ export const useServer = () => {
       if (selectedServerRef.current?.id === srvId) {
         setSelectedServer(null);
       }
-      // also remove server from list
-      useServerStore.setState((state)=>({servers: state.servers.filter(s=>s.id!==srvId)}));
+      // Удаляем из Zustand (на период перехода)
+      useServerStore.setState((state) => ({ servers: state.servers.filter((s) => s.id !== srvId) }));
+      // И сразу же правим кэш React-Query
+      queryClient.setQueryData(['servers'], (old: any) => {
+        if (!Array.isArray(old)) return old;
+        return old.filter((s: any) => s.id !== srvId);
+      });
     });
 
     socket.on('server:updated', (srv: Server) => {
-      // update servers list and selected server details if relevant
+      // Zustand (будет удалён позже)
       useServerStore.setState((state) => ({
-        servers: state.servers.map((s) => (s.id === srv.id ? { ...s, name: srv.name, icon: srv.icon } : s)),
+        servers: state.servers.map((s) =>
+          s.id === srv.id ? { ...s, name: srv.name, icon: srv.icon ?? s.icon } : s
+        ),
       }));
+      // React-Query кэш
+      queryClient.setQueryData(['servers'], (old: any) => {
+        if (!Array.isArray(old)) return old;
+        return old.map((s: any) => (s.id === srv.id ? { ...s, name: srv.name, icon: srv.icon ?? s.icon } : s));
+      });
       if (selectedServerRef.current?.id === srv.id) {
-        useServerStore.setState({ selectedServer: { ...selectedServerRef.current, name: srv.name, icon: srv.icon } as any });
+        useServerStore.setState({
+          selectedServer: {
+            ...selectedServerRef.current!,
+            name: srv.name,
+            icon: srv.icon ?? selectedServerRef.current!.icon,
+          } as any,
+        });
       }
     });
 
     socket.on('server:created', (srv: Server) => {
       const uid = user?.id;
       if (!uid) return;
-      // check membership list: if owner matches current user or members includes current user
       if (srv.ownerId !== uid && !(srv as any).members?.some?.((m: any) => m.userId === uid)) return;
+      // Zustand temporary
       useServerStore.setState((state) => ({
         servers: state.servers.some((s) => s.id === srv.id) ? state.servers : [...state.servers, srv],
       }));
+      // React-Query кэш
+      queryClient.setQueryData(['servers'], (old: any) => {
+        if (!Array.isArray(old)) return [srv];
+        if (old.some((s: any) => s.id === srv.id)) return old;
+        return [...old, srv];
+      });
     });
 
     socket.on('user:listening', (userId: string, listening: boolean) => {

@@ -15,11 +15,11 @@ import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import LogoutIcon from '@mui/icons-material/Logout';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { useServer, useAuth } from '@shared/hooks';
+import { useAuth } from '@shared/hooks';
+import { useServersQuery, useSelectServer, useAppStore } from '@shared/hooks';
 import { Server } from '@shared/types';
 import { CreateServerDialog } from '@shared/ui';
 import { serverAPI } from '@shared/data';
-import { useServerStore } from '@shared/hooks';
 import { useQueryClient } from '@tanstack/react-query';
 
 const SidebarWrapper = styled(Box)(({ theme }) => ({
@@ -109,14 +109,17 @@ const ServerListSkeleton = () => (
 );
 
 const ServersSidebar: React.FC = () => {
-  const { servers, selectedServer, isLoading, error, selectServer } = useServer();
+  const { data: serversData, isLoading, error } = useServersQuery();
+  const servers: Server[] = serversData ?? [];
+  const selectedServerId = useAppStore((s)=>s.selectedServerId);
+  const selectServer = useSelectServer();
   const { logout, user } = useAuth();
   const queryClient = useQueryClient();
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
   const [menu, setMenu] = useState<{id: string; x: number; y: number} | null>(null);
 
   const handleServerClick = useCallback((server: Server) => {
-    selectServer(server);
+    selectServer(server.id, server.name);
   }, [selectServer]);
 
   const handleDeleteServer = async () => {
@@ -124,9 +127,8 @@ const ServersSidebar: React.FC = () => {
     if (!confirm('Удалить сервер безвозвратно?')) { setMenu(null); return; }
     try {
       await serverAPI.deleteServer(menu.id);
-      useServerStore.setState(state=>({servers: state.servers.filter(s=>s.id!==menu.id)}));
       queryClient.setQueryData(['servers'], (old: any)=> Array.isArray(old) ? old.filter((s:any)=>s.id!==menu.id) : old);
-      if (selectedServer?.id === menu.id) selectServer(null);
+      if (selectedServerId === menu.id) selectServer(null);
     } finally {
       setMenu(null);
     }
@@ -136,7 +138,7 @@ const ServersSidebar: React.FC = () => {
     <>
       <SidebarWrapper>
         <Tooltip title="Космическое пространство" placement="right">
-          <ServerButton isselected={(selectedServer === null).toString()} onClick={() => selectServer(null)}>
+          <ServerButton isselected={(selectedServerId === null).toString()} onClick={() => selectServer(null)}>
               <Typography sx={{fontWeight: 'bold'}}>@</Typography>
           </ServerButton>
         </Tooltip>
@@ -149,7 +151,7 @@ const ServersSidebar: React.FC = () => {
             <ServerItem
               key={server.id}
               server={server}
-              isSelected={selectedServer?.id === server.id}
+              isSelected={selectedServerId === server.id}
               onClick={handleServerClick}
               currentUserId={user?.id}
               onOpenMenu={(id,pos)=>setMenu({id, ...pos})}
@@ -157,7 +159,11 @@ const ServersSidebar: React.FC = () => {
           ))
         )}
         
-        {error && <Typography color="error" sx={{maxWidth: '60px', overflowWrap: 'break-word', fontSize: '10px'}}>{error}</Typography>}
+        {error && (
+          <Typography color="error" sx={{ maxWidth: '60px', overflowWrap: 'break-word', fontSize: '10px' }}>
+            {typeof error === 'string' ? error : (error as any).message || String(error)}
+          </Typography>
+        )}
         
         <ActionButtons>
           <Tooltip title="Создать сервер" placement="right">

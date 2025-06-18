@@ -26,6 +26,8 @@ interface ServerStoreState {
   setOptimisticMessageStatus: (id: string, status: 'failed') => void;
   listeningStates: Record<string, boolean>;
   setListeningState: (userId: string, listening: boolean) => void;
+  isTransitioning: boolean;
+  setTransitioning: (v: boolean) => void;
 }
 
 export const useServerStore = create<ServerStoreState>()((set) => ({
@@ -80,6 +82,8 @@ export const useServerStore = create<ServerStoreState>()((set) => ({
       ),
     })),
   listeningStates: {},
+  isTransitioning: false,
+  setTransitioning: (v) => set({ isTransitioning: v }),
   setListeningState: (userId, listening) =>
     set((state: ServerStoreState) => ({
       listeningStates: { ...state.listeningStates, [userId]: listening },

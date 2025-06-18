@@ -8,4 +8,13 @@ export * from './contexts/VoiceConnectionContext';
 export * from './store/useServer';
 export * from './store/useServerStore';
 export * from './providers/ServerProvider';
-export * from './query/useServersQuery';
+// export of old query removed; use new api/useServers instead
+// --- new unified app store & hooks (2025 refactor) ---
+export * from '../store/useAppStore';
+export * from '../api/useServers';
+export * from '../api/useMembers';
+export * from '../api/useMessages';
+export * from '../api/useInfiniteMessages';
+export * from '../useServersSocketSync';
+export * from '../useSelectServer';
+export * from '../useMessagesSocketSync';

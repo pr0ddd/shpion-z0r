@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Alert, Box, CircularProgress } from '@mui/material';
 import { serverAPI } from '@shared/data';
 import { useServer } from '@shared/hooks';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface CreateServerDialogProps {
   open: boolean;
@@ -9,10 +10,11 @@ interface CreateServerDialogProps {
 }
 
 const CreateServerDialog: React.FC<CreateServerDialogProps> = ({ open, onClose }) => {
-  const { setServers } = useServer();
+  const { selectServer } = useServer();
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleClose = () => {
     setName('');
@@ -33,6 +35,15 @@ const CreateServerDialog: React.FC<CreateServerDialogProps> = ({ open, onClose }
     try {
       const response = await serverAPI.createServer(name);
       if (response.success && response.data) {
+        queryClient.setQueryData(['servers'], (old: any) => {
+          if (!Array.isArray(old)) return [response.data];
+          if (old.some((s: any) => s.id === response.data!.id)) return old;
+          return [...old, response.data];
+        });
+
+        queryClient.invalidateQueries({ queryKey: ['servers'] });
+
+        selectServer(response.data);
         handleClose();
       } else {
         setError(response.error || 'Не удалось создать сервер.');
