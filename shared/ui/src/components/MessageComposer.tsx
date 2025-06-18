@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Box, TextField, IconButton } from '@mui/material';
 import { Send } from '@mui/icons-material';
 import { useAppStore, useAuth, useSocket } from '@shared/hooks';
-import { useQueryClient, InfiniteData } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { patchFirstMessagesPage } from '@shared/hooks';
 import { Message } from '@shared/types';
 
 /**
@@ -17,6 +18,8 @@ export const MessageComposer: React.FC = () => {
   const { socket } = useSocket();
   const [text, setText] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  // keep track of pending timeout IDs so we can clear them on unmount
+  const pendingTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // Auto-focus при монтировании
   useEffect(() => {
@@ -40,42 +43,20 @@ export const MessageComposer: React.FC = () => {
       author: user ? { id: user.id, username: user.username, avatar: user.avatar } as any : undefined,
     } as Message;
 
-    qc.setQueryData<InfiniteData<{messages:Message[];hasMore:boolean}>>(['messages', serverId], (old)=>{
-      if(!old) return old;
-      const firstPage = old.pages[0];
-      const newFirst = {...firstPage, messages:[...firstPage.messages, optimistic]};
-      return {...old, pages:[newFirst,...old.pages.slice(1)]};
-    });
+    patchFirstMessagesPage(qc, serverId, (msgs: Message[])=>[...msgs, optimistic]);
 
     // send via socket
     if (socket?.connected) {
       socket.emit('message:send', { serverId, content: value, clientNonce } as any, (ack: { success: boolean }) => {
         if (ack.success) {
           // real message will arrive via 'message:new'; remove temp if still there after timeout fallback.
-          setTimeout(() => {
-            qc.setQueryData<InfiniteData<{ messages: Message[]; hasMore: boolean }>>(
-              ['messages', serverId],
-              (old) => {
-                if (!old) return old;
-                const firstPage = old.pages[0];
-                const msgs = firstPage.messages.filter((m) => m.id !== tempId);
-                return { ...old, pages: [{ ...firstPage, messages: msgs }, ...old.pages.slice(1)] };
-              },
-            );
+          const tid = setTimeout(() => {
+            patchFirstMessagesPage(qc, serverId, (arr: Message[])=> arr.filter((m)=> m.id !== tempId));
           }, 4000);
+          pendingTimeouts.current.push(tid);
         } else {
           // ack fail: mark failed
-          qc.setQueryData<InfiniteData<{ messages: Message[]; hasMore: boolean }>>(
-            ['messages', serverId],
-            (old) => {
-              if (!old) return old;
-              const firstPage = old.pages[0];
-              const msgs = firstPage.messages.map((m) =>
-                m.id === tempId ? { ...m, status: 'failed' } as any : m,
-              );
-              return { ...old, pages: [{ ...firstPage, messages: msgs }, ...old.pages.slice(1)] };
-            },
-          );
+          patchFirstMessagesPage(qc, serverId, (arr: Message[])=> arr.map((m: Message)=> m.id===tempId? { ...m, status:'failed'} as Message : m));
         }
       });
     }
@@ -93,6 +74,14 @@ export const MessageComposer: React.FC = () => {
       doSend();
     }
   };
+
+  // clear all pending timeouts on unmount to avoid leaks
+  useEffect(() => {
+    return () => {
+      pendingTimeouts.current.forEach(clearTimeout);
+      pendingTimeouts.current = [];
+    };
+  }, []);
 
   return (
     <Box sx={{ p: 2, borderTop: (theme) => `1px solid ${theme.palette.chat.border}`, flexShrink: 0, mt: 'auto' }}>

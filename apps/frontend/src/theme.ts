@@ -1,4 +1,4 @@
-import { createTheme, ThemeOptions } from '@mui/material/styles';
+import { createTheme, ThemeOptions, lighten } from '@mui/material/styles';
 
 // Расширяем интерфейс PaletteOptions для TypeScript
 declare module '@mui/material/styles' {
@@ -61,18 +61,21 @@ const themeOptions: ThemeOptions = {
   palette: {
     mode: 'dark', // Используем темную тему, как это часто бывает в игровых приложениях
     primary: {
-      main: '#5865F2', // Яркий сине-фиолетовый (Blurple)
+      main: '#2B2D31', // Базовый акцент — тёмно-серый C
+      light: lighten('#2B2D31', 0.25),
+      dark: '#1F2023',
+      contrastText: '#E2E3E5',
     },
     secondary: {
-      main: '#B9BBBE', // Светло-серый для второстепенного текста
+      main: '#B9BBBE', // Светло-серый D
     },
     background: {
-      default: '#1e1f22', // Очень темный, почти черный фон
-      paper: '#2b2d31', // Фон для панелей, чуть светлее
+      default: '#141517', // Почти чёрный A
+      paper: '#1F2023',  // Тёмный B (панели/сайдбар)
     },
     text: {
-      primary: '#f2f3f5', // Яркий белый для основного текста
-      secondary: '#b8b9bf', // Приглушенный серый для вторичного текста
+      primary: '#E2E3E5', // Очень светлый серый (E)
+      secondary: '#B9BBBE', // Светлый серый D
     },
     success: {
         main: '#2DC770', // Яркий зеленый
@@ -82,7 +85,7 @@ const themeOptions: ThemeOptions = {
     },
     discord: {
       sidebar: '#202225',
-      blurple: '#5865f2',
+      blurple: '#2B2D31', // используем базовый акцент
       green: '#43b581',
       grey: '#36393f',
       members_bg: '#2f3136',
@@ -105,9 +108,14 @@ const themeOptions: ThemeOptions = {
       border: '#202225',
     },
     sidebar: {
-        background: '#2f3136',
-        border: 'rgba(255, 255, 255, 0.12)',
-    }
+        background: '#1F2023',
+        border: 'rgba(255, 255, 255, 0.08)',
+    },
+    action: {
+      hover: lighten('#2B2D31', 0.08),
+      selected: lighten('#2B2D31', 0.25),
+      selectedOpacity: 0.24,
+    },
   },
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
@@ -204,7 +212,7 @@ const themeOptions: ThemeOptions = {
             width: '8px',
           },
           '*::-webkit-scrollbar-track': {
-            background: '#2f3136',
+            background: '#141517',
           },
           '*::-webkit-scrollbar-thumb': {
             backgroundColor: '#202225',
@@ -217,13 +225,34 @@ const themeOptions: ThemeOptions = {
         },
       },
     },
+    MuiMenu: {
+      styleOverrides: {
+        paper: ({ theme }) => ({
+          backgroundColor: theme.palette.grey[900],
+          borderRadius: 8,
+          paddingBlock: 4,
+        }),
+      },
+    },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: ({ theme }) => ({
+          marginInline: theme.spacing(1),
+          borderRadius: 5,
+          '&:hover': { backgroundColor: lighten('#2B2D31', 0.08) },
+          '&.Mui-selected': { backgroundColor: lighten('#2B2D31', 0.25) },
+          '&.Mui-selected:hover': { backgroundColor: lighten('#2B2D31', 0.35) },
+          '& + .MuiMenuItem-root': { marginTop: theme.spacing(1) },
+        }),
+      },
+    },
   },
 };
 
 // Manually add the custom palette because createTheme strips unknown properties.
 (themeOptions.palette as any).discord = {
   sidebar: '#202225',
-  blurple: '#5865f2',
+  blurple: '#40444b', // старое название поля, но цвет изменён
   green: '#43b581',
   grey: '#36393f',
   members_bg: '#2f3136',

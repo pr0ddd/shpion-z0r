@@ -13,3 +13,9 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Show context-menu cursor over elements that open on right-click */
+.allow-context,
+.allow-context * {
+  cursor: pointer;
+}

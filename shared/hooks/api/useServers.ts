@@ -18,7 +18,7 @@ export const useServersQuery = () =>
 export const useCreateServer = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (name: string) => serverAPI.createServer(name),
+    mutationFn: async (params: { name: string; description?: string; icon?: string | null; sfuHost?: string; sfuPort?: number }) => await serverAPI.createServer(params),
     onSuccess: (res: any) => {
       if (!res.success || !res.data) return;
       qc.setQueryData<Server[]>(['servers'], (old) => (old ? [...old, res.data!] : [res.data!]));
@@ -31,7 +31,7 @@ export const useCreateServer = () => {
 export const useDeleteServer = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => serverAPI.deleteServer(id),
+    mutationFn: async (id: string) => await serverAPI.deleteServer(id),
     onSuccess: (_, id) => {
       qc.setQueryData<Server[]>(['servers'], (old) => old?.filter((s) => s.id !== id));
       qc.invalidateQueries({ queryKey: ['servers'] });

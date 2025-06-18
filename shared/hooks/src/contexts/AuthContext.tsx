@@ -23,6 +23,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // prevent multiple parallel logout requests
   const isLoggingOutRef = React.useRef(false);
 
+  // local-only logout (token invalid / 401) – no network trip
+  const doLocalLogout = () => {
+    localStorage.removeItem('authToken');
+    setUser(null);
+    setToken(null);
+  };
+
+  // Full logout invoked from UI button – hits backend once, guarded against repeats
   const logout = useCallback(() => {
     if (isLoggingOutRef.current) return;
     isLoggingOutRef.current = true;
@@ -31,9 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .finally(() => {
         isLoggingOutRef.current = false;
       });
-    localStorage.removeItem('authToken');
-    setUser(null);
-    setToken(null);
+    doLocalLogout();
   }, []);
 
   useEffect(() => {
@@ -63,9 +69,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const handleAuthError = () => {
       if ((import.meta as any).env?.DEV) {
         // eslint-disable-next-line no-console
-        console.debug('Auth error detected, logging out.');
+        console.debug('Auth error detected, doing local logout.');
       }
-      logout();
+      doLocalLogout();
     };
 
     window.addEventListener('auth-error', handleAuthError);
@@ -74,7 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       window.removeEventListener('auth-error', handleAuthError);
     };
 
-  }, [logout]);
+  }, []);
 
   const handleAuthSuccess = useCallback((data: LoginResponseData) => {
     const { user, token: newToken } = data;

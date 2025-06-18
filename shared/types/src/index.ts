@@ -33,6 +33,9 @@ export interface Server {
   id: string;
   name: string;
   icon: string | null;
+  description?: string | null;
+  sfuId?: string | null;
+  sfu?: SfuServer | null;
   inviteCode: string;
   ownerId: string;
   members: Member[];
@@ -100,4 +103,10 @@ export interface ClientToServerEvents {
     callback: (ack: { success: boolean }) => void,
   ) => void;
   'user:listening': (listening: boolean) => void;
+}
+
+export interface SfuServer {
+  id: string;
+  name: string;
+  url: string;
 } 

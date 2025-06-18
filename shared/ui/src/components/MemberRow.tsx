@@ -21,7 +21,7 @@ interface MemberRowProps {
   isDeafened: boolean;
 }
 
-export const MemberRow: React.FC<MemberRowProps> = ({ participant, user, isDeafened }) => {
+const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafened }) => {
   const room = useRoomContext();
   const isSpeaking = useIsSpeaking(participant);
   const isSelf = participant.isLocal;
@@ -130,5 +130,17 @@ export const MemberRow: React.FC<MemberRowProps> = ({ participant, user, isDeafe
     </Box>
   );
 };
+
+// prevent unnecessary re-renders by comparing shallow props & participant state that matter
+export const MemberRow = React.memo(MemberRowInner, (prev, next) => {
+  return (
+    prev.participant.sid === next.participant.sid &&
+    prev.participant.connectionQuality === next.participant.connectionQuality &&
+    prev.isDeafened === next.isDeafened &&
+    prev.user.id === next.user.id &&
+    prev.user.username === next.user.username &&
+    prev.user.avatar === next.user.avatar
+  );
+});
 
 export default MemberRow; 

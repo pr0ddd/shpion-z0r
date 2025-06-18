@@ -84,66 +84,17 @@ const useLocalToggle = (type: 'mic' | 'cam') => {
   return { enabled, toggle } as const;
 };
 
-const MicControl = () => {
-  const { enabled, toggle } = useLocalToggle('mic');
-  const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({ kind: 'audioinput' });
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-
-  const openMenu = (e: React.MouseEvent<HTMLElement>) => {
-    e.stopPropagation(); // prevent toggle
-    setAnchorEl(e.currentTarget);
-  };
-  const closeMenu = () => setAnchorEl(null);
-
-  const handleSelect = async (id: string) => {
-    await setActiveMediaDevice(id);
-    closeMenu();
-  };
-
-  return (
-    <Box sx={{ position: 'relative' }}>
-      <ToggleButton
-        enabled={enabled}
-        iconOn={<MicIcon />}
-        iconOff={<MicOffIcon color="error" />}
-        titleOn="Включить микрофон"
-        titleOff="Выключить микрофон"
-        onClick={toggle}
-      />
-      <Tooltip
-        title="Устройства"
-        placement="top"
-        arrow
-        slotProps={{ popper: { modifiers: [{ name: 'offset', options: { offset: [0, -60] } }] } }}>
-        <IconButton
-          size="small"
-          onClick={openMenu}
-          sx={{cursor: 'context-menu', position: 'absolute', bottom: -4, right: -4, bgcolor: '#2f3136', p: '2px', '&:hover': { bgcolor: '#43454a' } }}
-        >
-          <ArrowDropDownIcon fontSize="inherit" sx={{ color: 'white', fontSize: 14 }} />
-        </IconButton>
-      </Tooltip>
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={closeMenu}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        {devices.map((d: MediaDeviceInfo) => (
-          <MenuItem key={d.deviceId} selected={d.deviceId === activeDeviceId} onClick={() => handleSelect(d.deviceId)}>
-            {d.label || d.deviceId || 'Unknown'}
-          </MenuItem>
-        ))}
-        {devices.length === 0 && <MenuItem disabled>Нет микрофонов</MenuItem>}
-      </Menu>
-    </Box>
-  );
-};
-
-const CameraControl = () => {
-  const { enabled, toggle } = useLocalToggle('cam');
-  const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({ kind: 'videoinput' });
+// Generic menu-based device toggle (mic/cam)
+const DeviceControl: React.FC<{
+  type: 'mic' | 'cam';
+  kind: 'audioinput' | 'videoinput';
+  iconOn: React.ReactNode;
+  iconOff: React.ReactNode;
+  titleOn: string;
+  titleOff: string;
+}> = ({ type, kind, iconOn, iconOff, titleOn, titleOff }) => {
+  const { enabled, toggle } = useLocalToggle(type);
+  const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({ kind });
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const openMenu = (e: React.MouseEvent<HTMLElement>) => {
@@ -160,17 +111,18 @@ const CameraControl = () => {
     <Box sx={{ position: 'relative' }}>
       <ToggleButton
         enabled={enabled}
-        iconOn={<VideocamIcon />}
-        iconOff={<VideocamOffIcon color="error" />}
-        titleOn="Включить камеру"
-        titleOff="Выключить камеру"
+        iconOn={iconOn}
+        iconOff={iconOff}
+        titleOn={titleOn}
+        titleOff={titleOff}
         onClick={toggle}
       />
       <Tooltip
         title="Устройства"
         placement="top"
         arrow
-        slotProps={{ popper: { modifiers: [{ name: 'offset', options: { offset: [0, -60] } }] } }}>
+        slotProps={{ popper: { modifiers: [{ name: 'offset', options: { offset: [0, -60] } }] } }}
+      >
         <IconButton
           size="small"
           onClick={openMenu}
@@ -191,7 +143,7 @@ const CameraControl = () => {
             {d.label || d.deviceId || 'Unknown'}
           </MenuItem>
         ))}
-        {devices.length === 0 && <MenuItem disabled>Нет камер</MenuItem>}
+        {devices.length === 0 && <MenuItem disabled>Нет устройств</MenuItem>}
       </Menu>
     </Box>
   );
@@ -285,6 +237,28 @@ const SpeakerControl = () => {
     </Box>
   );
 };
+
+const MicControl = () => (
+  <DeviceControl
+    type="mic"
+    kind="audioinput"
+    iconOn={<MicIcon />}
+    iconOff={<MicOffIcon color="error" />}
+    titleOn="Включить микрофон"
+    titleOff="Выключить микрофон"
+  />
+);
+
+const CameraControl = () => (
+  <DeviceControl
+    type="cam"
+    kind="videoinput"
+    iconOn={<VideocamIcon />}
+    iconOff={<VideocamOffIcon color="error" />}
+    titleOn="Включить камеру"
+    titleOff="Выключить камеру"
+  />
+);
 
 export const VoiceControlBar: React.FC<VoiceControlBarProps> = ({ onDisconnect }) => {
   const room = useRoomContext();

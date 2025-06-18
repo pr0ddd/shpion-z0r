@@ -50,7 +50,7 @@ export function useRtcStats(room: Room | null, interval = 2000): RtcStats | null
     let width = 0;
     let height = 0;
 
-    const id = window.setInterval(async () => {
+    const collectStats = async () => {
       const report = await pc.getStats();
       let bytes = 0;
       let frames = 0;
@@ -110,10 +110,34 @@ export function useRtcStats(room: Room | null, interval = 2000): RtcStats | null
       lastBytes = bytes;
       lastFrames = frames;
       lastTs = now;
-    }, interval);
+    };
+
+    // helper to run interval only when page visible
+    const start = () => {
+      if (intervalIdRef.current) return;
+      intervalIdRef.current = window.setInterval(collectStats, interval);
+    };
+    const stop = () => {
+      if (intervalIdRef.current) {
+        clearInterval(intervalIdRef.current);
+        intervalIdRef.current = null;
+      }
+    };
+
+    // keep reference in ref so we can clear later
+    const intervalIdRef = { current: null as null | number };
+
+    if (document.visibilityState === 'visible') start();
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') start();
+      else stop();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
-      clearInterval(id);
+      stop();
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, [room, interval]);
 

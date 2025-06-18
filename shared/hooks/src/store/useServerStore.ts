@@ -2,17 +2,15 @@ import { create } from 'zustand';
 import { Server, Member, Message } from '@shared/types';
 
 interface ServerStoreState {
-  servers: Server[];
   selectedServer: Server | null;
   members: Member[];
   messages: Message[];
   isLoading: boolean;
   areMembersLoading: boolean;
   error: string | null;
-  isServersInitialized: boolean;
-  setServersInitialized: (v: boolean) => void;
-  // actions
-  setServers: (servers: Server[] | ((prev: Server[]) => Server[])) => void;
+  listeningStates: Record<string, boolean>;
+  isTransitioning: boolean;
+  setTransitioning: (v: boolean) => void;
   setSelectedServer: (server: Server | null) => void;
   setMembers: (members: Member[]) => void;
   setMessages: (messages: Message[]) => void;
@@ -24,29 +22,19 @@ interface ServerStoreState {
   addMessages: (batch: Message[]) => void;
   removeMessage: (id: string) => void;
   setOptimisticMessageStatus: (id: string, status: 'failed') => void;
-  listeningStates: Record<string, boolean>;
   setListeningState: (userId: string, listening: boolean) => void;
-  isTransitioning: boolean;
-  setTransitioning: (v: boolean) => void;
 }
 
 export const useServerStore = create<ServerStoreState>()((set) => ({
-  servers: [],
   selectedServer: null,
   members: [],
   messages: [],
   isLoading: false,
   areMembersLoading: false,
   error: null,
-  isServersInitialized: false,
-  setServersInitialized: (v) => set({ isServersInitialized: v }),
-  setServers: (serversOrUpdater) =>
-    set((state: ServerStoreState) => ({
-      servers:
-        typeof serversOrUpdater === 'function'
-          ? (serversOrUpdater as (prev: Server[]) => Server[])(state.servers)
-          : serversOrUpdater,
-    })),
+  listeningStates: {},
+  isTransitioning: false,
+  setTransitioning: (v) => set({ isTransitioning: v }),
   setSelectedServer: (server) => set({ selectedServer: server }),
   setMembers: (members) => set({ members }),
   setMessages: (messages) => set({ messages }),
@@ -54,7 +42,7 @@ export const useServerStore = create<ServerStoreState>()((set) => ({
   setMembersLoading: (v) => set({ areMembersLoading: v }),
   setError: (err) => set({ error: err }),
   addMessage: (m) =>
-    set((state: ServerStoreState) => {
+    set((state) => {
       const idx = state.messages.findIndex((msg) => msg.id === m.id);
       if (idx >= 0) {
         // replace existing (optimistic or duplicated) message
@@ -81,9 +69,6 @@ export const useServerStore = create<ServerStoreState>()((set) => ({
         msg.id === id ? { ...msg, status } : msg,
       ),
     })),
-  listeningStates: {},
-  isTransitioning: false,
-  setTransitioning: (v) => set({ isTransitioning: v }),
   setListeningState: (userId, listening) =>
     set((state: ServerStoreState) => ({
       listeningStates: { ...state.listeningStates, [userId]: listening },

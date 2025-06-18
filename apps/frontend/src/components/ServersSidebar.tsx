@@ -3,68 +3,39 @@ import {
   Box,
   Avatar,
   Tooltip,
-  Divider,
   Typography,
   Skeleton,
   Menu,
   MenuItem,
   ListItemIcon,
   ListItemText,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { SidebarWrapper, ServerButton, StyledDivider } from '@shared/ui';
+import { styled as muiStyled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import LogoutIcon from '@mui/icons-material/Logout';
 import DeleteIcon from '@mui/icons-material/Delete';
+import SettingsIcon from '@mui/icons-material/Settings';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { useAuth } from '@shared/hooks';
 import { useServersQuery, useSelectServer, useAppStore } from '@shared/hooks';
 import { Server } from '@shared/types';
-import { CreateServerDialog } from '@shared/ui';
+import { CreateServerDialog, ServerSettingsDialog, InviteDialog } from '@shared/ui';
 import { serverAPI } from '@shared/data';
 import { useQueryClient } from '@tanstack/react-query';
-
-const SidebarWrapper = styled(Box)(({ theme }) => ({
-  width: 72,
-  height: '100vh',
-  padding: theme.spacing(1.5, 0),
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  gap: theme.spacing(1.5),
-  backgroundColor: theme.palette.background.default,
-  position: 'relative',
-}));
-
-const ServerButton = styled(Box)<{ isselected?: string }>(({ theme, isselected }) => ({
-  width: 48,
-  height: 48,
-  cursor: 'context-menu',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  transition: 'border-radius 0.2s ease, background-color 0.2s ease, transform 0.2s ease',
-  backgroundColor: isselected === 'true' ? theme.palette.primary.main : theme.palette.background.paper,
-  color: isselected === 'true' ? theme.palette.getContrastText(theme.palette.primary.main) : theme.palette.text.secondary,
-  borderRadius: isselected === 'true' ? '16px' : '50%', // More pronounced "squircle"
-  '&:hover': {
-    borderRadius: '16px',
-    backgroundColor: theme.palette.primary.main,
-    color: theme.palette.getContrastText(theme.palette.primary.main),
-    transform: 'scale(1.05)',
-  },
-}));
-
-const StyledDivider = styled(Divider)(({ theme }) => ({
-  width: 32,
-  backgroundColor: theme.palette.background.paper,
-  margin: theme.spacing(0.5, 'auto'),
-}));
+import { LobbyIcon } from '@shared/ui';
 
 interface ServerItemProps {
   server: Server;
   isSelected: boolean;
   onClick: (server: Server) => void;
   currentUserId: string | undefined;
-  onOpenMenu: (serverId: string, pos: {x:number; y:number})=>void;
+  onOpenMenu: (server: Server, anchorEl: HTMLElement)=>void;
 }
 
 const ServerItem = memo(({ server, isSelected, onClick, currentUserId, onOpenMenu }: ServerItemProps) => {
@@ -74,14 +45,18 @@ const ServerItem = memo(({ server, isSelected, onClick, currentUserId, onOpenMen
         className="allow-context"
         isselected={isSelected.toString()}
         onClick={() => onClick(server)}
-        onContextMenu={(e) => {
+        onContextMenu={(e: React.MouseEvent<HTMLDivElement>) => {
           e.preventDefault();
           if (server.ownerId !== currentUserId) return;
-          onOpenMenu(server.id, {x: e.clientX, y: e.clientY});
+          onOpenMenu(server, e.currentTarget);
         }}
       >
         {server.icon ? (
-          <Avatar src={server.icon} sx={{ width: 48, height: 48 }} />
+          <Avatar
+            src={server.icon}
+            variant="square"
+            sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: 'cover' }}
+          />
         ) : (
           <Typography variant="h6" sx={{fontWeight: 'bold'}}>
               {server.name.charAt(0).toUpperCase()}
@@ -92,7 +67,7 @@ const ServerItem = memo(({ server, isSelected, onClick, currentUserId, onOpenMen
   );
 });
 
-const ActionButtons = styled(Box)({
+const ActionButtons = muiStyled(Box)({
   marginTop: 'auto',
   display: 'flex',
   flexDirection: 'column',
@@ -116,21 +91,24 @@ const ServersSidebar: React.FC = () => {
   const { logout, user } = useAuth();
   const queryClient = useQueryClient();
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
-  const [menu, setMenu] = useState<{id: string; x: number; y: number} | null>(null);
+  const [menu, setMenu] = useState<{server: Server; anchorEl: HTMLElement} | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Server | null>(null);
+  const [settingsTarget, setSettingsTarget] = useState<Server | null>(null);
+  const [inviteTarget, setInviteTarget] = useState<Server | null>(null);
 
   const handleServerClick = useCallback((server: Server) => {
     selectServer(server.id, server.name);
   }, [selectServer]);
 
-  const handleDeleteServer = async () => {
-    if (!menu) return;
-    if (!confirm('Удалить сервер безвозвратно?')) { setMenu(null); return; }
+  const handleDeleteServerConfirmed = async () => {
+    if (!deleteTarget) return;
+    const id = deleteTarget.id;
     try {
-      await serverAPI.deleteServer(menu.id);
-      queryClient.setQueryData(['servers'], (old: any)=> Array.isArray(old) ? old.filter((s:any)=>s.id!==menu.id) : old);
-      if (selectedServerId === menu.id) selectServer(null);
+      await serverAPI.deleteServer(id);
+      queryClient.setQueryData(['servers'], (old: any) => (Array.isArray(old) ? old.filter((s: any) => s.id !== id) : old));
+      if (selectedServerId === id) selectServer(null);
     } finally {
-      setMenu(null);
+      setDeleteTarget(null);
     }
   };
 
@@ -139,7 +117,7 @@ const ServersSidebar: React.FC = () => {
       <SidebarWrapper>
         <Tooltip title="Космическое пространство" placement="right">
           <ServerButton isselected={(selectedServerId === null).toString()} onClick={() => selectServer(null)}>
-              <Typography sx={{fontWeight: 'bold'}}>@</Typography>
+              <LobbyIcon sx={{ width:32, height:32, color:'common.white' }} />
           </ServerButton>
         </Tooltip>
         <StyledDivider />
@@ -154,7 +132,7 @@ const ServersSidebar: React.FC = () => {
               isSelected={selectedServerId === server.id}
               onClick={handleServerClick}
               currentUserId={user?.id}
-              onOpenMenu={(id,pos)=>setMenu({id, ...pos})}
+              onOpenMenu={(srv, el)=>setMenu({server: srv, anchorEl: el})}
             />
           ))
         )}
@@ -184,15 +162,46 @@ const ServersSidebar: React.FC = () => {
       />
       <Menu
         open={Boolean(menu)}
-        onClose={()=>setMenu(null)}
-        anchorReference="anchorPosition"
-        anchorPosition={menu ? { top: menu.y, left: menu.x } : undefined}
+        onClose={() => setMenu(null)}
+        anchorEl={menu?.anchorEl}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
       >
-        <MenuItem onClick={handleDeleteServer}>
+        <MenuItem onClick={() => { if(menu){ setInviteTarget(menu.server); setMenu(null);} }}>
+          <ListItemIcon><PersonAddIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Пригласить</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => { if(menu){ setSettingsTarget(menu.server); setMenu(null);} }}>
+          <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Настройки</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => { if(menu){ setDeleteTarget(menu.server); setMenu(null);} }}>
           <ListItemIcon><DeleteIcon fontSize="small" /></ListItemIcon>
           <ListItemText>Удалить сервер</ListItemText>
         </MenuItem>
       </Menu>
+      <ServerSettingsDialog
+        open={Boolean(settingsTarget)}
+        server={settingsTarget}
+        onClose={()=>setSettingsTarget(null)}
+      />
+      <Dialog open={Boolean(deleteTarget)} onClose={() => setDeleteTarget(null)}>
+        <DialogTitle>Удалить сервер</DialogTitle>
+        <DialogContent>
+          Вы уверены, что хотите безвозвратно удалить сервер «{deleteTarget?.name}»?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteTarget(null)}>Отмена</Button>
+          <Button color="error" onClick={handleDeleteServerConfirmed}>Удалить</Button>
+        </DialogActions>
+      </Dialog>
+      {inviteTarget && (
+        <InviteDialog
+          open={Boolean(inviteTarget)}
+          onClose={()=>setInviteTarget(null)}
+          inviteLink={`${window.location.origin}/invite/${inviteTarget.inviteCode}`}
+        />
+      )}
     </>
   );
 };

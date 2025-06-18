@@ -16,7 +16,7 @@ export const useServersSocketSync = () => {
 
     const onUpdated = (srv: Server) => {
       qc.setQueryData<Server[]>(['servers'], (old) =>
-        old?.map((s) => (s.id === srv.id ? { ...s, name: srv.name, icon: srv.icon } : s)),
+        old?.map((s) => (s.id === srv.id ? { ...s, ...srv } : s)),
       );
     };
 

@@ -32,10 +32,22 @@ model User {
   @@map("users")
 }
 
+model SfuServer {
+  id   String @id @default(cuid())
+  name String
+  url  String
+
+  servers Server[] @relation("ServerSfu")
+
+  @@map("sfu_servers")
+}
+
 model Server {
   id         String   @id @default(cuid())
   name       String
   icon       String?  @db.Text // Storing as Base64 for now
+  description String? @db.Text
+  sfuId      String?
   inviteCode String   @unique @default(cuid())
   ownerId    String
   createdAt  DateTime @default(now())
@@ -44,6 +56,7 @@ model Server {
   owner   User      @relation("ServerOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   members Member[]
   messages Message[]
+  sfu     SfuServer? @relation("ServerSfu", fields: [sfuId], references: [id])
 
   @@map("servers")
 }

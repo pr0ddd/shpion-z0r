@@ -46,9 +46,13 @@ const MessageList: React.FC = () => {
       prevPagesRef.current = data.pages.length;
 
       // shift viewport down by 'added' items to keep visual position and avoid immediate startReached
-      requestAnimationFrame(() => {
+      // store rAF id so we can cancel if effect is cleaned up early
+      const rafId = requestAnimationFrame(() => {
         (virtuosoRef.current as any)?.scrollToIndex({ index: added, align: 'start', behavior: 'auto' });
       });
+
+      // cancel scheduled frame on next cleanup to avoid dangling callbacks
+      return () => cancelAnimationFrame(rafId);
     }
   }, [data]);
 

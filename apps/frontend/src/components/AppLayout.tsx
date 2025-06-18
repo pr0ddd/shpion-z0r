@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Box, CircularProgress, Typography, Snackbar } from '@mui/material';
 import ServersSidebar from './ServersSidebar';
 import ServerContent from './ServerContent';
 import { ServerMembers, StatsOverlay } from '@shared/livekit';
-import { useAppStore, useServersQuery, useServersSocketSync } from '@shared/hooks';
+import { useAppStore, useServersQuery, useServersSocketSync, useSelectServer } from '@shared/hooks';
 import { LiveKitRoom, useRoomContext } from '@livekit/components-react';
 import { ServerPlaceholder } from '@shared/ui';
 import { useLiveKitToken } from '@shared/livekit';
 import { VideoPresets, AudioPresets, RoomEvent } from 'livekit-client';
 import { useContextMenuGuard } from '@shared/ui';
+import { useSfuAvailability } from '@shared/hooks';
 
 // Use LiveKit 1080p preset for encoding parameters (30fps, ~4.5-6 Mbps)
 const motion1080p30 = VideoPresets.h1080;
@@ -56,6 +57,27 @@ const AppLayout: React.FC = () => {
 
   const transition = useAppStore((s) => s.transition);
 
+  const serverUrl: string | undefined = selectedServer
+    ? selectedServer.sfu?.url ?? (import.meta.env.VITE_LIVEKIT_URL as string)
+    : undefined;
+
+  const { data: sfuOk = true, isLoading: sfuChecking } = useSfuAvailability(serverUrl);
+
+  const selectServer = useSelectServer();
+  const [snackOpen, setSnackOpen] = useState(false);
+
+  React.useEffect(() => {
+    if (!sfuChecking && selectedServer && !sfuOk) {
+      selectServer(null);
+      setSnackOpen(true);
+    }
+  }, [sfuChecking, sfuOk, selectedServer, selectServer]);
+
+  const canShowLiveKitRoom = !!selectedServer && !!livekitToken && sfuOk;
+
+  // Показываем оверлей, пока мы ещё не готовы полностью показать комнату
+  const showTransition = !!selectedServer && (isTokenLoading || sfuChecking || transition.active || !isConnected);
+
   if (isServersLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100vw', height: '100vh', backgroundColor: '#202225' }}>
@@ -64,20 +86,15 @@ const AppLayout: React.FC = () => {
     );
   }
 
-  const canShowLiveKitRoom = !!selectedServer && !!livekitToken;
-
-  // Показываем оверлей, пока мы ещё не готовы полностью показать комнату
-  const showTransition = !!selectedServer && (isTokenLoading || transition.active || !isConnected);
-
   return (
     <Box sx={{ display: 'flex', height: '100vh', backgroundColor: '#36393f' }}>
       <ServersSidebar />
 
       {canShowLiveKitRoom ? (
         <LiveKitRoom
-          key={selectedServer!.id}
+          key={`${selectedServer!.id}-${selectedServer!.sfuId ?? 'default'}`}
           token={livekitToken!}
-          serverUrl={import.meta.env.VITE_LIVEKIT_URL as string}
+          serverUrl={serverUrl}
           connect={true}
           video={false}
           audio={true}
@@ -133,6 +150,20 @@ const AppLayout: React.FC = () => {
           <Typography variant="h6" sx={{ textAlign: 'center' }}>{transition.text ?? 'Загрузка...'}</Typography>
         </Box>
       )}
+
+      {selectedServer && !sfuOk && !sfuChecking && (
+        <Box sx={{ position: 'absolute', inset:0, bgcolor: 'rgba(0,0,0,0.8)', zIndex: 4000, display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <Typography variant="h5" color="error">SFU сервер недоступен</Typography>
+        </Box>
+      )}
+
+      <Snackbar
+        open={snackOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackOpen(false)}
+        message="SFU недоступен, вы перемещены в лобби"
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </Box>
   );
 };

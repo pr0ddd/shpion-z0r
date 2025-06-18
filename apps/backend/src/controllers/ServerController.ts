@@ -10,7 +10,7 @@ export class ServerController {
     const userId = req.user!.id;
     const servers = await prisma.server.findMany({
       where: { members: { some: { userId } } },
-      include: { _count: { select: { members: true } } },
+      include: { _count: { select: { members: true } }, sfu: true },
       orderBy: { createdAt: 'asc' },
     });
     res.json({ success: true, data: servers });
@@ -18,21 +18,37 @@ export class ServerController {
 
   // Создать новый сервер
   static async createServer(req: AuthenticatedRequest, res: Response<ApiResponse>) {
-    const { name } = req.body;
+    const { name, description, icon, sfuId } = req.body as {
+      name?: string;
+      description?: string;
+      icon?: string | null;
+      sfuId?: string | null;
+    };
     const userId = req.user!.id;
 
     if (!name) {
       throw new ApiError(400, 'Server name is required');
     }
 
+    const createData: any = {
+      name,
+      ownerId: userId,
+      inviteCode: uuidv4(),
+      members: { create: [{ userId, role: 'ADMIN' }] },
+    };
+    if (description !== undefined) createData.description = description;
+    if (icon !== undefined) createData.icon = icon;
+    if (sfuId !== undefined) {
+      if (sfuId) {
+        const exists = await prisma.sfuServer.findUnique({ where: { id: sfuId } });
+        if (!exists) throw new ApiError(400, 'Invalid sfuId');
+      }
+      createData.sfuId = sfuId;
+    }
+
     const server = await prisma.server.create({
-      data: {
-        name,
-        ownerId: userId,
-        inviteCode: uuidv4(),
-        members: { create: [{ userId, role: 'ADMIN' }] },
-      },
-      include: { members: { select: { userId: true } } },
+      data: createData,
+      include: { members: { select: { userId: true } }, sfu: true },
     });
 
     const { socketService } = await import('../index');
@@ -76,7 +92,8 @@ export class ServerController {
               }
             }
           }
-        }
+        },
+        sfu: true,
       }
     });
 
@@ -157,21 +174,34 @@ export class ServerController {
     res.json({ success: true, message: 'Server deleted' });
   }
 
-  // Переименовать сервер (owner only)
+  // Обновить настройки сервера (owner only)
   static async renameServer(req: AuthenticatedRequest, res: Response<ApiResponse>) {
     const { serverId } = req.params;
-    const { name } = req.body as { name?: string };
+    const { name, description, icon, sfuId } = req.body as {
+      name?: string;
+      description?: string;
+      icon?: string | null;
+      sfuId?: string | null;
+    };
     const userId = req.user!.id;
-
-    if (!name || !name.trim()) {
-      throw new ApiError(400, 'New server name is required');
-    }
 
     const server = await prisma.server.findUnique({ where: { id: serverId } });
     if (!server) throw new ApiError(404, 'Server not found');
     if (server.ownerId !== userId) throw new ApiError(403, 'Only owner can rename server');
 
-    const updated = await prisma.server.update({ where: { id: serverId }, data: { name } });
+    const data: any = {};
+    if (name !== undefined) data.name = name;
+    if (description !== undefined) data.description = description;
+    if (icon !== undefined) data.icon = icon;
+    if (sfuId !== undefined) {
+      if (sfuId) {
+        const exists = await prisma.sfuServer.findUnique({ where: { id: sfuId } });
+        if (!exists) throw new ApiError(400, 'Invalid sfuId');
+      }
+      data.sfuId = sfuId;
+    }
+
+    const updated = await prisma.server.update({ where: { id: serverId }, data, include: { sfu: true } });
 
     // notify via socket
     const { socketService } = await import('../index');

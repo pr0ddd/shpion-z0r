@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { serverAPI } from '@shared/data';
 import { Server } from '@shared/types';
-import { useServerStore } from '@shared/hooks';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface RenameServerDialogProps {
   open: boolean;
@@ -23,6 +23,8 @@ const RenameServerDialog: React.FC<RenameServerDialogProps> = ({ open, server, o
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const qc = useQueryClient();
 
   useEffect(() => {
     setName(server?.name ?? '');
@@ -45,8 +47,8 @@ const RenameServerDialog: React.FC<RenameServerDialogProps> = ({ open, server, o
     try {
       const res = await serverAPI.renameServer(server.id, name.trim());
       if (res.success && res.data) {
-        // обновить Zustand
-        useServerStore.getState().setServers((prev) => prev.map((s) => (s.id === res.data!.id ? { ...s, name: res.data!.name } : s)));
+        // patch React Query cache ['servers']
+        qc.setQueryData<Server[]>(['servers'], (old)=> old?.map((s)=> s.id===res.data!.id ? { ...s, name: res.data!.name } : s));
         onClose();
       } else {
         setError(res.error || 'Не удалось переименовать.');

@@ -2,16 +2,10 @@ import React, { useMemo, useState } from 'react';
 import {
   Box,
   Typography,
-  List,
   ListItem,
   ListItemText,
   ListItemAvatar,
   Skeleton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  TextField,
-  Button,
 } from '@mui/material';
 import { useParticipants } from '@livekit/components-react';
 import { useAppStore, useMembersQuery } from '@shared/hooks';
@@ -19,6 +13,7 @@ import { VoiceControlBar } from '@shared/ui';
 import { Participant } from 'livekit-client';
 import { User, Member } from '@shared/types';
 import { MemberRow } from '@shared/ui';
+import { Virtuoso } from 'react-virtuoso';
 
 const MemberSkeleton = () => (
   <ListItem>
@@ -51,7 +46,6 @@ export const ServerMembers = () => {
       sx={{
         width: 240,
         borderRight: '1px solid rgba(255, 255, 255, 0.12)',
-        padding: '1rem',
         color: 'white',
         background: '#2f3136',
         height: '100%',
@@ -59,21 +53,33 @@ export const ServerMembers = () => {
         flexDirection: 'column',
       }}
     >
-      <Box sx={{ flexGrow: 1, overflowY: 'auto', minHeight: 0 }}>
-        <List>
-          {isMembersLoading && onlineMembers.length === 0 ? (
-            <>
-              <MemberSkeleton />
-              <MemberSkeleton />
-            </>
-          ) : (
-            onlineMembers.map(({ participant, user }) => (
-              <MemberRow key={participant.sid} participant={participant} user={user} isDeafened={listeningStates?.[user.id] === false} />
-            ))
-          )}
-        </List>
+      <Box sx={{ flexGrow: 1, minHeight: 0 }}>
+        {isMembersLoading && onlineMembers.length === 0 ? (
+          <Box sx={{ p: 2 }}>
+            <MemberSkeleton />
+            <MemberSkeleton />
+          </Box>
+        ) : (
+          <Virtuoso
+            style={{ height: '100%' }}
+            totalCount={onlineMembers.length}
+            itemContent={(index) => {
+              const { participant, user } = onlineMembers[index];
+              return (
+                <Box sx={{ px: 1 }}>
+                  <MemberRow
+                    participant={participant}
+                    user={user}
+                    isDeafened={listeningStates?.[user.id] === false}
+                  />
+                </Box>
+              );
+            }}
+            overscan={200}
+          />
+        )}
       </Box>
-      <Box sx={{ mt: 'auto', pt: 2 }}>
+      <Box sx={{ mt: 'auto', pt: 2, p: 1 }}>
         <VoiceControlBar onDisconnect={() => {}} />
       </Box>
     </Box>

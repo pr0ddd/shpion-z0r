@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -7,15 +7,12 @@ import {
   ListItemText,
   ListItemAvatar,
   Skeleton,
-  Button,
 } from '@mui/material';
 import { useParticipants } from '@livekit/components-react';
 import { useServer } from '@shared/hooks';
 import { VoiceControlBar, MemberRow } from '@shared/ui';
 import { Participant } from 'livekit-client';
 import { User, Member } from '@shared/types';
-import { InviteDialog } from '@shared/ui';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
 const MemberSkeleton = () => (
   <ListItem>
@@ -29,7 +26,6 @@ const MemberSkeleton = () => (
 export const ServerMembers: React.FC = () => {
   const { selectedServer, members: allServerMembers, areMembersLoading, listeningStates = {} } = useServer() as any;
   const participants = useParticipants();
-  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
   const onlineMembers = useMemo(() => {
     const memberMap = new Map(allServerMembers.map((m: Member) => [m.user.id, m.user]));
@@ -54,11 +50,6 @@ export const ServerMembers: React.FC = () => {
         flexDirection: 'column',
       }}
     >
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 1, flexShrink: 0 }}>
-        <Button variant="contained" startIcon={<PersonAddIcon />} onClick={() => setInviteDialogOpen(true)}>
-          Пригласить
-        </Button>
-      </Box>
       <Box sx={{ flexGrow: 1, overflowY: 'auto', minHeight: 0 }}>
         <List>
           {areMembersLoading && onlineMembers.length === 0 ? (
@@ -76,13 +67,6 @@ export const ServerMembers: React.FC = () => {
       <Box sx={{ mt: 'auto', pt: 2 }}>
         <VoiceControlBar onDisconnect={() => {}} />
       </Box>
-      {selectedServer && (
-        <InviteDialog
-          open={inviteDialogOpen}
-          onClose={() => setInviteDialogOpen(false)}
-          inviteLink={`${window.location.origin}/invite/${selectedServer.inviteCode}`}
-        />
-      )}
     </Box>
   );
 }; 
