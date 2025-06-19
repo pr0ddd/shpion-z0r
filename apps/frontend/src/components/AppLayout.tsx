@@ -104,10 +104,6 @@ const AppLayout: React.FC = () => {
             publishDefaults: {
               videoCodec: 'av1',
               screenShareEncoding: screenShare60fps,
-              backupCodec: {
-                codec: 'vp8',
-                encoding: { ...screenShare60fps, maxBitrate: 8_000_000 },
-              },
               audioPreset: AudioPresets.speech,
               dtx: true,
               red: false,

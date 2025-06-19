@@ -50,7 +50,7 @@ const MemberRow: React.FC<{ member: MemberListItemData }> = ({ member }) => (
         <Avatar
           src={member.avatar || dicebearAvatar(member.id)}
           sx={{
-            border: member.isSpeaking ? '2px solid #4ade80' : '2px solid transparent',
+            border: member.isSpeaking ? '2px solid #4ade80' : '2px solid rgba(255, 255, 255, 0.12)',
             boxShadow: member.isSpeaking ? '0 0 8px #4ade80' : 'none',
             transition: 'all 0.2s ease-in-out',
           }}

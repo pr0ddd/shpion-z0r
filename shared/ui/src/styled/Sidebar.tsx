@@ -41,6 +41,7 @@ export const ServerButton = styled(Box, {
   transition: 'transform .2s',
   borderRadius: 12,
   pb: 2,
+  position: 'relative',
   // default non-selected state
   backgroundColor: theme.palette.background.paper,
   color: theme.palette.text.secondary,
@@ -50,6 +51,20 @@ export const ServerButton = styled(Box, {
     backgroundColor: theme.palette.primary.main,
     color: theme.palette.primary.contrastText,
   }),
+
+  // dot indicator
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    left: -10,
+    top: 20,
+    width: 8,
+    height: 8,
+    borderRadius: '50%',
+    backgroundColor: theme.palette.primary.main,
+    opacity: isselected === 'true' ? 1 : 0,
+    transition: 'opacity .2s',
+  },
 
   '&:hover': {
     transform: 'scale(1.05)',

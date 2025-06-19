@@ -61,7 +61,7 @@ const themeOptions: ThemeOptions = {
   palette: {
     mode: 'dark', // Используем темную тему, как это часто бывает в игровых приложениях
     primary: {
-      main: '#5865F2', // Discord blurple
+      main: 'rgba(40, 81, 178, 0.84)', // Discord blurple
       light: lighten('#5865F2', 0.2),
       dark: '#4752c4',
       contrastText: '#ffffff',

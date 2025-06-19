@@ -78,7 +78,7 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
         sx={{
           width: 32,
           height: 32,
-          border: isSpeaking ? '2px solid #4ade80' : '2px solid transparent',
+          border: isSpeaking ? '2px solid #4ade80' : '1px solid rgba(255, 255, 255, 0.7)',
           boxShadow: isSpeaking ? '0 0 6px #4ade80' : 'none',
           transition: 'all 0.2s ease-in-out',
         }}

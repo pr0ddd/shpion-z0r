@@ -55,7 +55,7 @@ const ServerItem = memo(({ server, isSelected, onClick, currentUserId, onOpenMen
           <Avatar
             src={server.icon}
             variant="square"
-            sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: 'cover' }}
+            sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: 'cover'}}
           />
         ) : (
           <Typography variant="h6" sx={{fontWeight: 'bold'}}>

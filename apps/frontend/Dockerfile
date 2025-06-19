@@ -8,12 +8,12 @@ COPY package.json package-lock.json ./
 RUN npm install --legacy-peer-deps
 
 # Accept build arguments for React environment variables
-ARG REACT_APP_API_URL
-ARG REACT_APP_LIVEKIT_URL
+ARG VITE_API_URL
+ARG VITE_LIVEKIT_URL
 
 # Set environment variables from build arguments
-ENV REACT_APP_API_URL=$REACT_APP_API_URL
-ENV REACT_APP_LIVEKIT_URL=$REACT_APP_LIVEKIT_URL
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_LIVEKIT_URL=$VITE_LIVEKIT_URL
 
 # Copy the rest of the application source code
 COPY . .
