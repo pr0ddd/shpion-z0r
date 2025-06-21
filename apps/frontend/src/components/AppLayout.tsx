@@ -104,10 +104,10 @@ const AppLayout: React.FC = () => {
           video={false}
           audio={true}
           options={{
-            adaptiveStream: true,
+            adaptiveStream: false,
             dynacast: false,
             publishDefaults: {
-              videoCodec: 'vp9',
+              videoCodec: 'av1',
               videoEncoding: encoding1080p60_4m,
               screenShareEncoding: screenShare60fps,
               audioPreset: AudioPresets.speech,
