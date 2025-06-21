@@ -23,6 +23,7 @@
     "paths": {
       "@shared/ui": ["../../shared/ui/src/index.ts"],
       "@shared/hooks": ["../../shared/hooks/src/index.ts"],
+      "@shared/hooks/*": ["../../shared/hooks/src/*"],
       "@shared/data": ["../../shared/data/src/index.ts"],
       "@shared/types": ["../../shared/types/src/index.ts"],
       "@shared/livekit": ["../../shared/livekit/src/index.ts"]
