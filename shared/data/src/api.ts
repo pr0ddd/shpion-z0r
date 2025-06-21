@@ -1,4 +1,4 @@
-import axios, { AxiosRequestHeaders } from 'axios';
+import axios from 'axios';
 import {
   ApiResponse,
   User,
@@ -24,9 +24,7 @@ export const http = axios.create({
 http.interceptors.request.use(cfg => {
   const token = localStorage.getItem('authToken');
   if (token) {
-    const headers = (cfg.headers ?? {}) as AxiosRequestHeaders;
-    headers.Authorization = `Bearer ${token}`;
-    cfg.headers = headers;
+    (cfg.headers as any)['Authorization'] = `Bearer ${token}`;
   }
   return cfg;
 });

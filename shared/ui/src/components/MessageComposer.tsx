@@ -84,7 +84,7 @@ export const MessageComposer: React.FC = () => {
   }, []);
 
   return (
-    <Box sx={{ p: 2, borderTop: (theme) => `1px solid ${theme.palette.chat.border}`, flexShrink: 0, mt: 'auto' }}>
+    <Box sx={{ p: 2, borderTop: (theme) => `1px solid ${theme.palette.divider}`, flexShrink: 0, mt: 'auto' }}>
       <Box
         component="form"
         onSubmit={handleSubmit}
@@ -115,7 +115,7 @@ export const MessageComposer: React.FC = () => {
             },
           }}
         />
-        <IconButton type="submit" sx={{ p: '10px', color: 'chat.inputPlaceholder' }} disabled={!text.trim()}>
+        <IconButton type="submit" sx={{ p: '10px', color: 'text.secondary' }} disabled={!text.trim()}>
           <Send />
         </IconButton>
       </Box>

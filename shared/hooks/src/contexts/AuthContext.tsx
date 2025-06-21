@@ -34,7 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(() => {
     if (isLoggingOutRef.current) return;
     isLoggingOutRef.current = true;
-    authAPI.logout()
+    (authAPI.logout() as Promise<any>)
       .catch(err => console.error('Logout API call failed, proceeding.', err))
       .finally(() => {
         isLoggingOutRef.current = false;

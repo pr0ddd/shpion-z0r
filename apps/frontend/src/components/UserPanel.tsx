@@ -12,7 +12,6 @@ import ScreenShareIcon from '@mui/icons-material/ScreenShare';
 import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
-import SettingsIcon from '@mui/icons-material/Settings';
 import { dicebearAvatar } from '@shared/ui';
 import { StreamSettingsDialog } from './StreamSettingsDialog';
 
@@ -119,11 +118,6 @@ const UserPanel: React.FC = () => {
             <Divider />
 
             <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-around' }}>
-                <Tooltip title="Stream Settings">
-                    <IconButton onClick={() => setDialogOpen(true)}>
-                        <SettingsIcon />
-                    </IconButton>
-                </Tooltip>
                 <Tooltip title={isScreenShareEnabled ? "Stop Sharing" : "Share Screen"}>
                     <IconButton onClick={handleScreenShareClick} color="default">
                         {isScreenShareEnabled ? <StopScreenShareIcon /> : <ScreenShareIcon />}
