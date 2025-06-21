@@ -8,10 +8,23 @@ export const useScreenShare = () => {
 
   const toggle = useCallback(() => {
     if (enabled) {
-      void innerToggle(false);
-    } else {
-      void innerToggle(true, { audio: true, contentHint: 'motion' } as any);
+      void innerToggle(false).catch((err:any)=>{
+        console.error('Disable screenshare failed',err);
+      });
+      return;
     }
+
+    // First attempt: with system audio
+    innerToggle(true, { audio: true } as any).catch((err: any) => {
+      console.warn('Screen share with audio failed, retrying without audio:', err);
+      // Try again without audio
+      innerToggle(true).catch((err2: any) => {
+        console.error('Screen share failed:', err2);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('screen-share-error', { detail: err2 }));
+        }
+      });
+    });
   }, [enabled, innerToggle]);
 
   return { toggle, enabled } as const;
