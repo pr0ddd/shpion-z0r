@@ -23,6 +23,7 @@ newgrp docker
 sudo mkdir -p /opt/shpion-z0r && sudo chown $USER /opt/shpion-z0r
 ```
 
+
 Порты 3001 (backend) и 8080 (frontend) должны быть свободны **внутри** сервера.
 Снаружи к ним обращаться не надо — всё пойдёт через Nginx Proxy Manager.
 
