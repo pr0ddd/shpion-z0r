@@ -63,6 +63,9 @@ jobs:
     name: Deploy to VPS
     runs-on: ubuntu-latest
     needs: build-and-push
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SERVER_WORKDIR: ${{ secrets.SERVER_WORKDIR }}
 
     steps:
       - name: Checkout repository (compose files)
@@ -73,10 +76,8 @@ jobs:
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
-          # use default SSH port 22 if secret not provided
-          # port: ${{ secrets.SERVER_SSH_PORT }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: GITHUB_TOKEN,DATABASE_URL,JWT_SECRET,LIVEKIT_URL,LIVEKIT_API_KEY,LIVEKIT_API_SECRET,CLIENT_URL,REGISTRY,IMAGE_OWNER
+          envs: GITHUB_TOKEN,DATABASE_URL,JWT_SECRET,LIVEKIT_URL,LIVEKIT_API_KEY,LIVEKIT_API_SECRET,CLIENT_URL,REGISTRY,IMAGE_OWNER,SERVER_WORKDIR
           script: |
             set -e
             export REGISTRY=${{ env.REGISTRY }}
@@ -84,11 +85,12 @@ jobs:
             docker login $REGISTRY -u ${{ github.actor }} -p $GITHUB_TOKEN
 
             # Clone or update project repository
-            if [ ! -d "${{ secrets.SERVER_WORKDIR }}" ]; then
-              git clone https://github.com/${{ github.repository }} ${{ secrets.SERVER_WORKDIR }}
+            if [ ! -d "$SERVER_WORKDIR" ]; then
+              git clone https://github.com/${{ github.repository }} "$SERVER_WORKDIR"
             fi
 
-            cd ${{ secrets.SERVER_WORKDIR }}
+            cd "$SERVER_WORKDIR"
+
             git pull --ff-only
 
             # --- (Re)create backend-prod.env from secrets ---
