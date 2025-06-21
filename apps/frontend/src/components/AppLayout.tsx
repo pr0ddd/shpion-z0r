@@ -14,8 +14,13 @@ import { useSfuAvailability } from '@shared/hooks';
 // Use LiveKit 1080p preset for encoding parameters (30fps, ~4.5-6 Mbps)
 const motion1080p30 = VideoPresets.h1080;
 
-// Override preset to force 60 FPS
-const screenShare60fps = { ...motion1080p30.encoding, maxFramerate: 60 } as const;
+// Custom 1080p @60 fps VP8 (≈4 Mbps) for camera and screen share
+const encoding1080p60_4m = {
+  maxBitrate: 4_000_000, // 4 Mbps
+  maxFramerate: 60,
+} as const;
+
+const screenShare60fps = encoding1080p60_4m; // reuse for screen share
 
 const CenteredLoader: React.FC = () => (
   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', flexGrow: 1 }}>
@@ -99,10 +104,11 @@ const AppLayout: React.FC = () => {
           video={false}
           audio={true}
           options={{
-            adaptiveStream: true,
-            dynacast: true,
+            adaptiveStream: false,
+            dynacast: false,
             publishDefaults: {
-              videoCodec: 'av1',
+              videoCodec: 'vp8',
+              videoEncoding: encoding1080p60_4m,
               screenShareEncoding: screenShare60fps,
               audioPreset: AudioPresets.speech,
               dtx: true,
