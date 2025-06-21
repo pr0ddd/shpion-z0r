@@ -84,9 +84,14 @@ jobs:
             export IMAGE_OWNER=${{ env.IMAGE_OWNER }}
             docker login $REGISTRY -u ${{ github.actor }} -p $GITHUB_TOKEN
 
+            # Ensure we can write inside workdir
+            if [ -d "$SERVER_WORKDIR" ]; then
+              sudo chown -R $(whoami) "$SERVER_WORKDIR" || true
+            fi
+
             # Clone or update project repository
             if [ ! -d "$SERVER_WORKDIR/.git" ]; then
-              rm -rf "$SERVER_WORKDIR" || true
+              (rm -rf "$SERVER_WORKDIR" || sudo rm -rf "$SERVER_WORKDIR")
               git clone https://github.com/${{ github.repository }} "$SERVER_WORKDIR"
             fi
 
