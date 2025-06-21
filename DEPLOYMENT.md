@@ -164,7 +164,10 @@ Proxy Host'ы:
      proxy_set_header Connection "Upgrade";
    }
    ```
-   
+
+
+
+
 
 Теперь:
 - Frontend доступен на `https://shpion.pr0d.ru/`.
