@@ -10,6 +10,7 @@ import { useLiveKitToken } from '@shared/livekit';
 import { VideoPresets, AudioPresets, RoomEvent } from 'livekit-client';
 import { useContextMenuGuard } from '@shared/ui';
 import { useSfuAvailability } from '@shared/hooks';
+import { useStreamSettingsStore } from '@shared/hooks/store/streamSettings';
 
 // Screen share encoding will be defined inline in publishDefaults (best-practice)
 
@@ -71,6 +72,9 @@ const AppLayout: React.FC = () => {
 
   const canShowLiveKitRoom = !!selectedServer && !!livekitToken && sfuOk;
 
+  // stream settings chosen by user
+  const settings = useStreamSettingsStore((s) => s.settings);
+
   // Показываем оверлей, пока мы ещё не готовы полностью показать комнату
   const showTransition = !!selectedServer && (isTokenLoading || sfuChecking || transition.active || !isConnected);
 
@@ -95,17 +99,17 @@ const AppLayout: React.FC = () => {
           video={false}
           audio={true}
           options={{
-            adaptiveStream: false,
-            dynacast: false,
+            adaptiveStream: settings.adaptiveStream,
+            dynacast: settings.dynacast,
             publishDefaults: {
-              videoCodec: 'h264',
+              videoCodec: settings.codec,
               videoEncoding: {
-                maxBitrate: 3_000_000, // 4 Mbps
-                maxFramerate: 60,
+                maxBitrate: settings.maxBitrate,
+                maxFramerate: settings.fps,
               },
               screenShareEncoding: {
-                maxBitrate: 3_000_000, // 4 Mbps
-                maxFramerate: 60,
+                maxBitrate: settings.maxBitrate,
+                maxFramerate: settings.fps,
               },
               audioPreset: AudioPresets.speech,
               dtx: true,

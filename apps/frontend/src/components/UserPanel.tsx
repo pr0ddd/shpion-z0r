@@ -12,7 +12,9 @@ import ScreenShareIcon from '@mui/icons-material/ScreenShare';
 import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { dicebearAvatar } from '@shared/ui';
+import { StreamSettingsDialog } from './StreamSettingsDialog';
 
 const ActualVoiceControls: React.FC<{ room: Room }> = ({ room }) => {
     const connectionState = useConnectionState(room);
@@ -83,6 +85,7 @@ const UserPanel: React.FC = () => {
     const screenShareButtonProps = {
       onClick: toggleScreenShare,
     };
+    const [settingsOpen, setSettingsOpen] = React.useState(false);
 
     if (!user) {
         return null;
@@ -110,6 +113,11 @@ const UserPanel: React.FC = () => {
             <Divider />
 
             <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-around' }}>
+                <Tooltip title="Stream Settings">
+                    <IconButton onClick={() => setSettingsOpen(true)}>
+                        <SettingsIcon />
+                    </IconButton>
+                </Tooltip>
                 <Tooltip title={isScreenShareEnabled ? "Stop Sharing" : "Share Screen"}>
                     <IconButton {...screenShareButtonProps} color="default">
                         {isScreenShareEnabled ? <StopScreenShareIcon /> : <ScreenShareIcon />}
@@ -117,6 +125,7 @@ const UserPanel: React.FC = () => {
                 </Tooltip>
                 {/* Остальные контроли рендерятся только если есть комната */}
                 {room && <VoiceControls />}
+                <StreamSettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
             </Box>
         </Paper>
     );
