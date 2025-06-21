@@ -21,10 +21,20 @@ export const RnnoisePublisher: React.FC = () => {
     const publish = async () => {
       try {
         // 1. capture raw mic stream
-        const rawStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const rawStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true, // оставляем AEC, оно не мешает RNNoise
+            noiseSuppression: false, // отключаем встроенный NS, иначе разницы не услышать
+            autoGainControl: false,
+          },
+        });
 
         // 2. set up AudioWorklet graph
         ctx = new AudioContext({ sampleRate: 48000 });
+        // mobile / autoplay policies могут запускать контекст в suspended
+        if (ctx.state === 'suspended') {
+          await ctx.resume();
+        }
         await ctx.audioWorklet.addModule(NoiseSuppressorWorklet);
         const src = ctx.createMediaStreamSource(rawStream);
         const rnnoiseNode = new AudioWorkletNode(ctx, NoiseSuppressorWorklet_Name);
@@ -33,8 +43,10 @@ export const RnnoisePublisher: React.FC = () => {
         rnnoiseNode.connect(dest);
 
         const processedTrack = dest.stream.getAudioTracks()[0];
+        console.log('[RNNoise] track ready – context', ctx.state, 'sampleLength', rnnoiseNode.parameters?.size ?? 'n/a');
         track = new LocalAudioTrack(processedTrack);
         await room.localParticipant.publishTrack(track);
+        console.log('[RNNoise] mic published');
       } catch (err) {
         /* eslint-disable no-console */
         console.error('RNNoise publish error', err);
