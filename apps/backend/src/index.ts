@@ -39,12 +39,35 @@ const httpServer = createServer(app);
 const PORT = process.env.PORT || 3001;
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 
-const corsOptions = {
-    origin: CLIENT_URL,
-    credentials: true,
+// ---- CORS ----
+// allow main client URL and *.pr0d.ru sub-domains (including regional SFUs/frontends)
+const allowedOrigins = [CLIENT_URL];
+
+const dynamicCorsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true); // mobile apps, Postman
+
+    // exact match of allowed origins
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // allow any sub-domain of pr0d.ru (https only)
+    try {
+      const url = new URL(origin);
+      if (url.hostname.endsWith('.pr0d.ru')) {
+        return callback(null, true);
+      }
+    } catch {
+      /* malformed origin – fall through */
+    }
+
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
 };
 
-app.use(cors(corsOptions));
+app.use(cors(dynamicCorsOptions));
 app.use(morgan('dev'));
 app.use(helmet());
 app.use(compression());
@@ -74,26 +97,11 @@ const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents, {}, So
   },
 });
 
-// Apply Middleware
-
-app.use(cors({ 
-  origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
-    
-    if (CLIENT_URL.includes(origin)) {
-      return callback(null, true);
-    }
-    
-    callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true
-}));
+// ---- Middleware (once) ----
 app.use(helmet());
 app.use(compression());
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
-
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
