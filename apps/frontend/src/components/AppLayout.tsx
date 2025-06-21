@@ -16,7 +16,7 @@ const motion1080p30 = VideoPresets.h1080;
 
 // Custom 1080p @60 fps VP8 (≈4 Mbps) for camera and screen share
 const encoding1080p60_4m = {
-  maxBitrate: 4_000_000, // 4 Mbps
+  maxBitrate: 8_000_000, // 4 Mbps
   maxFramerate: 60,
 } as const;
 
@@ -104,10 +104,10 @@ const AppLayout: React.FC = () => {
           video={false}
           audio={true}
           options={{
-            adaptiveStream: false,
+            adaptiveStream: true,
             dynacast: false,
             publishDefaults: {
-              videoCodec: 'vp8',
+              videoCodec: 'vp9',
               videoEncoding: encoding1080p60_4m,
               screenShareEncoding: screenShare60fps,
               audioPreset: AudioPresets.speech,
