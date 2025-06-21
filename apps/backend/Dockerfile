@@ -12,7 +12,7 @@ RUN npm install
 COPY apps/backend/ ./
 
 # Copy shared tsconfig base for TypeScript compilation
-COPY tsconfig.base.json ./
+COPY tsconfig.base.json /tsconfig.base.json
 
 # Copy prisma schema into expected path if not already (it's inside backend)
 # Генерируем Prisma Client, передавая временный URL через переменную среды только на время команды
