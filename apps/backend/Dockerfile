@@ -3,21 +3,25 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files and install dependencies
-COPY package.json package-lock.json ./
+# Copy backend package files and install deps
+COPY apps/backend/package.json apps/backend/package-lock.json ./
+# Install deps (incl. dev for build)
 RUN npm install
 
-# Copy source code
-COPY . .
+# Copy backend source code
+COPY apps/backend/ ./
 
-# Generate Prisma Client
-# Note: You need a dummy DATABASE_URL at build time for generation
-RUN npx prisma generate
+# Copy shared tsconfig base for TypeScript compilation
+COPY tsconfig.base.json ./
+
+# Copy prisma schema into expected path if not already (it's inside backend)
+# Генерируем Prisma Client, передавая временный URL через переменную среды только на время команды
+RUN DATABASE_URL="file:dummy.db" npx prisma generate
 
 # Build TypeScript
 RUN npm run build
 
-# Prune development dependencies
+# Prune development dependencies already omitted above if needed
 RUN npm prune --production
 
 # Stage 2: Production
