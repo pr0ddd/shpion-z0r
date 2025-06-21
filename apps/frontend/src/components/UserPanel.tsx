@@ -82,7 +82,14 @@ const UserPanel: React.FC = () => {
     const room = useMaybeRoomContext();
     const { toggle: toggleScreenShare, enabled: isScreenShareEnabled } = useScreenShare();
     const [dialogOpen, setDialogOpen] = React.useState(false);
+    const isConnected = room?.state === ConnectionState.Connected;
+
+    if (!user) {
+        return null;
+    }
+
     const handleScreenShareClick = () => {
+      if (!isConnected) return;
       if (isScreenShareEnabled) {
         // уже шарим – стоп
         toggleScreenShare();
@@ -91,10 +98,6 @@ const UserPanel: React.FC = () => {
         setDialogOpen(true);
       }
     };
-
-    if (!user) {
-        return null;
-    }
 
     return (
         <Paper 

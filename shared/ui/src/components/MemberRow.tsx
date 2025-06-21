@@ -72,7 +72,8 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
         transition: 'background-color .15s, border-color .15s',
       }}
     >
-      {audioTrack && <AudioTrack trackRef={audioTrack} volume={volume} />}
+      {/* AudioTrack воспроизводим только для чужих участников */}
+      {audioTrack && !isSelf && <AudioTrack trackRef={audioTrack} volume={volume} />}
       <Avatar
         src={user.avatar || dicebearAvatar(user.id)}
         sx={{
@@ -139,6 +140,7 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
               color="primary"
               size="small"
               sx={{ mx: 1, flex: 1 }}
+              disabled={isSelf}
             />
             <VolumeUpIcon fontSize="small" sx={{ color: 'text.secondary' }} />
           </Box>

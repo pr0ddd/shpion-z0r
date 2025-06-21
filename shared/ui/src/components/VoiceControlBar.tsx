@@ -15,6 +15,7 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { StreamSettingsDialog } from './StreamSettingsDialog';
+import { ConnectionState } from 'livekit-client';
 
 interface VoiceControlBarProps {
   onDisconnect: () => void;
@@ -153,8 +154,11 @@ const DeviceControl: React.FC<{
 const ScreenShareToggle = () => {
   const { toggle, enabled } = useScreenShare();
   const [open, setOpen] = React.useState(false);
+  const room = useRoomContext();
+  const isConnected = room?.state === ConnectionState.Connected;
 
   const handleClick = () => {
+    if (!isConnected) return;
     if (enabled) {
       toggle();
     } else {

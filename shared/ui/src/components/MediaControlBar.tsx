@@ -10,8 +10,9 @@ import CallEndIcon from '@mui/icons-material/CallEnd';
 import {
   useTrackToggle,
   useDisconnectButton,
+  useRoomContext,
 } from '@livekit/components-react';
-import { Track } from 'livekit-client';
+import { Track, ConnectionState } from 'livekit-client';
 import { useServer } from '@shared/hooks';
 import { useScreenShare } from '@shared/livekit';
 import { StreamSettingsDialog } from './StreamSettingsDialog';
@@ -32,7 +33,12 @@ export const MediaControlBar = () => {
 
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
+  const room = useRoomContext();
+  const isConnected = room?.state === ConnectionState.Connected;
+
   const handleScreenShareClick = () => {
+    if (!isConnected) return;
+
     if (isScreenShareEnabled) {
       toggleScreen();
     } else {
@@ -72,7 +78,8 @@ export const MediaControlBar = () => {
         </IconButton>
       </Tooltip>
       <Tooltip title={isScreenShareEnabled ? 'Остановить демонстрацию' : 'Поделиться экраном'}>
-        <IconButton onClick={handleScreenShareClick} color="default" sx={{ color: isScreenShareEnabled ? '#4caf50' : 'white' }}>
+        <IconButton onClick={handleScreenShareClick} color="default" disabled={!isConnected}
+          sx={{ color: isScreenShareEnabled ? '#4caf50' : 'white' }}>
           {isScreenShareEnabled ? <StopScreenShareIcon /> : <ScreenShareIcon />}
         </IconButton>
       </Tooltip>
