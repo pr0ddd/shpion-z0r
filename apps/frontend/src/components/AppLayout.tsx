@@ -11,16 +11,7 @@ import { VideoPresets, AudioPresets, RoomEvent } from 'livekit-client';
 import { useContextMenuGuard } from '@shared/ui';
 import { useSfuAvailability } from '@shared/hooks';
 
-// Use LiveKit 1080p preset for encoding parameters (30fps, ~4.5-6 Mbps)
-const motion1080p30 = VideoPresets.h1080;
-
-// Custom 1080p @60 fps VP8 (≈4 Mbps) for camera and screen share
-const encoding1080p60_4m = {
-  maxBitrate: 8_000_000, // 4 Mbps
-  maxFramerate: 60,
-} as const;
-
-const screenShare60fps = encoding1080p60_4m; // reuse for screen share
+// Screen share encoding will be defined inline in publishDefaults (best-practice)
 
 const CenteredLoader: React.FC = () => (
   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', flexGrow: 1 }}>
@@ -107,9 +98,15 @@ const AppLayout: React.FC = () => {
             adaptiveStream: false,
             dynacast: false,
             publishDefaults: {
-              videoCodec: 'av1',
-              videoEncoding: encoding1080p60_4m,
-              screenShareEncoding: screenShare60fps,
+              videoCodec: 'h264',
+              videoEncoding: {
+                maxBitrate: 3_000_000, // 4 Mbps
+                maxFramerate: 60,
+              },
+              screenShareEncoding: {
+                maxBitrate: 3_000_000, // 4 Mbps
+                maxFramerate: 60,
+              },
               audioPreset: AudioPresets.speech,
               dtx: true,
               red: false,
