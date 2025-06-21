@@ -26,8 +26,8 @@ ENV VITE_LIVEKIT_URL=$VITE_LIVEKIT_URL
 # ------------------------
 COPY . .
 
-# Сборка production версии фронтенда через Nx (Vite)
-RUN npx nx build frontend --configuration=production --with-deps=false
+# Сборка production версии фронтенда напрямую через Vite (без Nx, избегаем циклов)
+RUN npx vite build --config apps/frontend/vite.config.ts
 
 # Build-output находится в dist/apps/frontend
 
