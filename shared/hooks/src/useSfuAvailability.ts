@@ -8,20 +8,30 @@ export const useSfuAvailability = (url: string | undefined) =>
     refetchInterval: 10000,
     queryFn: async () => {
       if (!url) return false;
-      // Convert ws:// → http:// and ensure we hit a health endpoint that returns 200.
-      // LiveKit ≥ v2.4 exposes /rtc/validate , older versions expose /livekit/healthz.
-      const baseHttpUrl = url.replace(/^ws/, 'http').replace(/\/rtc.*/, '/rtc');
-      const httpUrl = `${baseHttpUrl}/validate`;  // First try /rtc/validate
+      // 1. Превращаем ws(s) → http(s)
+      let base = url.replace(/^wss?/, 'https').replace(/^ws/, 'http');
+
+      // 2. Удаляем всё после /rtc (включительно), если оно уже есть,
+      //    чтобы не получить дублирующее /rtc/rtc
+      base = base.replace(/\/rtc(?:\/.*)?$/, '');
+
+      // 3. Формируем итоговый health-URL
+      const httpUrl = `${base}/rtc/validate`;
+
+      // LiveKit < v2.4 имел только /livekit/healthz, оставляем это как fallback.
+
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 3000);
       try {
         let res = await fetch(httpUrl, { method: 'HEAD', signal: controller.signal });
         if (!res.ok && httpUrl.endsWith('/validate')) {
           // Fallback for older LiveKit builds
-          const fallbackUrl = `${baseHttpUrl}/livekit/healthz`;
+          const fallbackUrl = `${base}/livekit/healthz`;
           res = await fetch(fallbackUrl, { method: 'HEAD', signal: controller.signal });
         }
-        return res.ok;
+        // LiveKit может отвечать 401 (требует JWT), 403 (запрещён) или 405 на HEAD.
+        // Для нашей простой health-проверки считаем эти ответы признаком «жив».
+        return res.ok || [401, 403, 405].includes(res.status);
       } catch {
         return false;
       } finally {
