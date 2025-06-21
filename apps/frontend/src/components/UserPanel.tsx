@@ -82,10 +82,16 @@ const UserPanel: React.FC = () => {
     const { user } = useAuth();
     const room = useMaybeRoomContext();
     const { toggle: toggleScreenShare, enabled: isScreenShareEnabled } = useScreenShare();
-    const screenShareButtonProps = {
-      onClick: toggleScreenShare,
+    const [dialogOpen, setDialogOpen] = React.useState(false);
+    const handleScreenShareClick = () => {
+      if (isScreenShareEnabled) {
+        // уже шарим – стоп
+        toggleScreenShare();
+      } else {
+        // сначала открыть диалог настроек
+        setDialogOpen(true);
+      }
     };
-    const [settingsOpen, setSettingsOpen] = React.useState(false);
 
     if (!user) {
         return null;
@@ -114,18 +120,18 @@ const UserPanel: React.FC = () => {
 
             <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-around' }}>
                 <Tooltip title="Stream Settings">
-                    <IconButton onClick={() => setSettingsOpen(true)}>
+                    <IconButton onClick={() => setDialogOpen(true)}>
                         <SettingsIcon />
                     </IconButton>
                 </Tooltip>
                 <Tooltip title={isScreenShareEnabled ? "Stop Sharing" : "Share Screen"}>
-                    <IconButton {...screenShareButtonProps} color="default">
+                    <IconButton onClick={handleScreenShareClick} color="default">
                         {isScreenShareEnabled ? <StopScreenShareIcon /> : <ScreenShareIcon />}
                     </IconButton>
                 </Tooltip>
                 {/* Остальные контроли рендерятся только если есть комната */}
                 {room && <VoiceControls />}
-                <StreamSettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+                <StreamSettingsDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onConfirm={toggleScreenShare} />
             </Box>
         </Paper>
     );

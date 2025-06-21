@@ -18,17 +18,19 @@ import { StreamSettings, useStreamSettingsStore, VideoCodec } from '@shared/hook
 interface Props {
   open: boolean;
   onClose: () => void;
+  onConfirm: () => void;
 }
 
 const resolutions: StreamSettings['resolution'][] = ['540p', '720p', '1080p', '1440p', '2160p'];
 const codecs: VideoCodec[] = ['vp8', 'h264', 'vp9', 'av1'];
 
-export const StreamSettingsDialog: React.FC<Props> = ({ open, onClose }) => {
+export const StreamSettingsDialog: React.FC<Props> = ({ open, onClose, onConfirm }) => {
   const { settings, setSettings } = useStreamSettingsStore();
   const [local, setLocal] = useState<StreamSettings>(settings);
 
-  const handleSave = () => {
+  const handleConfirm = () => {
     setSettings(local);
+    onConfirm();
     onClose();
   };
 
@@ -95,8 +97,8 @@ export const StreamSettingsDialog: React.FC<Props> = ({ open, onClose }) => {
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleSave}>
-          Save
+        <Button variant="contained" onClick={handleConfirm}>
+          Start Sharing
         </Button>
       </DialogActions>
     </Dialog>
