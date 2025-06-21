@@ -13,7 +13,7 @@ import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import { dicebearAvatar } from '@shared/ui';
-import { StreamSettingsDialog } from './StreamSettingsDialog';
+import { StreamSettingsDialog } from '@shared/ui';
 
 const ActualVoiceControls: React.FC<{ room: Room }> = ({ room }) => {
     const connectionState = useConnectionState(room);

@@ -14,6 +14,7 @@ import CallEndIcon from '@mui/icons-material/CallEnd';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import { StreamSettingsDialog } from './StreamSettingsDialog';
 
 interface VoiceControlBarProps {
   onDisconnect: () => void;
@@ -151,15 +152,28 @@ const DeviceControl: React.FC<{
 
 const ScreenShareToggle = () => {
   const { toggle, enabled } = useScreenShare();
+  const [open, setOpen] = React.useState(false);
+
+  const handleClick = () => {
+    if (enabled) {
+      toggle();
+    } else {
+      setOpen(true);
+    }
+  };
+
   return (
-    <ToggleButton
-      enabled={enabled}
-      iconOn={<StopScreenShareIcon />}
-      iconOff={<ScreenShareIcon />}
-      titleOn="Остановить трансляцию экрана"
-      titleOff="Поделиться экраном"
-      onClick={toggle}
-    />
+    <>
+      <ToggleButton
+        enabled={enabled}
+        iconOn={<StopScreenShareIcon />}
+        iconOff={<ScreenShareIcon />}
+        titleOn="Остановить трансляцию экрана"
+        titleOff="Поделиться экраном"
+        onClick={handleClick}
+      />
+      <StreamSettingsDialog open={open} onClose={() => setOpen(false)} onConfirm={toggle} />
+    </>
   );
 };
 

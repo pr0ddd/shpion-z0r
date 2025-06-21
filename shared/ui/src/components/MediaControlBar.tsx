@@ -14,6 +14,7 @@ import {
 import { Track } from 'livekit-client';
 import { useServer } from '@shared/hooks';
 import { useScreenShare } from '@shared/livekit';
+import { StreamSettingsDialog } from './StreamSettingsDialog';
 
 export const MediaControlBar = () => {
   const { selectServer } = useServer();
@@ -28,7 +29,16 @@ export const MediaControlBar = () => {
   const isCameraMuted = !cameraTrack || cameraTrack.isMuted;
 
   const { toggle: toggleScreen, enabled: isScreenShareEnabled } = useScreenShare();
-  const screenShareButtonProps = { onClick: toggleScreen } as const;
+
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+
+  const handleScreenShareClick = () => {
+    if (isScreenShareEnabled) {
+      toggleScreen();
+    } else {
+      setDialogOpen(true);
+    }
+  };
 
   const { buttonProps: disconnectButtonProps } = useDisconnectButton({});
 
@@ -62,7 +72,7 @@ export const MediaControlBar = () => {
         </IconButton>
       </Tooltip>
       <Tooltip title={isScreenShareEnabled ? 'Остановить демонстрацию' : 'Поделиться экраном'}>
-        <IconButton {...screenShareButtonProps} color="default" sx={{ color: isScreenShareEnabled ? '#4caf50' : 'white' }}>
+        <IconButton onClick={handleScreenShareClick} color="default" sx={{ color: isScreenShareEnabled ? '#4caf50' : 'white' }}>
           {isScreenShareEnabled ? <StopScreenShareIcon /> : <ScreenShareIcon />}
         </IconButton>
       </Tooltip>
@@ -71,6 +81,8 @@ export const MediaControlBar = () => {
           <CallEndIcon />
         </IconButton>
       </Tooltip>
+
+      <StreamSettingsDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onConfirm={toggleScreen} />
     </Box>
   );
 }; 
