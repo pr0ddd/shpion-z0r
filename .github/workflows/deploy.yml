@@ -106,7 +106,13 @@ jobs:
 
             cd "$SERVER_WORKDIR"
 
-            git pull --ff-only
+            git pull --ff-only || {
+              echo "Fast-forward pull failed, recloning repository...";
+              cd ..;
+              (rm -rf "$SERVER_WORKDIR" || sudo rm -rf "$SERVER_WORKDIR");
+              git clone https://github.com/${{ github.repository }} "$SERVER_WORKDIR";
+              cd "$SERVER_WORKDIR";
+            }
 
             # Build DATABASE_URL if not provided
             if [ -z "$DATABASE_URL" ]; then
