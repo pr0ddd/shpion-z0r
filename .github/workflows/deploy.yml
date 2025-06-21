@@ -41,7 +41,7 @@ jobs:
       - name: Build & push backend image
         uses: docker/build-push-action@v5
         with:
-          context: ./apps/backend
+          context: .
           file: ./apps/backend/Dockerfile
           push: true
           tags: ${{ env.BACKEND_IMAGE }}:latest
@@ -50,7 +50,7 @@ jobs:
       - name: Build & push frontend image
         uses: docker/build-push-action@v5
         with:
-          context: ./apps/frontend
+          context: .
           file: ./apps/frontend/Dockerfile
           push: true
           tags: ${{ env.FRONTEND_IMAGE }}:latest

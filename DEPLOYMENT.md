@@ -19,6 +19,7 @@ sudo apt update && sudo apt install -y docker.io docker-compose-plugin git
 sudo usermod -aG docker $USER
 newgrp docker
 
+
 # Создайте рабочую директорию
 sudo mkdir -p /opt/shpion-z0r && sudo chown $USER /opt/shpion-z0r
 ```
