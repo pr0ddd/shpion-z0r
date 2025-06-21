@@ -10,7 +10,6 @@ import { useLiveKitToken } from '@shared/livekit';
 import { VideoPresets, AudioPresets, RoomEvent } from 'livekit-client';
 import { useContextMenuGuard } from '@shared/ui';
 import { useSfuAvailability } from '@shared/hooks';
-import { RnnoisePublisher } from './RnnoisePublisher';
 
 // Use LiveKit 1080p preset for encoding parameters (30fps, ~4.5-6 Mbps)
 const motion1080p30 = VideoPresets.h1080;
@@ -98,10 +97,10 @@ const AppLayout: React.FC = () => {
           serverUrl={serverUrl}
           connect={true}
           video={false}
-          audio={false}
+          audio={true}
           options={{
-            adaptiveStream: false,
-            dynacast: false,
+            adaptiveStream: true,
+            dynacast: true,
             publishDefaults: {
               videoCodec: 'av1',
               screenShareEncoding: screenShare60fps,
@@ -109,13 +108,17 @@ const AppLayout: React.FC = () => {
               dtx: true,
               red: false,
             },
+            audioCaptureDefaults: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            },
           }}
           style={{ display: 'flex', flexGrow: 1, minWidth: 0, position: 'relative' }}
         >
           <RoomConnectionWatcher onChange={setConnected} />
           {isConnected && (
             <>
-              <RnnoisePublisher />
               <ServerMembers />
               <StatsOverlay />
               <Box sx={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
