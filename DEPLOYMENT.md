@@ -75,6 +75,7 @@ sudo mkdir -p /opt/shpion-z0r && sudo chown $USER /opt/shpion-z0r
 
 ---
 
+
 ## 5. Настройка GitHub Container Registry (если репозиторий приватный)
 
 GHCR доступен «из коробки». Для приватного репозитория убедитесь, что:
