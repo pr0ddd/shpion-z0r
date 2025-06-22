@@ -40,7 +40,25 @@ export const StreamPage: React.FC = () => {
     };
   }, []);
 
+  // user gesture gate to pass autoplay policy
+  const [ready, setReady] = React.useState(false);
+
   if (!serverId || !trackSid) return <Typography sx={{ p: 4 }}>Некорректный URL</Typography>;
+  if (!ready)
+    return (
+      <Box sx={{ width: '100vw', height: '100vh', bgcolor: 'background.default', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:2 }}>
+        <Typography variant="h6">Нажмите, чтобы начать просмотр стрима</Typography>
+        <Box component="button" onClick={async ()=>{
+          try {
+            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            await ctx.resume();
+            await ctx.close();
+          } catch {}
+          setReady(true);
+        }} sx={{ px:3, py:1.2, fontSize:16, fontWeight:600, borderRadius:2, bgcolor:'primary.main', color:'primary.contrastText', border:'none', cursor:'pointer', '&:hover':{ opacity:0.9 } }}>Запустить</Box>
+      </Box>
+    );
+
   if (!token || !serverUrl || tokenLoading)
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
