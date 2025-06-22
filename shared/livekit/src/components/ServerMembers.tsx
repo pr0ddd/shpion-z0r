@@ -41,7 +41,11 @@ export const ServerMembers: React.FC = () => {
   return (
     <Box
       sx={{
-        width: 240,
+        position: 'relative',
+        width: 340,
+        flex: '0 0 340px',
+        zIndex: 1,
+        boxSizing: 'border-box',
         borderRight: '1px solid rgba(255, 255, 255, 0.12)',
         padding: '1rem',
         color: 'white',
@@ -49,6 +53,7 @@ export const ServerMembers: React.FC = () => {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
+        marginLeft: 0,
       }}
     >
       <Box sx={{ flexGrow: 1, overflowY: 'auto', minHeight: 0 }}>

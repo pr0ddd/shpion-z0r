@@ -3,7 +3,7 @@ import { Box, CircularProgress, Typography } from '@mui/material';
 import { LiveKitRoom, useRoomContext } from '@livekit/components-react';
 import { useLiveKitToken } from '@shared/livekit';
 import { AudioPresets, RoomEvent } from 'livekit-client';
-import { ServerMembers, StatsOverlay } from '@shared/livekit';
+import { StatsOverlay, ServerMembers } from '@shared/livekit';
 import ServerContent from './ServerContent';
 import { useAppStore } from '@shared/hooks';
 import type { Server } from '@shared/types';
@@ -81,13 +81,16 @@ export const RoomWrapper: React.FC<RoomWrapperProps> = ({ server }) => {
       >
         <RoomConnectionWatcher onChange={setConnected} />
         {isConnected && (
-          <>
+          <Box sx={{ display: 'flex', flexGrow: 1, width: '100%', height: '100%', minWidth: 0 }}>
+            {/* Sidebar members list */}
             <ServerMembers />
-            <StatsOverlay />
-            <Box sx={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+
+            {/* Main content */}
+            <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
               <ServerContent />
+              <StatsOverlay />
             </Box>
-          </>
+          </Box>
         )}
       </LiveKitRoom>
 

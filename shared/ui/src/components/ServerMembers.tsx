@@ -43,11 +43,15 @@ export const ServerMembers = () => {
   return (
     <Box
       sx={{
-        width: 240,
+        position: 'fixed',
+        top: 0,
+        bottom: 0,
+        left: 72,
+        width: 340,
+        boxSizing: 'border-box',
         borderRight: '1px solid rgba(255, 255, 255, 0.12)',
         color: 'white',
         background: '#2f3136',
-        height: '100%',
         display: 'flex',
         flexDirection: 'column',
       }}

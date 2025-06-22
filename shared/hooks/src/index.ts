@@ -19,3 +19,4 @@ export * from '../useServersSocketSync';
 export * from '../useSelectServer';
 export * from '../useMessagesSocketSync';
 export * from './lib/queryUtils';
+export * from './store/useStreamView';

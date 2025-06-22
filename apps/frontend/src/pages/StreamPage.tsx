@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { LiveKitRoom, useTracks, TrackReference } from '@livekit/components-react';
 import { Track } from 'livekit-client';
@@ -40,8 +40,9 @@ export const StreamPage: React.FC = () => {
     };
   }, []);
 
-  // user gesture gate to pass autoplay policy
-  const [ready, setReady] = React.useState(false);
+  const [search] = useSearchParams();
+  const auto = search.get('auto') === '1';
+  const [ready, setReady] = React.useState(auto);
 
   if (!serverId || !trackSid) return <Typography sx={{ p: 4 }}>Некорректный URL</Typography>;
   if (!ready)

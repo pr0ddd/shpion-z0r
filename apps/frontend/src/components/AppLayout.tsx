@@ -1,41 +1,11 @@
 import React, { useState } from 'react';
-import { Box, CircularProgress, Typography, Snackbar } from '@mui/material';
+import { Box, CircularProgress, Snackbar } from '@mui/material';
 import ServersSidebar from './ServersSidebar';
-import ServerContent from './ServerContent';
 import { useAppStore, useServersQuery, useServersSocketSync, useSelectServer } from '@shared/hooks';
-import { LiveKitRoom, useRoomContext } from '@livekit/components-react';
 import { ServerPlaceholder } from '@shared/ui';
 import { useLiveKitToken } from '@shared/livekit';
-import { AudioPresets, RoomEvent } from 'livekit-client';
 import { useContextMenuGuard } from '@shared/ui';
 import { RoomWrapper } from './RoomWrapper';
-
-// Fixed 1080p @30 fps, 3 Mbps encoding for both camera and screen share.
-const encoding1080p30_3m = {
-  maxBitrate: 3_000_000, // 3 Mbps
-  maxFramerate: 30,
-} as const;
-
-const screenShareEncoding = encoding1080p30_3m;
-
-const RoomConnectionWatcher: React.FC<{ onChange: (connected: boolean) => void }> = ({ onChange }) => {
-  const room = useRoomContext();
-  React.useEffect(() => {
-    if (!room) return;
-    const handleConnected = () => onChange(true);
-    const handleReconnecting = () => onChange(false);
-    const handleReconnected = () => onChange(true);
-    room.on(RoomEvent.Connected, handleConnected);
-    room.on(RoomEvent.Reconnecting, handleReconnecting);
-    room.on(RoomEvent.Reconnected, handleReconnected);
-    return () => {
-      room.off(RoomEvent.Connected, handleConnected);
-      room.off(RoomEvent.Reconnecting, handleReconnecting);
-      room.off(RoomEvent.Reconnected, handleReconnected);
-    };
-  }, [room, onChange]);
-  return null;
-};
 
 const AppLayout: React.FC = () => {
   useServersSocketSync();
@@ -44,25 +14,11 @@ const AppLayout: React.FC = () => {
   const { data: serversData = [], isLoading: isServersLoading } = useServersQuery();
   const selectedServer = serversData.find((s) => s.id === selectedServerId) ?? null;
 
-  const { token: livekitToken, isLoading: isTokenLoading } = useLiveKitToken(selectedServer);
+  const { token: livekitToken } = useLiveKitToken(selectedServer);
 
   // disable default context menu globally, allow only whitelisted elements
   useContextMenuGuard();
 
-  const transition = useAppStore((s) => s.transition);
-
-  // В режиме разработки всегда используем адрес SFU из переменной окружения,
-  // чтобы локальная сборка могла подключаться к тестовому серверу, независимо
-  // от записей в базе. На продакшене логика остаётся прежней – сначала берём
-  // URL из выбранного сервера, а если его нет, используем переменную среды
-  // как запасной вариант.
-  const serverUrl: string | undefined = import.meta.env.DEV
-    ? ((import.meta.env.VITE_LIVEKIT_URL as string) || undefined)
-    : selectedServer
-        ? selectedServer.sfu?.url ?? (import.meta.env.VITE_LIVEKIT_URL as string)
-        : undefined;
-
-  // Отключили health-проверку SFU: считаем сервер всегда доступным.
   const sfuOk = true;
   const sfuChecking = false;
 
@@ -78,9 +34,6 @@ const AppLayout: React.FC = () => {
 
   const canShowLiveKitRoom = !!selectedServer && !!livekitToken && sfuOk;
 
-  // Показываем оверлей, пока мы ещё не готовы полностью показать комнату
-  const showTransition = !!selectedServer && (isTokenLoading || sfuChecking || transition.active);
-
   if (isServersLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100vw', height: '100vh', backgroundColor: '#202225' }}>
@@ -90,26 +43,24 @@ const AppLayout: React.FC = () => {
   }
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', backgroundColor: '#36393f' }}>
+    <Box sx={{ display: 'flex', height: '100vh', backgroundColor: '#36393f', width: '100vw' }}>
+      {/* Колонка 1: список серверов (72px) */}
       <ServersSidebar />
 
-      {canShowLiveKitRoom ? (
-        <RoomWrapper server={selectedServer!} />
+      {/* Колонка 2 + 3: основное содержимое */}
+      {selectedServer ? (
+        // Если сервер выбран
+        <Box sx={{ display: 'flex', flexGrow: 1, minWidth: 0 }}>
+          {/* Правая часть – всё содержимое сервера */}
+          <Box sx={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+            {canShowLiveKitRoom ? <RoomWrapper server={selectedServer!} /> : <ServerPlaceholder />}
+          </Box>
+        </Box>
       ) : (
-        <>
-          {/* Ширина блока участников */}
-          <Box
-            sx={{
-              width: 240,
-              flexShrink: 0,
-              borderRight: '1px solid rgba(255, 255, 255, 0.12)',
-              background: '#2f3136',
-              height: '100vh',
-            }}
-          />
-          {/* Когда идёт переход на сервер (загрузка токена / мемберов / соединение) отображается глобальный оверлей */}
-          {selectedServer ? null : <ServerPlaceholder />}
-        </>
+        // Ничего не выбрано: показываем лобби / плейсхолдер во всё оставшееся пространство
+        <Box sx={{ flexGrow: 1 }}>
+          <ServerPlaceholder />
+        </Box>
       )}
 
       <Snackbar

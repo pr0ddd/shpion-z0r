@@ -18,6 +18,8 @@ const gradientFlow = keyframes`
 // Common sidebar wrapper (72px width, vertical stack)
 export const SidebarWrapper = styled(Box)(({ theme }) => ({
   width: 72,
+  flex: '0 0 72px',
+  flexShrink: 0,
   height: '100vh',
   padding: theme.spacing(1.5, 0),
   display: 'flex',
