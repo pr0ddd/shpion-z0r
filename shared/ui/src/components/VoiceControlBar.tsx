@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, IconButton, Tooltip, Typography, Menu, MenuItem } from '@mui/material';
+import { Box, IconButton, Tooltip, Menu, MenuItem } from '@mui/material';
 import { useRoomContext, useMediaDeviceSelect } from '@livekit/components-react';
 import { useEffect, useState } from 'react';
 import { useServer, useServerStore, useNotification, useSocket, useAuth } from '@shared/hooks';
@@ -12,6 +12,7 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { ScreenShareControl } from './ScreenShareControl';
+import { RoomEvent, RemoteParticipant } from 'livekit-client';
 
 interface VoiceControlBarProps {
   onDisconnect: () => void;
@@ -64,12 +65,13 @@ const useLocalToggle = (type: 'mic' | 'cam') => {
     }
   };
 
-  // Apply saved preference on first mount/room connection
+  // Apply saved mic/cam preference when (re)подключаемся к комнате
   useEffect(() => {
     if (!room) return;
-    const key = `voice_${type}_enabled`;
-    const saved = localStorage.getItem(key);
-    if (saved !== null) {
+
+    const applyPref = () => {
+      const saved = localStorage.getItem(`voice_${type}_enabled`);
+      if (saved === null) return;
       const desired = saved === 'true';
       const current = type === 'mic'
         ? room.localParticipant.isMicrophoneEnabled
@@ -78,7 +80,14 @@ const useLocalToggle = (type: 'mic' | 'cam') => {
         if (type === 'mic') room.localParticipant.setMicrophoneEnabled(desired);
         else room.localParticipant.setCameraEnabled(desired);
       }
-    }
+    };
+
+    if (room.state === 'connected') applyPref();
+    else room.once('connected', applyPref);
+
+    return () => {
+      room.off('connected', applyPref as any);
+    };
   }, [room, type]);
 
   useEffect(() => {
@@ -172,16 +181,35 @@ const SpeakerControl = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const { socket } = useSocket();
   const { user } = useAuth();
+  const room = useRoomContext();
 
-  const listening = useServerStore((s) => (user?.id ? s.listeningStates[user.id] : (localStorage.getItem('voice_listening') !== 'false')) ?? true);
+  const listening = useServerStore((s) => (user?.id ? s.listeningStates[user.id] : true) ?? true);
   const setListeningState = useServerStore((s) => s.setListeningState);
 
-  // keep actual audio elements in sync
+  // Синхронизируем глобальный mute с LiveKit (глушит/восстанавливает все удалённые аудио-треки,
+  // включая появившихся позже). Для этого меняем громкость у каждого RemoteParticipant.
   useEffect(() => {
-    document.querySelectorAll('audio').forEach((el) => {
-      (el as HTMLMediaElement).muted = !listening;
-    });
-  }, [listening]);
+    if (!room) return;
+
+    const applyVolume = (p: RemoteParticipant) => p.setVolume(listening ? 1 : 0);
+    const handleTrackSubscribed = (
+      _track: any,
+      _publication: any,
+      participant: RemoteParticipant,
+    ) => applyVolume(participant);
+
+    // текущие участники
+    room.remoteParticipants.forEach(applyVolume);
+
+    // участники, которые подключатся позднее
+    room.on(RoomEvent.ParticipantConnected, applyVolume);
+    room.on(RoomEvent.TrackSubscribed, handleTrackSubscribed as any);
+
+    return () => {
+      room.off(RoomEvent.ParticipantConnected, applyVolume);
+      room.off(RoomEvent.TrackSubscribed, handleTrackSubscribed as any);
+    };
+  }, [room, listening]);
 
   const toggleListening = () => {
     if (!user) return;
@@ -190,19 +218,6 @@ const SpeakerControl = () => {
     socket?.emit('user:listening', newVal);
     localStorage.setItem('voice_listening', String(newVal));
   };
-
-  // Apply saved listening preference after mount/when connection ready
-  useEffect(() => {
-    if (!user || !socket) return;
-    const saved = localStorage.getItem('voice_listening');
-    if (saved === null) return;
-    const desired = saved === 'true';
-    if (desired !== listening) {
-      setListeningState(user.id, desired);
-      socket.emit('user:listening', desired);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, socket]);
 
   const openMenu = (e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation();
@@ -213,6 +228,18 @@ const SpeakerControl = () => {
     await setActiveMediaDevice(id);
     closeMenu();
   };
+
+  useEffect(() => {
+    if (!user || !socket || !room) return;
+    const saved = localStorage.getItem('voice_listening');
+    if (saved === null) return;
+    const desired = saved === 'true';
+    if (desired !== listening) {
+      setListeningState(user.id, desired);
+      socket.emit('user:listening', desired);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, socket, room]);
 
   return (
     <Box sx={{ position: 'relative' }}>

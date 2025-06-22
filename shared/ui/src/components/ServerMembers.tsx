@@ -1,14 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   Box,
-  Typography,
   ListItem,
   ListItemText,
   ListItemAvatar,
   Skeleton,
 } from '@mui/material';
 import { useParticipants } from '@livekit/components-react';
-import { useAppStore, useMembersQuery } from '@shared/hooks';
+import { useAppStore, useMembersQuery, useServerStore } from '@shared/hooks';
 import { VoiceControlBar } from '@shared/ui';
 import { Participant } from 'livekit-client';
 import { User, Member } from '@shared/types';
@@ -28,7 +27,7 @@ export const ServerMembers = () => {
   const serverId = useAppStore(s=>s.selectedServerId);
   const { data: allServerMembers = [], isLoading: isMembersLoading } = useMembersQuery(serverId);
   const selectedServer = null; // invite dialog disabled until refactor
-  const listeningStates: Record<string, boolean> = {};
+  const listeningStates = useServerStore(s=>s.listeningStates);
   const participants = useParticipants();
 
   const onlineMembers = useMemo(() => {

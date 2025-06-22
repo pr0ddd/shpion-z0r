@@ -128,13 +128,25 @@ export const useServer = () => {
     }
   }, [user]);
 
-  // socket listeners except messages (handled by useMessagesSocketBatch)
+  // socket listeners
   useEffect(() => {
     if (!socket) return;
 
-    // no server listeners here
+    // when любой участник меняет флаг прослушивания – сервер рассылает user:listening
+    const onListening = (userIdOrBool: any, maybeBool?: boolean) => {
+      if (typeof userIdOrBool === 'string') {
+        setListeningState(userIdOrBool, !!maybeBool);
+      } else if (user) {
+        setListeningState(user.id, !!userIdOrBool);
+      }
+    };
 
-  }, [socket, setListeningState]);
+    socket.on('user:listening', onListening);
+
+    return () => {
+      socket.off('user:listening', onListening);
+    };
+  }, [socket, user, setListeningState]);
 
   const sendMessage = useCallback((content: string) => {
     const server = selectedServer;

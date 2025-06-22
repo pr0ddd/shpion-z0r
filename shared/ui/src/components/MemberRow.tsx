@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Avatar, Box, IconButton, Menu, MenuItem, Slider, Tooltip, Typography } from '@mui/material';
+import { Avatar, Box, Menu, MenuItem, Slider, Typography } from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
 import HeadsetOffIcon from '@mui/icons-material/HeadsetOff';
@@ -10,11 +10,13 @@ import { AudioTrack, useIsSpeaking, useIsMuted, useTracks, useRoomContext } from
 import { Participant, Track } from 'livekit-client';
 import { User } from '@shared/types';
 import { dicebearAvatar } from '../lib/ui';
+import { useAuth } from '@shared/hooks';
+import { useServerStore } from '@shared/hooks';
 
 interface MemberRowProps {
   participant: Participant;
   user: User;
-  isDeafened: boolean;
+  isDeafened?: boolean;
 }
 
 const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafened }) => {
@@ -31,7 +33,16 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
     [tracks, participant.identity]
   );
 
-  const [volume, setVolume] = useState(1);
+  const [sliderVolume, setSliderVolume] = useState(1);
+
+  const { user: me } = useAuth();
+  const listeningSelf = useServerStore((s) => (me?.id ? s.listeningStates[me.id] : true) ?? true);
+
+  const remoteDeaf = isDeafened ?? false;
+  const headphoneOff = participant.isLocal ? !listeningSelf : remoteDeaf;
+
+  // итоговая громкость учитывает глобальное состояние заглушения
+  const effectiveVolume = listeningSelf ? sliderVolume : 0;
 
   // context-menu (right-click) handling
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -61,7 +72,7 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
         transition: 'background-color .15s, border-color .15s',
       }}
     >
-      {audioTrack && <AudioTrack trackRef={audioTrack} volume={volume} />}
+      {audioTrack && <AudioTrack trackRef={audioTrack} volume={effectiveVolume} />}
       <Avatar
         src={user.avatar || dicebearAvatar(user.id)}
         sx={{
@@ -83,15 +94,11 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
       </Box>
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 'auto', mr: 1 }}>
-        {isMuted ? (
+        {isMuted && (
           <MicOffIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-        ) : (
-          <MicIcon fontSize="small" sx={{ color: 'text.secondary' }} />
         )}
-        {isDeafened ? (
+        {headphoneOff && (
           <HeadsetOffIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-        ) : (
-          <HeadsetIcon fontSize="small" sx={{ color: 'text.secondary' }} />
         )}
       </Box>
 
@@ -117,11 +124,11 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <VolumeDownIcon fontSize="small" sx={{ color: 'text.secondary' }} />
             <Slider
-              value={volume}
+              value={sliderVolume}
               min={0}
               max={1}
               step={0.01}
-              onChange={(_, v) => setVolume(v as number)}
+              onChange={(_, v) => setSliderVolume(v as number)}
               color="primary"
               size="small"
               sx={{ mx: 1, flex: 1 }}
@@ -142,10 +149,10 @@ export const MemberRow = React.memo(MemberRowInner, (prev, next) => {
   return (
     prev.participant.sid === next.participant.sid &&
     prev.participant.connectionQuality === next.participant.connectionQuality &&
-    prev.isDeafened === next.isDeafened &&
     prev.user.id === next.user.id &&
     prev.user.username === next.user.username &&
-    prev.user.avatar === next.user.avatar
+    prev.user.avatar === next.user.avatar &&
+    prev.isDeafened === next.isDeafened
   );
 });
 

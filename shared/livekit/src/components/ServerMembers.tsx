@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import {
   Box,
-  Typography,
   List,
   ListItem,
   ListItemText,
@@ -10,6 +9,7 @@ import {
 } from '@mui/material';
 import { useParticipants } from '@livekit/components-react';
 import { useServer } from '@shared/hooks';
+import { useServerStore } from '@shared/hooks';
 import { VoiceControlBar, MemberRow } from '@shared/ui';
 import { Participant } from 'livekit-client';
 import { User, Member } from '@shared/types';
@@ -24,7 +24,8 @@ const MemberSkeleton = () => (
 );
 
 export const ServerMembers: React.FC = () => {
-  const { selectedServer, members: allServerMembers, areMembersLoading, listeningStates = {} } = useServer() as any;
+  const { selectedServer, members: allServerMembers, areMembersLoading } = useServer() as any;
+  const listeningStates = useServerStore(s=>s.listeningStates);
   const participants = useParticipants();
 
   const onlineMembers = useMemo(() => {
