@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Avatar, Paper, Divider, IconButton, Tooltip } from '@mui/material';
+import { Box, Typography, Avatar, Paper, Divider, IconButton } from '@mui/material';
 import { useAuth } from '@shared/hooks';
 import { ConnectionState, Room, Track } from 'livekit-client';
 import { useConnectionState, useMaybeRoomContext, useTrackMutedIndicator, useTracks } from '@livekit/components-react';
@@ -48,21 +48,15 @@ const ActualVoiceControls: React.FC<{ room: Room }> = ({ room }) => {
 
     return (
         <Box sx={{ display: 'flex', justifyContent: 'space-around' }}>
-            <Tooltip title={isMuted ? "Unmute" : "Mute"}>
-                <IconButton onClick={onMuteClick}>
-                    {isMuted ? <MicOffIcon /> : <MicIcon />}
-                </IconButton>
-            </Tooltip>
-            <Tooltip title={isCameraOn ? "Turn Off Camera" : "Turn On Camera"}>
-                <IconButton onClick={onCameraClick}>
-                    {isCameraOn ? <VideocamOffIcon /> : <VideocamIcon />}
-                </IconButton>
-            </Tooltip>
-            <Tooltip title="Disconnect">
-                <IconButton onClick={onDisconnectClick} sx={{ color: 'error.main' }}>
-                    <CallEndIcon />
-                </IconButton>
-            </Tooltip>
+            <IconButton onClick={onMuteClick}>
+                {isMuted ? <MicOffIcon /> : <MicIcon />}
+            </IconButton>
+            <IconButton onClick={onCameraClick}>
+                {isCameraOn ? <VideocamOffIcon /> : <VideocamIcon />}
+            </IconButton>
+            <IconButton onClick={onDisconnectClick} sx={{ color: 'error.main' }}>
+                <CallEndIcon />
+            </IconButton>
         </Box>
     );
 };
@@ -110,11 +104,9 @@ const UserPanel: React.FC = () => {
             <Divider />
 
             <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-around' }}>
-                <Tooltip title={isScreenShareEnabled ? "Stop Sharing" : "Share Screen"}>
-                    <IconButton {...screenShareButtonProps} color="default">
-                        {isScreenShareEnabled ? <StopScreenShareIcon /> : <ScreenShareIcon />}
-                    </IconButton>
-                </Tooltip>
+                <IconButton {...screenShareButtonProps} color="default">
+                    {isScreenShareEnabled ? <StopScreenShareIcon /> : <ScreenShareIcon />}
+                </IconButton>
                 {/* Остальные контроли рендерятся только если есть комната */}
                 {room && <VoiceControls />}
             </Box>

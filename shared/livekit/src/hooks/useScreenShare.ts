@@ -38,8 +38,26 @@ class ScreenShareManager {
     const tokenRes = await livekitAPI.getVoiceToken(serverId, instance);
     if (!tokenRes.success || !tokenRes.data) throw new Error('Failed to obtain LiveKit token');
 
-    // capture display media
-    const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+    // capture display media – try with audio, fallback to video-only if user/browser denies audio capture
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+    } catch (err: any) {
+      if (err?.name === 'NotAllowedError' || err?.name === 'NotFoundError' || err?.name === 'OverconstrainedError') {
+        // retry without audio (video-only) so at least screen is shared
+        try {
+          stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+          // eslint-disable-next-line no-console
+          console.warn('[ScreenShare] Audio capture unavailable, sharing screen without sound:', err);
+        } catch (err2) {
+          // user may have denied the entire capture; propagate but log nicely
+          console.error('[ScreenShare] User denied screen capture:', err2);
+          throw err2;
+        }
+      } else {
+        throw err;
+      }
+    }
     const videoTrack = new LocalVideoTrack(stream.getVideoTracks()[0]);
     let audioTrack: LocalAudioTrack | undefined;
     if (stream.getAudioTracks().length) {
@@ -51,7 +69,13 @@ class ScreenShareManager {
 
     await room.localParticipant.publishTrack(videoTrack, { source: Track.Source.ScreenShare });
     if (audioTrack) {
-      await room.localParticipant.publishTrack(audioTrack);
+      try {
+        await room.localParticipant.publishTrack(audioTrack, { source: Track.Source.ScreenShareAudio });
+      } catch (e) {
+        // some browsers may still reject publishing audio track
+        // eslint-disable-next-line no-console
+        console.warn('[ScreenShare] Failed to publish audio track:', e);
+      }
     }
 
     // when user stops sharing via browser UI

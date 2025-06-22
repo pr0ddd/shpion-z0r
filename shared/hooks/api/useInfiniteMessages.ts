@@ -35,4 +35,5 @@ export const useInfiniteMessagesQuery = (serverId: string | null) =>
       lastPage.hasMore && lastPage.messages.length > 0
         ? lastPage.messages[0].createdAt
         : undefined,
+    refetchOnWindowFocus: false,
   }); 

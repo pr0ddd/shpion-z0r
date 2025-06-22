@@ -118,7 +118,7 @@ const themeOptions: ThemeOptions = {
     },
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Jura", "Helvetica", "Arial", sans-serif',
     h6: {
       fontWeight: 600,
     },
@@ -194,16 +194,14 @@ const themeOptions: ThemeOptions = {
         },
       },
     MuiTooltip: {
+        defaultProps: {
+          disableFocusListener: true,
+          disableHoverListener: true,
+          disableTouchListener: true,
+        },
         styleOverrides: {
-            tooltip: {
-                backgroundColor: '#1a1b1e',
-                color: '#dcddde',
-                fontSize: '0.8rem',
-            },
-            arrow: {
-                color: '#1a1b1e',
-            }
-        }
+          tooltip: { display: 'none' },
+        },
     },
     MuiCssBaseline: {
       styleOverrides: {

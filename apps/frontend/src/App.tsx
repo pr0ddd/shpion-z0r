@@ -7,6 +7,7 @@ import AppLayout from './components/AppLayout';
 import { useAuth } from '@shared/hooks';
 import { MediaSourceSelector as SourcePicker, Source } from '@shared/ui';
 import './App.css';
+import { StreamPage } from './pages/StreamPage';
 
 interface ElectronApi {
   onShowSourcePicker: (callback: (sources: Source[]) => void) => void;
@@ -62,6 +63,7 @@ const App: React.FC = () => {
         <Route path="/" element={user ? <AppLayout /> : <Navigate to="/auth" />} />
         <Route path="/auth" element={!user ? <AuthPage /> : <Navigate to="/" />} />
         <Route path="/invite/:inviteCode" element={<InvitePage />} />
+        <Route path="/stream/:serverId/:trackSid" element={<StreamPage />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </>

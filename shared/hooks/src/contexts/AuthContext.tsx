@@ -102,7 +102,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(err.message || 'An unexpected error occurred during login.');
+      if (err?.response?.status === 401) {
+        setError('Неверный email или пароль.');
+      } else {
+        setError(err?.response?.data?.error || err.message || 'Не удалось войти. Попробуйте позже.');
+      }
     } finally {
         setLoading(false);
     }
@@ -120,7 +124,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (err: any) {
       console.error('Registration error:', err);
-      setError(err.message || 'An unexpected error occurred during registration.');
+      if (err?.response?.status === 409) {
+        setError('Пользователь с таким Email уже существует.');
+      } else {
+        setError(err?.response?.data?.error || err.message || 'Не удалось зарегистрироваться.');
+      }
     } finally {
         setLoading(false);
     }

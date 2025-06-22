@@ -15,4 +15,5 @@ export const useMessagesQuery = (serverId: string | null) =>
       throw new Error(res.error || 'Failed to fetch messages');
     },
     staleTime: 1000 * 15,
+    refetchOnWindowFocus: false,
   }); 
