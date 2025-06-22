@@ -17,9 +17,16 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  selectedServerId: null,
+  selectedServerId: localStorage.getItem('lastSelectedServerId'),
   transition: { active: false, text: null },
-  setSelected: (id) => set({ selectedServerId: id }),
+  setSelected: (id) => {
+    if (id) {
+      localStorage.setItem('lastSelectedServerId', id);
+    } else {
+      localStorage.removeItem('lastSelectedServerId');
+    }
+    set({ selectedServerId: id });
+  },
   startTransition: (text) => set({ transition: { active: true, text } }),
   endTransition: () => set({ transition: { active: false, text: null } }),
 })); 

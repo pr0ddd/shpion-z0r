@@ -1,13 +1,18 @@
-import { useCallback, useEffect, useSyncExternalStore } from 'react';
-import { Room, LocalVideoTrack, LocalAudioTrack, Track } from 'livekit-client';
-import { livekitAPI } from '@shared/data';
+import { useCallback, useEffect, useSyncExternalStore, useRef } from 'react';
+import { Room, LocalVideoTrack, LocalAudioTrack, Track, RoomEvent } from 'livekit-client';
 import { useServer } from '@shared/hooks';
+import { useRoomContext } from '@livekit/components-react';
+
+// Config: maximum simultaneous screen shares (per client)
+const MAX_SHARES = 3;
 
 // --- Internal manager (singleton) --------------------------------------------------
 
 type ShareEntry = {
   room: Room;
   instance: number; // 0..2
+  videoTrack: LocalVideoTrack;
+  audioTrack?: LocalAudioTrack;
 };
 
 class ScreenShareManager {
@@ -31,26 +36,31 @@ class ScreenShareManager {
     return this.shares.length;
   }
 
-  async start(serverId: string, serverUrl: string): Promise<void> {
-    if (this.shares.length >= 3) return; // limit
+  async start(room: Room): Promise<void> {
+    if (this.shares.length >= MAX_SHARES) return; // limit
 
-    const instance = this.shares.length; // 0..2
-    const tokenRes = await livekitAPI.getVoiceToken(serverId, instance);
-    if (!tokenRes.success || !tokenRes.data) throw new Error('Failed to obtain LiveKit token');
+    if (room.state !== 'connected') {
+      console.warn('[ScreenShare] Room not connected');
+      return;
+    }
 
-    // capture display media – try with audio, fallback to video-only if user/browser denies audio capture
+    const instance = this.shares.length; // 0..MAX_SHARES-1
+
+    // For the very first share we include audio, subsequent shares are video-only to prevent duplicated audio
+    const allowAudio = this.shares.length === 0;
+
+    // capture display media – request audio only if allowed, otherwise request silent capture
     let stream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: allowAudio });
     } catch (err: any) {
-      if (err?.name === 'NotAllowedError' || err?.name === 'NotFoundError' || err?.name === 'OverconstrainedError') {
-        // retry without audio (video-only) so at least screen is shared
+      if (allowAudio && (err?.name === 'NotAllowedError' || err?.name === 'NotFoundError' || err?.name === 'OverconstrainedError')) {
+        // retry without audio so at least screen is shared
         try {
           stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
           // eslint-disable-next-line no-console
           console.warn('[ScreenShare] Audio capture unavailable, sharing screen without sound:', err);
         } catch (err2) {
-          // user may have denied the entire capture; propagate but log nicely
           console.error('[ScreenShare] User denied screen capture:', err2);
           throw err2;
         }
@@ -58,32 +68,29 @@ class ScreenShareManager {
         throw err;
       }
     }
+
     const videoTrack = new LocalVideoTrack(stream.getVideoTracks()[0]);
     let audioTrack: LocalAudioTrack | undefined;
-    if (stream.getAudioTracks().length) {
+    if (allowAudio && stream.getAudioTracks().length) {
       audioTrack = new LocalAudioTrack(stream.getAudioTracks()[0]);
     }
-
-    const room = new Room();
-    await room.connect(serverUrl, tokenRes.data.token, { autoSubscribe: false });
 
     await room.localParticipant.publishTrack(videoTrack, { source: Track.Source.ScreenShare });
     if (audioTrack) {
       try {
         await room.localParticipant.publishTrack(audioTrack, { source: Track.Source.ScreenShareAudio });
       } catch (e) {
-        // some browsers may still reject publishing audio track
         // eslint-disable-next-line no-console
         console.warn('[ScreenShare] Failed to publish audio track:', e);
       }
     }
 
-    // when user stops sharing via browser UI
+    // stop share when user ends capture from browser UI
     stream.getVideoTracks()[0].addEventListener('ended', () => {
       this.stop(instance);
     });
 
-    this.shares.push({ room, instance });
+    this.shares.push({ room, instance, videoTrack, audioTrack });
     this.emit();
   }
 
@@ -92,14 +99,25 @@ class ScreenShareManager {
   }
 
   stop(instance?: number) {
+    const stopShare = (s: ShareEntry) => {
+      if (s.videoTrack) {
+        s.room.localParticipant.unpublishTrack(s.videoTrack);
+        s.videoTrack.stop();
+      }
+      if (s.audioTrack) {
+        s.room.localParticipant.unpublishTrack(s.audioTrack);
+        s.audioTrack.stop();
+      }
+    };
+
     if (instance === undefined) {
-      // stop all
-      this.shares.forEach((s) => s.room.disconnect());
+      // stop all shares
+      this.shares.forEach(stopShare);
       this.shares = [];
     } else {
       const idx = this.shares.findIndex((s) => s.instance === instance);
       if (idx !== -1) {
-        this.shares[idx].room.disconnect();
+        stopShare(this.shares[idx]);
         this.shares.splice(idx, 1);
       }
     }
@@ -113,32 +131,25 @@ const manager = new ScreenShareManager();
 
 export const useScreenShare = () => {
   const { selectedServer } = useServer();
-
-  // compute serverUrl similar to frontend logic
-  const serverUrl = (() => {
-    if (!selectedServer) return undefined;
-    const envUrl = (import.meta as any).env.VITE_LIVEKIT_URL as string;
-    if ((import.meta as any).env.DEV) return envUrl;
-    return selectedServer.sfu?.url || envUrl;
-  })();
+  const room = useRoomContext();
 
   const enabled = useSyncExternalStore(manager.subscribe.bind(manager), () => manager.isEnabled());
   const sharesStr = useSyncExternalStore(manager.subscribe.bind(manager), () => manager.list().join('|'));
   const shares = sharesStr ? sharesStr.split('|').filter(Boolean).map(Number) : [];
 
   const toggle = useCallback(() => {
-    if (!selectedServer || !serverUrl) return;
-    if (manager.count < 3) {
-      void manager.start(selectedServer.id, serverUrl);
+    if (!selectedServer || !room) return;
+    if (manager.count < MAX_SHARES) {
+      void manager.start(room);
     } else {
       manager.stop();
     }
-  }, [selectedServer, serverUrl]);
+  }, [selectedServer, room]);
 
   const startNew = useCallback(() => {
-    if (!selectedServer || !serverUrl) return;
-    void manager.start(selectedServer.id, serverUrl);
-  }, [selectedServer, serverUrl]);
+    if (!selectedServer || !room) return;
+    void manager.start(room);
+  }, [selectedServer, room]);
 
   const stopShare = useCallback((idx: number) => {
     manager.stop(idx);
@@ -148,9 +159,31 @@ export const useScreenShare = () => {
     manager.stop();
   }, []);
 
-  // cleanup on unmount of hook consumers (optional)
-  useEffect(() => () => {
-    // no-op; manager persists globally
+  // Авто-остановка всех локальных шэров при выходе из комнаты
+  useEffect(() => {
+    if (!room) return;
+    const handleDisconnect = () => manager.stop();
+    room.on(RoomEvent.Disconnected, handleDisconnect);
+    return () => {
+      room.off(RoomEvent.Disconnected, handleDisconnect);
+    };
+  }, [room]);
+
+  // Если пользователь сменил комнату (room объект поменялся), прекращаем все локальные шэринги,
+  // чтобы счётчик корректно обнулился и треки не остались висеть в старой комнате.
+  const prevRoomRef = useRef<Room | null>(null);
+  useEffect(() => {
+    if (prevRoomRef.current && room && prevRoomRef.current !== room) {
+      manager.stop();
+    }
+    prevRoomRef.current = room ?? null;
+  }, [room]);
+
+  // Остановка всех шэрингов, когда компонент с хуком размонтируется (смена комнаты / выход).
+  useEffect(() => {
+    return () => {
+      manager.stop();
+    };
   }, []);
 
   return { toggle, enabled, shares, count: manager.count, startNew, stopShare, stopAll } as const;

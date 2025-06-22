@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { Box, Typography, IconButton, Slider, Fade } from '@mui/material';
+import { Box, Typography, IconButton, Slider, Fade, CircularProgress } from '@mui/material';
 import { VideoTrack, AudioTrack, useTracks, TrackReference } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
@@ -8,6 +8,9 @@ import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PictureInPictureAltIcon from '@mui/icons-material/PictureInPictureAlt';
+import { useFullscreen } from '../hooks/useFullscreen';
+import { usePictureInPicture } from '../hooks/usePictureInPicture';
+import { useInactivityHide } from '../hooks/useInactivityHide';
 
 export type StreamPlayerMode = 'preview' | 'tab' | 'fullscreen' | 'main';
 
@@ -39,71 +42,33 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({ trackRef, mode = 'pr
   // --------------------------------------------
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
-  const volumeRef = useRef(1);
-  useEffect(() => { volumeRef.current = volume; }, [volume]);
 
   const toggleMute = useCallback(() => {
-    const newMuted = !isMuted;
-    setIsMuted(newMuted);
-    document.querySelectorAll('audio').forEach((el) => {
-      const media = el as HTMLMediaElement;
-      media.muted = newMuted;
-      if (!newMuted && volumeRef.current !== undefined) {
-        media.volume = volumeRef.current;
-      }
-    });
-  }, [isMuted]);
+    setIsMuted((prev) => !prev);
+  }, []);
 
   // --------------------------------------------
-  // Remote screen-share audio track (if any)
+  // Remote screen-share audio track (if any). We deliberately skip
+  // audio rendering in preview mode to ensure silent thumbnails.
   // --------------------------------------------
   const screenAudioTracks = useTracks([Track.Source.ScreenShareAudio]);
   const audioTrackRef = useMemo(() => {
-    if (screenAudioTracks.length === 0) return undefined;
+    if (mode === 'preview' || screenAudioTracks.length === 0) return undefined; // never output sound in preview
     if (trackRef) {
       const match = screenAudioTracks.find((t) => t.participant.sid === trackRef.participant?.sid);
       if (match) return match;
     }
     // fallback to first available
     return screenAudioTracks[0];
-  }, [screenAudioTracks, trackRef]);
-
-  // --------------------------------------------
-  // Picture-in-Picture state tracking
-  // --------------------------------------------
-  const [isPip, setIsPip] = useState(false);
-
-  useEffect(() => {
-    const onPipChange = () => setIsPip(Boolean(document.pictureInPictureElement));
-    document.addEventListener('enterpictureinpicture', onPipChange);
-    document.addEventListener('leavepictureinpicture', onPipChange);
-    return () => {
-      document.removeEventListener('enterpictureinpicture', onPipChange);
-      document.removeEventListener('leavepictureinpicture', onPipChange);
-    };
-  }, []);
+  }, [screenAudioTracks, trackRef, mode]);
 
   // --------------------------------------------
   // Fullscreen-specific media controls
   // --------------------------------------------
   const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const [controlsVisible, setControlsVisible] = useState(true);
-  const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [isFs, setFs] = useState(false);
-  const toggleFs = useCallback(() => {
-    if (!document.fullscreenElement && wrapperRef.current) {
-      wrapperRef.current.requestFullscreen().then(() => setFs(true));
-    } else if (document.fullscreenElement) {
-      document.exitFullscreen().then(() => setFs(false));
-    }
-  }, []);
-
-  // keep isFs in sync with actual fullscreen state (handles PIP exit etc.)
-  useEffect(() => {
-    const handler = () => setFs(Boolean(document.fullscreenElement));
-    document.addEventListener('fullscreenchange', handler);
-    return () => document.removeEventListener('fullscreenchange', handler);
-  }, []);
+  const { isFs, toggle: toggleFs } = useFullscreen(wrapperRef);
+  const isPip = usePictureInPicture();
+  const controlsVisible = useInactivityHide(wrapperRef, 2000);
 
   useEffect(() => {
     if (mode !== 'fullscreen' && mode !== 'tab') return;
@@ -119,23 +84,6 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({ trackRef, mode = 'pr
     };
   }, [mode]);
 
-  useEffect(() => {
-    if (mode !== 'fullscreen' && mode !== 'tab') return;
-    const container = wrapperRef.current;
-    if (!container) return;
-    const show = () => {
-      setControlsVisible(true);
-      if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
-      inactivityTimer.current = setTimeout(() => setControlsVisible(false), 2000);
-    };
-    show();
-    container.addEventListener('mousemove', show);
-    return () => {
-      container.removeEventListener('mousemove', show);
-      if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
-    };
-  }, [mode]);
-
   const [sliderVisible, setSliderVisible] = useState(false);
 
   return (
@@ -143,11 +91,11 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({ trackRef, mode = 'pr
       {trackRef ? (
         <VideoTrack trackRef={trackRef} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
       ) : (
-        <Typography sx={{ color: 'white' }}>Стрим недоступен</Typography>
+        <CircularProgress color="inherit" />
       )}
 
-      {/* play screenshare audio track only in fullscreen or PiP */}
-      {audioTrackRef && (isFs || mode === 'fullscreen' || isPip) && (
+      {/* play screenshare audio track only when allowed (never in preview) */}
+      {audioTrackRef && (isFs || mode === 'fullscreen' || mode === 'main' || mode === 'tab' || isPip) && (
         <AudioTrack trackRef={audioTrackRef} volume={isMuted ? 0 : volume} />
       )}
 
@@ -167,12 +115,9 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({ trackRef, mode = 'pr
                   max={1}
                   step={0.01}
                   onChange={(_, val)=>{
-                    const vol=val as number;
+                    const vol = val as number;
                     setVolume(vol);
-                    setIsMuted(vol===0);
-                    document.querySelectorAll('audio').forEach(el=>{
-                      const m=el as HTMLMediaElement; m.volume=vol; if(vol>0) m.muted=false; else m.muted=true;
-                    });
+                    setIsMuted(vol === 0);
                   }}
                   sx={{ width: sliderVisible ? 100 : 0, overflow:'hidden', transition:'width .2s', color:'white', '& .MuiSlider-thumb':{width:10,height:10} }}
                 />
@@ -193,7 +138,6 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({ trackRef, mode = 'pr
                   if (v?.requestPictureInPicture) {
                     try {
                       await v.requestPictureInPicture();
-                      setIsPip(true);
                     } catch (e) {
                       console.error(e);
                     }
