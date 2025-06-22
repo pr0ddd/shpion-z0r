@@ -47,6 +47,24 @@ const ToggleButton: React.FC<{
 const useLocalToggle = (type: 'mic' | 'cam') => {
   const room = useRoomContext();
   const { showNotification } = useNotification();
+  // small local feedback sound
+  const playClick = () => {
+    try {
+      const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 660;
+      gain.gain.value = 0.05;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.1);
+    } catch {}
+  };
+
   // version state just to trigger re-render
   const [, force] = useState(0);
 
@@ -60,6 +78,7 @@ const useLocalToggle = (type: 'mic' | 'cam') => {
       if (type === 'mic') await room.localParticipant.setMicrophoneEnabled(!enabled);
       else await room.localParticipant.setCameraEnabled(!enabled);
       localStorage.setItem(`voice_${type}_enabled`, String(!enabled));
+      playClick();
     } catch (err: any) {
       showNotification(err?.message || 'Cannot access device', 'error');
     }
@@ -217,6 +236,21 @@ const SpeakerControl = () => {
     setListeningState(user.id, newVal);
     socket?.emit('user:listening', newVal);
     localStorage.setItem('voice_listening', String(newVal));
+    try {
+      const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.value = 440;
+        gain.gain.value = 0.05;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.05);
+      }
+    } catch {}
   };
 
   const openMenu = (e: React.MouseEvent<HTMLElement>) => {
