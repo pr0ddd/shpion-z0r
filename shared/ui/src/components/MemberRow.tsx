@@ -4,14 +4,10 @@ import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
 import HeadsetOffIcon from '@mui/icons-material/HeadsetOff';
 import HeadsetIcon from '@mui/icons-material/Headset';
-import SignalCellular0BarIcon from '@mui/icons-material/SignalCellular0Bar';
-import SignalCellular2BarIcon from '@mui/icons-material/SignalCellular2Bar';
-import SignalCellular3BarIcon from '@mui/icons-material/SignalCellular3Bar';
-import SignalCellular4BarIcon from '@mui/icons-material/SignalCellular4Bar';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import { AudioTrack, useIsSpeaking, useIsMuted, useTracks, useRoomContext } from '@livekit/components-react';
-import { Participant, Track, ConnectionQuality } from 'livekit-client';
+import { Participant, Track } from 'livekit-client';
 import { User } from '@shared/types';
 import { dicebearAvatar } from '../lib/ui';
 
@@ -36,13 +32,6 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
   );
 
   const [volume, setVolume] = useState(1);
-
-  // connection quality / ping indicator
-  const quality = participant.connectionQuality ?? ConnectionQuality.Unknown;
-  let QualityIcon: React.ElementType = SignalCellular0BarIcon;
-  if (quality === ConnectionQuality.Excellent) QualityIcon = SignalCellular4BarIcon;
-  else if (quality === ConnectionQuality.Good) QualityIcon = SignalCellular3BarIcon;
-  else if (quality === ConnectionQuality.Poor) QualityIcon = SignalCellular2BarIcon;
 
   // context-menu (right-click) handling
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -104,9 +93,6 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
         ) : (
           <HeadsetIcon fontSize="small" sx={{ color: 'text.secondary' }} />
         )}
-        <Tooltip title={`Состояние соединения: ${quality}`}>
-          <QualityIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-        </Tooltip>
       </Box>
 
       {/* контекстное меню с ползунком громкости */}

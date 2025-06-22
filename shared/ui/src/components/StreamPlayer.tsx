@@ -48,27 +48,27 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({ trackRef, mode = 'pr
   }, []);
 
   // --------------------------------------------
+  // Fullscreen/PiP & inactivity handlers (need isFs before audio selection)
+  // --------------------------------------------
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const { isFs, toggle: toggleFs } = useFullscreen(wrapperRef);
+  const isPip = usePictureInPicture();
+  const controlsVisible = useInactivityHide(wrapperRef, 2000);
+
+  // --------------------------------------------
   // Remote screen-share audio track (if any). We deliberately skip
   // audio rendering in preview mode to ensure silent thumbnails.
   // --------------------------------------------
   const screenAudioTracks = useTracks([Track.Source.ScreenShareAudio]);
   const audioTrackRef = useMemo(() => {
-    if (mode === 'preview' || screenAudioTracks.length === 0) return undefined; // never output sound in preview
+    if (mode === 'preview' || (mode === 'main' && !isFs) || screenAudioTracks.length === 0) return undefined; // never output sound in preview; in main only if fullscreen
     if (trackRef) {
       const match = screenAudioTracks.find((t) => t.participant.sid === trackRef.participant?.sid);
       if (match) return match;
     }
     // fallback to first available
     return screenAudioTracks[0];
-  }, [screenAudioTracks, trackRef, mode]);
-
-  // --------------------------------------------
-  // Fullscreen-specific media controls
-  // --------------------------------------------
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const { isFs, toggle: toggleFs } = useFullscreen(wrapperRef);
-  const isPip = usePictureInPicture();
-  const controlsVisible = useInactivityHide(wrapperRef, 2000);
+  }, [screenAudioTracks, trackRef, mode, isFs]);
 
   useEffect(() => {
     if (mode !== 'fullscreen' && mode !== 'tab') return;
@@ -89,13 +89,20 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({ trackRef, mode = 'pr
   return (
     <Box ref={wrapperRef} sx={{ position: 'relative', width: '100%', height: '100%', bgcolor: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       {trackRef ? (
-        <VideoTrack trackRef={trackRef} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        <VideoTrack
+          trackRef={trackRef}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: isFs || mode === 'fullscreen' || mode === 'tab' ? 'cover' : 'contain',
+          }}
+        />
       ) : (
         <CircularProgress color="inherit" />
       )}
 
-      {/* play screenshare audio track only when allowed (never in preview) */}
-      {audioTrackRef && (isFs || mode === 'fullscreen' || mode === 'main' || mode === 'tab' || isPip) && (
+      {/* play screenshare audio track only in dedicated playback modes */}
+      {audioTrackRef && (isFs || mode === 'fullscreen' || mode === 'tab' || isPip) && (
         <AudioTrack trackRef={audioTrackRef} volume={isMuted ? 0 : volume} />
       )}
 

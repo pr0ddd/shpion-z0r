@@ -58,10 +58,28 @@ const useLocalToggle = (type: 'mic' | 'cam') => {
     try {
       if (type === 'mic') await room.localParticipant.setMicrophoneEnabled(!enabled);
       else await room.localParticipant.setCameraEnabled(!enabled);
+      localStorage.setItem(`voice_${type}_enabled`, String(!enabled));
     } catch (err: any) {
       showNotification(err?.message || 'Cannot access device', 'error');
     }
   };
+
+  // Apply saved preference on first mount/room connection
+  useEffect(() => {
+    if (!room) return;
+    const key = `voice_${type}_enabled`;
+    const saved = localStorage.getItem(key);
+    if (saved !== null) {
+      const desired = saved === 'true';
+      const current = type === 'mic'
+        ? room.localParticipant.isMicrophoneEnabled
+        : room.localParticipant.isCameraEnabled;
+      if (desired !== current) {
+        if (type === 'mic') room.localParticipant.setMicrophoneEnabled(desired);
+        else room.localParticipant.setCameraEnabled(desired);
+      }
+    }
+  }, [room, type]);
 
   useEffect(() => {
     const lp = room?.localParticipant;
@@ -155,7 +173,7 @@ const SpeakerControl = () => {
   const { socket } = useSocket();
   const { user } = useAuth();
 
-  const listening = useServerStore((s) => (user?.id ? s.listeningStates[user.id] : true) ?? true);
+  const listening = useServerStore((s) => (user?.id ? s.listeningStates[user.id] : (localStorage.getItem('voice_listening') !== 'false')) ?? true);
   const setListeningState = useServerStore((s) => s.setListeningState);
 
   // keep actual audio elements in sync
@@ -170,7 +188,21 @@ const SpeakerControl = () => {
     const newVal = !listening;
     setListeningState(user.id, newVal);
     socket?.emit('user:listening', newVal);
+    localStorage.setItem('voice_listening', String(newVal));
   };
+
+  // Apply saved listening preference after mount/when connection ready
+  useEffect(() => {
+    if (!user || !socket) return;
+    const saved = localStorage.getItem('voice_listening');
+    if (saved === null) return;
+    const desired = saved === 'true';
+    if (desired !== listening) {
+      setListeningState(user.id, desired);
+      socket.emit('user:listening', desired);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, socket]);
 
   const openMenu = (e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation();
