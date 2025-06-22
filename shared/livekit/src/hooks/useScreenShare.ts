@@ -1,18 +1,133 @@
-import { useTrackToggle } from '@livekit/components-react';
-import { Track } from 'livekit-client';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
+import { Room, LocalVideoTrack, LocalAudioTrack, Track } from 'livekit-client';
+import { livekitAPI } from '@shared/data';
+import { useServer } from '@shared/hooks';
 
-// Simplified: rely on LiveKit helper but request audio together with video
+// --- Internal manager (singleton) --------------------------------------------------
+
+type ShareEntry = {
+  room: Room;
+  instance: number; // 0..2
+};
+
+class ScreenShareManager {
+  private shares: ShareEntry[] = [];
+  private listeners = new Set<() => void>();
+
+  isEnabled() {
+    return this.shares.length > 0;
+  }
+
+  subscribe(listener: () => void) {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  private emit() {
+    this.listeners.forEach((l) => l());
+  }
+
+  get count() {
+    return this.shares.length;
+  }
+
+  async start(serverId: string, serverUrl: string): Promise<void> {
+    if (this.shares.length >= 3) return; // limit
+
+    const instance = this.shares.length; // 0..2
+    const tokenRes = await livekitAPI.getVoiceToken(serverId, instance);
+    if (!tokenRes.success || !tokenRes.data) throw new Error('Failed to obtain LiveKit token');
+
+    // capture display media
+    const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+    const videoTrack = new LocalVideoTrack(stream.getVideoTracks()[0]);
+    let audioTrack: LocalAudioTrack | undefined;
+    if (stream.getAudioTracks().length) {
+      audioTrack = new LocalAudioTrack(stream.getAudioTracks()[0]);
+    }
+
+    const room = new Room();
+    await room.connect(serverUrl, tokenRes.data.token, { autoSubscribe: false });
+
+    await room.localParticipant.publishTrack(videoTrack, { source: Track.Source.ScreenShare });
+    if (audioTrack) {
+      await room.localParticipant.publishTrack(audioTrack);
+    }
+
+    // when user stops sharing via browser UI
+    stream.getVideoTracks()[0].addEventListener('ended', () => {
+      this.stop(instance);
+    });
+
+    this.shares.push({ room, instance });
+    this.emit();
+  }
+
+  list() {
+    return this.shares.map((s) => s.instance);
+  }
+
+  stop(instance?: number) {
+    if (instance === undefined) {
+      // stop all
+      this.shares.forEach((s) => s.room.disconnect());
+      this.shares = [];
+    } else {
+      const idx = this.shares.findIndex((s) => s.instance === instance);
+      if (idx !== -1) {
+        this.shares[idx].room.disconnect();
+        this.shares.splice(idx, 1);
+      }
+    }
+    this.emit();
+  }
+}
+
+const manager = new ScreenShareManager();
+
+// --- React hook --------------------------------------------------------------------
+
 export const useScreenShare = () => {
-  const { toggle: innerToggle, enabled } = useTrackToggle({ source: Track.Source.ScreenShare });
+  const { selectedServer } = useServer();
+
+  // compute serverUrl similar to frontend logic
+  const serverUrl = (() => {
+    if (!selectedServer) return undefined;
+    const envUrl = (import.meta as any).env.VITE_LIVEKIT_URL as string;
+    if ((import.meta as any).env.DEV) return envUrl;
+    return selectedServer.sfu?.url || envUrl;
+  })();
+
+  const enabled = useSyncExternalStore(manager.subscribe.bind(manager), () => manager.isEnabled());
+  const sharesStr = useSyncExternalStore(manager.subscribe.bind(manager), () => manager.list().join('|'));
+  const shares = sharesStr ? sharesStr.split('|').filter(Boolean).map(Number) : [];
 
   const toggle = useCallback(() => {
-    if (enabled) {
-      void innerToggle(false);
+    if (!selectedServer || !serverUrl) return;
+    if (manager.count < 3) {
+      void manager.start(selectedServer.id, serverUrl);
     } else {
-      void innerToggle(true, { audio: true, contentHint: 'motion' } as any);
+      manager.stop();
     }
-  }, [enabled, innerToggle]);
+  }, [selectedServer, serverUrl]);
 
-  return { toggle, enabled } as const;
+  const startNew = useCallback(() => {
+    if (!selectedServer || !serverUrl) return;
+    void manager.start(selectedServer.id, serverUrl);
+  }, [selectedServer, serverUrl]);
+
+  const stopShare = useCallback((idx: number) => {
+    manager.stop(idx);
+  }, []);
+
+  const stopAll = useCallback(() => {
+    manager.stop();
+  }, []);
+
+  // cleanup on unmount of hook consumers (optional)
+  useEffect(() => () => {
+    // no-op; manager persists globally
+  }, []);
+
+  return { toggle, enabled, shares, count: manager.count, startNew, stopShare, stopAll } as const;
 }; 

@@ -2,18 +2,16 @@ import React from 'react';
 import { Box, IconButton, Tooltip, Typography, Menu, MenuItem } from '@mui/material';
 import { useRoomContext, useMediaDeviceSelect } from '@livekit/components-react';
 import { useEffect, useState } from 'react';
-import { useScreenShare } from '@shared/livekit';
 import { useServer, useServerStore, useNotification, useSocket, useAuth } from '@shared/hooks';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
-import ScreenShareIcon from '@mui/icons-material/ScreenShare';
-import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
 import CallEndIcon from '@mui/icons-material/CallEnd';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import { ScreenShareControl } from './ScreenShareControl';
 
 interface VoiceControlBarProps {
   onDisconnect: () => void;
@@ -149,19 +147,7 @@ const DeviceControl: React.FC<{
   );
 };
 
-const ScreenShareToggle = () => {
-  const { toggle, enabled } = useScreenShare();
-  return (
-    <ToggleButton
-      enabled={enabled}
-      iconOn={<StopScreenShareIcon />}
-      iconOff={<ScreenShareIcon />}
-      titleOn="Остановить трансляцию экрана"
-      titleOff="Поделиться экраном"
-      onClick={toggle}
-    />
-  );
-};
+const ScreenShareToggle = ScreenShareControl;
 
 const SpeakerControl = () => {
   const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({ kind: 'audiooutput' });

@@ -53,11 +53,22 @@ export class LiveKitController {
       const user = req.user!;
 
       const roomName = `shpion-server-${serverId}`;
-      console.log(`🎤 Generating voice token for user ${user.username} in room ${roomName}`);
+
+      // Позволяем запрашивать токен для «виртуального» участника, передавая ?instance=n (0-2)
+      const instance = typeof req.query.instance === 'string' ? parseInt(req.query.instance, 10) : undefined;
+      const identity = instance !== undefined && !Number.isNaN(instance)
+        ? `${user.id}#share${instance}`
+        : user.id;
+
+      const participantName = instance !== undefined && !Number.isNaN(instance)
+        ? `${user.username} (экран ${instance + 1})`
+        : user.username;
+
+      console.log(`🎤 Generating voice token for ${participantName} (${identity}) in room ${roomName}`);
 
       const token = await LiveKitService.createToken(
-        user.id,
-        user.username,
+        identity,
+        participantName,
         roomName
       );
 

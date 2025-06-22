@@ -9,18 +9,17 @@ import { ServerPlaceholder } from '@shared/ui';
 import { useLiveKitToken } from '@shared/livekit';
 import { VideoPresets, AudioPresets, RoomEvent } from 'livekit-client';
 import { useContextMenuGuard } from '@shared/ui';
-import { useSfuAvailability } from '@shared/hooks';
 
 // Use LiveKit 1080p preset for encoding parameters (30fps, ~4.5-6 Mbps)
 const motion1080p30 = VideoPresets.h1080;
 
 // Custom 1080p @60 fps VP8 (≈4 Mbps) for camera and screen share
-const encoding1080p60_4m = {
-  maxBitrate: 8_000_000, // 4 Mbps
-  maxFramerate: 60,
+const encoding1080p30_2m = {
+  maxBitrate: 2_000_000, // 4 Mbps
+  maxFramerate: 30,
 } as const;
 
-const screenShare60fps = encoding1080p60_4m; // reuse for screen share
+const screenShare60fps = encoding1080p30_2m; // reuse for screen share
 
 const CenteredLoader: React.FC = () => (
   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', flexGrow: 1 }}>
@@ -62,11 +61,20 @@ const AppLayout: React.FC = () => {
 
   const transition = useAppStore((s) => s.transition);
 
-  const serverUrl: string | undefined = selectedServer
-    ? selectedServer.sfu?.url ?? (import.meta.env.VITE_LIVEKIT_URL as string)
-    : undefined;
+  // В режиме разработки всегда используем адрес SFU из переменной окружения,
+  // чтобы локальная сборка могла подключаться к тестовому серверу, независимо
+  // от записей в базе. На продакшене логика остаётся прежней – сначала берём
+  // URL из выбранного сервера, а если его нет, используем переменную среды
+  // как запасной вариант.
+  const serverUrl: string | undefined = import.meta.env.DEV
+    ? ((import.meta.env.VITE_LIVEKIT_URL as string) || undefined)
+    : selectedServer
+        ? selectedServer.sfu?.url ?? (import.meta.env.VITE_LIVEKIT_URL as string)
+        : undefined;
 
-  const { data: sfuOk = true, isLoading: sfuChecking } = useSfuAvailability(serverUrl);
+  // Отключили health-проверку SFU: считаем сервер всегда доступным.
+  const sfuOk = true;
+  const sfuChecking = false;
 
   const selectServer = useSelectServer();
   const [snackOpen, setSnackOpen] = useState(false);
@@ -108,7 +116,7 @@ const AppLayout: React.FC = () => {
             dynacast: false,
             publishDefaults: {
               videoCodec: 'av1',
-              videoEncoding: encoding1080p60_4m,
+              videoEncoding: encoding1080p30_2m,
               screenShareEncoding: screenShare60fps,
               audioPreset: AudioPresets.speech,
               dtx: true,
@@ -155,12 +163,6 @@ const AppLayout: React.FC = () => {
         <Box sx={{ position: 'fixed', inset: 0, bgcolor: 'rgba(0,0,0,0.75)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', zIndex: 3000 }}>
           <CircularProgress size={60} sx={{ mb: 3 }} />
           <Typography variant="h6" sx={{ textAlign: 'center' }}>{transition.text ?? 'Загрузка...'}</Typography>
-        </Box>
-      )}
-
-      {selectedServer && !sfuOk && !sfuChecking && (
-        <Box sx={{ position: 'absolute', inset:0, bgcolor: 'rgba(0,0,0,0.8)', zIndex: 4000, display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <Typography variant="h5" color="error">SFU сервер недоступен</Typography>
         </Box>
       )}
 

@@ -18,5 +18,4 @@ export * from '../api/useInfiniteMessages';
 export * from '../useServersSocketSync';
 export * from '../useSelectServer';
 export * from '../useMessagesSocketSync';
-export * from './useSfuAvailability';
 export * from './lib/queryUtils';

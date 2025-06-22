@@ -4,8 +4,6 @@ import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
-import ScreenShareIcon from '@mui/icons-material/ScreenShare';
-import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
 import CallEndIcon from '@mui/icons-material/CallEnd';
 import {
   useTrackToggle,
@@ -13,7 +11,7 @@ import {
 } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import { useServer } from '@shared/hooks';
-import { useScreenShare } from '@shared/livekit';
+import { ScreenShareControl } from './ScreenShareControl';
 
 export const MediaControlBar = () => {
   const { selectServer } = useServer();
@@ -26,9 +24,6 @@ export const MediaControlBar = () => {
     source: Track.Source.Camera,
   });
   const isCameraMuted = !cameraTrack || cameraTrack.isMuted;
-
-  const { toggle: toggleScreen, enabled: isScreenShareEnabled } = useScreenShare();
-  const screenShareButtonProps = { onClick: toggleScreen } as const;
 
   const { buttonProps: disconnectButtonProps } = useDisconnectButton({});
 
@@ -61,11 +56,7 @@ export const MediaControlBar = () => {
           {isCameraMuted ? <VideocamOffIcon /> : <VideocamIcon />}
         </IconButton>
       </Tooltip>
-      <Tooltip title={isScreenShareEnabled ? 'Остановить демонстрацию' : 'Поделиться экраном'}>
-        <IconButton {...screenShareButtonProps} color="default" sx={{ color: isScreenShareEnabled ? '#4caf50' : 'white' }}>
-          {isScreenShareEnabled ? <StopScreenShareIcon /> : <ScreenShareIcon />}
-        </IconButton>
-      </Tooltip>
+      <ScreenShareControl />
       <Tooltip title="Покинуть комнату">
         <IconButton onClick={handleDisconnect} color="default" sx={{ color: '#f44336' }}>
           <CallEndIcon />

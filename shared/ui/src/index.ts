@@ -24,3 +24,4 @@ export * from './components/MemberRow';
 export * from './hooks/useContextMenuGuard';
 export * from './styled/Sidebar';
 export { default as LobbyIcon } from './icons/LobbyIcon';
+export * from './components/ScreenShareControl';
