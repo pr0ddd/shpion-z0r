@@ -37,6 +37,8 @@ git clone <repository-url>
 cd shpion-z0r
 ```
 
+
+
 ### 2. Настройка бэкенда
 1.  **Перейдите в директорию:**
     ```bash
