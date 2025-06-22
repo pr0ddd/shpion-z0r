@@ -135,14 +135,12 @@ export const StreamPlayer = forwardRef<StreamPlayerHandle, StreamPlayerProps>(
       return audios;
     }, [trackRef]);
 
-    // включаем/выключаем получение аудио прямо на уровне подписки
+    // когда звук разрешён автоматически снимаем глобальный mute (если он был из-за превью)
     useEffect(()=>{
-      audioPublications.forEach((pub:any)=>{
-        if (typeof pub.setEnabled === 'function') {
-          pub.setEnabled(isAudioAllowed);
-        }
-      });
-    }, [audioPublications, isAudioAllowed]);
+      if (isAudioAllowed) {
+        setIsMuted(false);
+      }
+    }, [isAudioAllowed]);
 
     /* ------------------------------------------------------------------
      * Синхронизируем состояние mute/volume с элементом <audio>
@@ -185,19 +183,15 @@ export const StreamPlayer = forwardRef<StreamPlayerHandle, StreamPlayerProps>(
      * ---------------------------------------------------------------- */
     // helper: полностью выключить звук
     const muteHard = useCallback(() => {
+      // просто детачим все media элементы для мгновенной тишины
       try {
         audioPublications.forEach((pub:any)=>{
-          if (typeof pub.setEnabled === 'function') {
-            console.log('[StreamPlayer] muteHard: disable publication', pub.trackSid);
-            pub.setEnabled(false);
-            // детачим элементы 
-            if (pub.track && typeof pub.track.detach === 'function') {
-              pub.track.detach().forEach((el:HTMLElement)=> el.remove());
-            }
+          if (pub.track && typeof pub.track.detach === 'function') {
+            pub.track.detach().forEach((el:HTMLElement)=> el.remove());
           }
         });
       } catch (err) {
-        console.warn('[StreamPlayer] muteHard setEnabled error', err);
+        console.warn('[StreamPlayer] muteHard detach error', err);
       }
 
       // 2) локально замьютить все элементы
