@@ -1,6 +1,26 @@
-import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { Box, Typography, IconButton, Slider, Fade, CircularProgress } from '@mui/material';
-import { VideoTrack, AudioTrack, useTracks, TrackReference } from '@livekit/components-react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
+import {
+  Box,
+  Fade,
+  IconButton,
+  Slider,
+  Typography,
+  CircularProgress,
+} from '@mui/material';
+import {
+  AudioTrack,
+  TrackReference,
+  useTracks,
+  VideoTrack,
+} from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
@@ -15,171 +35,409 @@ import { useInactivityHide } from '../hooks/useInactivityHide';
 export type StreamPlayerMode = 'preview' | 'tab' | 'fullscreen' | 'main';
 
 export interface StreamPlayerProps {
-  /** Reference to a published track (camera or screen share). If null – show placeholder */
+  /** Published track (camera or screen share). */
   trackRef: TrackReference | null;
+  /** Visual/display mode – affects UI and audio policy. */
   mode?: StreamPlayerMode;
+  /** Fired in "tab" or "fullscreen" modes when user closes the player. */
   onClose?: () => void;
+  /** Pop-out button handler (only in "main" mode). */
   onPopout?: () => void;
 }
 
+export interface StreamPlayerHandle {
+  /** жёстко выключить звук (mute + disable track) */
+  muteHard(): void;
+}
+
 /**
- * Универсальный плеер одного LiveKit-трека с оверлеем управления.
- * Используется и в отдельной вкладке стрима, и внутри модального просмотра.
+ * Единый плеер LiveKit-трека с управлением громкостью, полноэкранным режимом
+ * и PiP. Обеспечивает строгую политику звука: превью никогда не воспроизводит
+ * аудио, даже если пользователь ранее включал звук в полноэкранном режиме.
  */
-export const StreamPlayer: React.FC<StreamPlayerProps> = ({ trackRef, mode = 'preview', onClose, onPopout }) => {
-  // вычисляем имя и номер стрима
-  const { name: rawName = 'Стример', identity } = trackRef?.participant ?? {} as any;
-  const streamerName = rawName;
-  let streamIndex: number | null = null;
-  if (identity && identity.includes('#share')) {
-    const idxStr = identity.split('#share').pop();
-    const idxNum = parseInt(idxStr ?? '', 10);
-    if (!Number.isNaN(idxNum)) streamIndex = idxNum + 1;
-  }
-
-  // --------------------------------------------
-  // Controls state (shared)
-  // --------------------------------------------
-  const [volume, setVolume] = useState(1);
-  const [isMuted, setIsMuted] = useState(false);
-
-  const toggleMute = useCallback(() => {
-    setIsMuted((prev) => !prev);
-  }, []);
-
-  // --------------------------------------------
-  // Fullscreen/PiP & inactivity handlers (need isFs before audio selection)
-  // --------------------------------------------
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const { isFs, toggle: toggleFs } = useFullscreen(wrapperRef);
-  const isPip = usePictureInPicture();
-  const controlsVisible = useInactivityHide(wrapperRef, 2000);
-
-  // --------------------------------------------
-  // Remote screen-share audio track (if any). We deliberately skip
-  // audio rendering in preview mode to ensure silent thumbnails.
-  // --------------------------------------------
-  const screenAudioTracks = useTracks([Track.Source.ScreenShareAudio]);
-  const audioTrackRef = useMemo(() => {
-    if (mode === 'preview' || (mode === 'main' && !isFs) || screenAudioTracks.length === 0) return undefined; // never output sound in preview; in main only if fullscreen
-    if (trackRef) {
-      const match = screenAudioTracks.find((t) => t.participant.sid === trackRef.participant?.sid);
-      if (match) return match;
+export const StreamPlayer = forwardRef<StreamPlayerHandle, StreamPlayerProps>(
+  ({ trackRef, mode = 'preview', onClose, onPopout }, ref) => {
+    /* ------------------------------------------------------------------
+     * Generic info (имя стримера, индекс экрана)
+     * ---------------------------------------------------------------- */
+    const { name: rawName = 'Стример', identity } =
+      (trackRef?.participant as any) ?? {};
+    const streamerName = rawName;
+    let streamIndex: number | null = null;
+    if (identity && identity.includes('#share')) {
+      const idx = Number(identity.split('#share').pop());
+      streamIndex = Number.isNaN(idx) ? null : idx + 1;
     }
-    // fallback to first available
-    return screenAudioTracks[0];
-  }, [screenAudioTracks, trackRef, mode, isFs]);
 
-  useEffect(() => {
-    if (mode !== 'fullscreen' && mode !== 'tab') return;
-    const videoEl = wrapperRef.current?.querySelector('video') as HTMLVideoElement | null;
-    if (!videoEl) return;
-    const onVolume = () => {
-      setIsMuted(videoEl.muted);
-      setVolume(videoEl.volume);
-    };
-    videoEl.addEventListener('volumechange', onVolume);
-    return () => {
-      videoEl.removeEventListener('volumechange', onVolume);
-    };
-  }, [mode]);
+    /* ------------------------------------------------------------------
+     * Local UI state
+     * ---------------------------------------------------------------- */
+    const [volume, setVolume] = useState(1);
+    const [isMuted, setIsMuted] = useState(false);
+    const [sliderVisible, setSliderVisible] = useState(false);
 
-  const [sliderVisible, setSliderVisible] = useState(false);
+    const toggleMute = useCallback(() => setIsMuted((prev) => !prev), []);
 
-  return (
-    <Box ref={wrapperRef} sx={{ position: 'relative', width: '100%', height: '100%', bgcolor: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      {trackRef ? (
-        <VideoTrack
-          trackRef={trackRef}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: isFs || mode === 'fullscreen' || mode === 'tab' ? 'cover' : 'contain',
+    /* ------------------------------------------------------------------
+     * Fullscreen / PiP helpers
+     * ---------------------------------------------------------------- */
+    const wrapperRef = useRef<HTMLDivElement>(null);
+    const { isFs, toggle: toggleFs } = useFullscreen(wrapperRef);
+    const isPip = usePictureInPicture();
+    const controlsVisible = useInactivityHide(wrapperRef, 2000);
+
+    /* ------------------------------------------------------------------
+     * Audio policy – «preview never sounds»
+     * ---------------------------------------------------------------- */
+    const screenAudioTracks = useTracks([Track.Source.ScreenShareAudio]);
+
+    const isAudioAllowed = useMemo(() => {
+      // Звук разрешён только в полноэкранных режимах (fullscreen, tab) либо
+      // когда компонент фактически находится в Fullscreen API (isFs) или PiP.
+      // Во всех остальных случаях, включая "main"/"preview" плитки, звук запрещён.
+      return (
+        mode === 'fullscreen' ||
+        mode === 'tab' ||
+        isFs ||
+        isPip
+      );
+    }, [mode, isFs, isPip]);
+
+    const audioTrackRef = useMemo<TrackReference | undefined>(() => {
+      if (!isAudioAllowed || screenAudioTracks.length === 0) return undefined;
+
+      // По возможности берём аудио-трек того же участника.
+      if (trackRef) {
+        const match = screenAudioTracks.find(
+          (t) => t.participant.sid === trackRef.participant?.sid,
+        );
+        if (match) return match;
+      }
+
+      // Падение назад: первый доступный аудиотрек.
+      return screenAudioTracks[0];
+    }, [isAudioAllowed, screenAudioTracks, trackRef]);
+
+    const audioPublications = useMemo(() => {
+      if (!trackRef) return [] as any[];
+      const participant = trackRef.participant as any;
+      let pubsArr: any[] = [];
+      const tp = participant?.trackPublications;
+      if (tp) {
+        if (typeof tp.values === 'function') {
+          pubsArr = Array.from(tp.values()); // Map
+        } else if (Array.isArray(tp)) {
+          pubsArr = tp;
+        }
+      }
+      const audios = pubsArr.filter((p:any)=> p.source === Track.Source.ScreenShareAudio);
+      console.log('[StreamPlayer] audioPublications count', audios.length);
+      return audios;
+    }, [trackRef]);
+
+    // включаем/выключаем получение аудио прямо на уровне подписки
+    useEffect(()=>{
+      audioPublications.forEach((pub:any)=>{
+        if (typeof pub.setEnabled === 'function') {
+          pub.setEnabled(isAudioAllowed);
+        }
+      });
+    }, [audioPublications, isAudioAllowed]);
+
+    /* ------------------------------------------------------------------
+     * Синхронизируем состояние mute/volume с элементом <audio>
+     * ---------------------------------------------------------------- */
+    useEffect(() => {
+      const audioEl = wrapperRef.current?.querySelector('audio') as
+        | HTMLAudioElement
+        | undefined;
+      if (!audioEl) return;
+
+      const handleChange = () => {
+        setIsMuted(audioEl.muted || audioEl.volume === 0);
+        setVolume(audioEl.volume);
+      };
+
+      audioEl.addEventListener('volumechange', handleChange);
+      return () => audioEl.removeEventListener('volumechange', handleChange);
+    }, [audioTrackRef]);
+
+    // ▼ ensure video element itself is muted when audio is not allowed (e.g., preview tiles)
+    useEffect(() => {
+      const mediaEls = wrapperRef.current?.querySelectorAll('video, audio') as NodeListOf<HTMLMediaElement> | null;
+      if (!mediaEls) return;
+
+      mediaEls.forEach((el) => {
+        console.log('[StreamPlayer] apply mute to media', isAudioAllowed);
+        if (isAudioAllowed) {
+          el.muted = isMuted;
+          (el as any).volume = isMuted ? 0 : volume;
+        } else {
+          const media = el as HTMLMediaElement;
+          media.muted = true;
+          media.volume = 0;
+        }
+      });
+    }, [isAudioAllowed, isMuted, volume]);
+
+    /* ------------------------------------------------------------------
+     * Audio policy – «preview never sounds»
+     * ---------------------------------------------------------------- */
+    // helper: полностью выключить звук
+    const muteHard = useCallback(() => {
+      try {
+        audioPublications.forEach((pub:any)=>{
+          if (typeof pub.setEnabled === 'function') {
+            console.log('[StreamPlayer] muteHard: disable publication', pub.trackSid);
+            pub.setEnabled(false);
+            // детачим элементы 
+            if (pub.track && typeof pub.track.detach === 'function') {
+              pub.track.detach().forEach((el:HTMLElement)=> el.remove());
+            }
+          }
+        });
+      } catch (err) {
+        console.warn('[StreamPlayer] muteHard setEnabled error', err);
+      }
+
+      // 2) локально замьютить все элементы
+      wrapperRef.current
+        ?.querySelectorAll('video,audio')
+        .forEach((el) => {
+          const media = el as HTMLMediaElement;
+          media.muted = true;
+          media.volume = 0;
+        });
+
+      setIsMuted(true);
+      setVolume(0);
+    }, [audioPublications]);
+
+    useImperativeHandle(ref, () => ({ muteHard }), [muteHard]);
+
+    /* ------------------------------------------------------------------
+     * Dispatch global event о том, что плеер вошёл/вышел из Fullscreen
+     * ---------------------------------------------------------------- */
+    useEffect(() => {
+      if (!trackRef?.publication?.trackSid) return;
+      const detail = {
+        trackSid: (trackRef.publication as any).trackSid,
+        isFs,
+      } as const;
+      console.log('[StreamPlayer] dispatch fs-change', detail);
+      document.dispatchEvent(
+        new CustomEvent('stream-fs-change', { detail }),
+      );
+    }, [isFs, trackRef]);
+
+    /* ------------------------------------------------------------------
+     * Render helpers
+     * ---------------------------------------------------------------- */
+    const renderControlsBar = () => (
+      <Fade in={controlsVisible}>
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            p: 1,
+            background:
+              'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}
-        />
-      ) : (
-        <CircularProgress color="inherit" />
-      )}
+        >
+          {/* --- Left: Volume --- */}
+          <Box
+            onMouseEnter={() => setSliderVisible(true)}
+            onMouseLeave={() => setSliderVisible(false)}
+            sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+          >
+            <IconButton size="small" sx={{ color: 'white' }} onClick={toggleMute}>
+              {isMuted ? (
+                <VolumeOffIcon fontSize="small" />
+              ) : (
+                <VolumeUpIcon fontSize="small" />
+              )}
+            </IconButton>
+            <Slider
+              size="small"
+              value={isMuted ? 0 : volume}
+              min={0}
+              max={1}
+              step={0.01}
+              onChange={(_, v) => {
+                const vol = v as number;
+                setVolume(vol);
+                setIsMuted(vol === 0);
+              }}
+              sx={{
+                width: sliderVisible ? 100 : 0,
+                overflow: 'hidden',
+                transition: 'width .2s',
+                color: 'white',
+                '& .MuiSlider-thumb': { width: 10, height: 10 },
+              }}
+            />
+          </Box>
 
-      {/* play screenshare audio track only in dedicated playback modes */}
-      {audioTrackRef && (isFs || mode === 'fullscreen' || mode === 'tab' || isPip) && (
-        <AudioTrack trackRef={audioTrackRef} volume={isMuted ? 0 : volume} />
-      )}
+          {/* --- Center: Label --- */}
+          <Typography
+            variant="subtitle1"
+            sx={{
+              flexGrow: 1,
+              textAlign: 'center',
+              color: 'white',
+              fontWeight: 500,
+              px: 2,
+              userSelect: 'none',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              pointerEvents: 'none',
+            }}
+          >
+            {streamerName}
+            {typeof streamIndex === 'number' && ` • стрим ${streamIndex}`}
+          </Typography>
 
-      {/* Overlay: fullscreen controls used for fullscreen & tab modes */}
-      {(mode === 'fullscreen' || isFs || mode === 'tab') && (
-        <Fade in={controlsVisible}>
-          <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, p: 1, background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box onMouseEnter={()=>setSliderVisible(true)} onMouseLeave={()=>setSliderVisible(false)} sx={{ display:'flex', alignItems:'center', gap:1 }}>
-                <IconButton size="small" onClick={toggleMute} sx={{ color:'white' }}>
-                  {isMuted ? <VolumeOffIcon fontSize="small" /> : <VolumeUpIcon fontSize="small" />}
-                </IconButton>
-                <Slider
-                  size="small"
-                  value={isMuted ? 0 : volume}
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  onChange={(_, val)=>{
-                    const vol = val as number;
-                    setVolume(vol);
-                    setIsMuted(vol === 0);
-                  }}
-                  sx={{ width: sliderVisible ? 100 : 0, overflow:'hidden', transition:'width .2s', color:'white', '& .MuiSlider-thumb':{width:10,height:10} }}
-                />
-              </Box>
-            </Box>
-
-            {/* Center label */}
-            <Typography variant="subtitle1" sx={{ flexGrow: 1, textAlign: 'center', color: 'white', fontWeight: 500, px:2, pointerEvents:'none', userSelect:'none', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
-              {streamerName}
-              {typeof streamIndex === 'number' && ` • стрим ${streamIndex}`}
-            </Typography>
-
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml:1 }}>
-                <IconButton size="small" onClick={async () => {
-                  if (document.fullscreenElement) await document.exitFullscreen();
-                  const v = wrapperRef.current?.querySelector('video') as any;
-                  if (v?.requestPictureInPicture) {
-                    try {
-                      await v.requestPictureInPicture();
-                    } catch (e) {
-                      console.error(e);
-                    }
+          {/* --- Right: Actions --- */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton
+              size="small"
+              sx={{ color: 'white' }}
+              onClick={async () => {
+                if (document.fullscreenElement) await document.exitFullscreen();
+                const video = wrapperRef.current?.querySelector('video') as
+                  | HTMLVideoElement
+                  | undefined;
+                if (video?.requestPictureInPicture) {
+                  try {
+                    await video.requestPictureInPicture();
+                  } catch (err) {
+                    console.error(err);
                   }
-                }} sx={{ color: 'white' }}>
-                  <PictureInPictureAltIcon fontSize="small" />
-                </IconButton>
-                <IconButton size="small" onClick={toggleFs} sx={{ color: 'white' }}>
-                  {isFs ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
-                </IconButton>
-              </Box>
-            </Box>
-          </Box>
-        </Fade>
-      )}
-
-      {mode === 'main' && !isFs && (
-        <>
-          <Box sx={{ position: 'absolute', top: 8, left: 8, px: 1.5, py: 0.5, backgroundColor: 'rgba(0, 0, 0, 0.6)', borderRadius: '6px', backdropFilter: 'blur(4px)' }}>
-            <Typography variant="caption" sx={{ color: 'white', fontWeight: 'bold', lineHeight: 1 }}>
-              {streamerName} {typeof streamIndex === 'number' && `• стрим ${streamIndex}`}
-            </Typography>
-          </Box>
-          <Box sx={{ position: 'absolute', bottom: 8, right: 8, display: 'flex', gap: 1 }}>
-            {onPopout && (
-              <IconButton onClick={onPopout} sx={{ color: 'white', backgroundColor: 'rgba(0,0,0,0.5)', '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' } }}>
-                <OpenInNewIcon fontSize="small" />
-              </IconButton>
-            )}
-            <IconButton onClick={toggleFs} sx={{ color: 'white', backgroundColor: 'rgba(0,0,0,0.5)', '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' } }}>
-              {isFs ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
+                }
+              }}
+            >
+              <PictureInPictureAltIcon fontSize="small" />
+            </IconButton>
+            <IconButton size="small" sx={{ color: 'white' }} onClick={toggleFs}>
+              {isFs ? (
+                <FullscreenExitIcon fontSize="small" />
+              ) : (
+                <FullscreenIcon fontSize="small" />
+              )}
             </IconButton>
           </Box>
-        </>
-      )}
-    </Box>
-  );
-}; 
+        </Box>
+      </Fade>
+    );
+
+    /* ------------------------------------------------------------------
+     * Main render
+     * ---------------------------------------------------------------- */
+    const shouldShowControls = mode === 'fullscreen' || isFs || mode === 'tab';
+
+    return (
+      <Box
+        ref={wrapperRef}
+        sx={{
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          bgcolor: 'black',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {trackRef ? (
+          <VideoTrack
+            trackRef={trackRef}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit:
+                isFs || mode === 'fullscreen' || mode === 'tab' ? 'cover' : 'contain',
+            }}
+          />
+        ) : (
+          <CircularProgress color="inherit" />
+        )}
+
+        {/* Audio (if allowed) */}
+        {audioTrackRef && isAudioAllowed && (
+          <AudioTrack trackRef={audioTrackRef} volume={isMuted ? 0 : volume} />
+        )}
+
+        {/* Overlay controls for fullscreen & tab */}
+        {shouldShowControls && renderControlsBar()}
+
+        {/* In "main" (grid) mode – title & actions in corners */}
+        {mode === 'main' && !isFs && (
+          <>
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 8,
+                left: 8,
+                px: 1.5,
+                py: 0.5,
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                borderRadius: '6px',
+                backdropFilter: 'blur(4px)',
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{ color: 'white', fontWeight: 'bold', lineHeight: 1 }}
+              >
+                {streamerName}{' '}
+                {typeof streamIndex === 'number' && `• стрим ${streamIndex}`}
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: 8,
+                right: 8,
+                display: 'flex',
+                gap: 1,
+              }}
+            >
+              {onPopout && (
+                <IconButton
+                  onClick={onPopout}
+                  sx={{
+                    color: 'white',
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
+                  }}
+                >
+                  <OpenInNewIcon fontSize="small" />
+                </IconButton>
+              )}
+              <IconButton
+                onClick={toggleFs}
+                sx={{
+                  color: 'white',
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                  '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
+                }}
+              >
+                {isFs ? (
+                  <FullscreenExitIcon fontSize="small" />
+                ) : (
+                  <FullscreenIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Box>
+          </>
+        )}
+      </Box>
+    );
+  }
+); 

@@ -95,17 +95,7 @@ export function useRtcStats(room: Room | null, interval = 2000): RtcStats | null
         height,
       });
 
-      // debug log once every interval
-      if ((import.meta as any).env?.DEV) {
-        console.debug('[RtcStats]', {
-          bitrateKbps: Math.round(bitrate),
-          fps: Math.round(fps),
-          width,
-          height,
-          layer,
-          qualityLimitation,
-        });
-      }
+      // debug output removed to prevent console noise
 
       lastBytes = bytes;
       lastFrames = frames;
