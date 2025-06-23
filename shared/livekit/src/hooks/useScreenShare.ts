@@ -4,7 +4,7 @@ import { useServer } from '@shared/hooks';
 import { useRoomContext } from '@livekit/components-react';
 
 // Config: maximum simultaneous screen shares (per client)
-const MAX_SHARES = 3;
+export const MAX_SHARES = 4;
 
 // --- Internal manager (singleton) --------------------------------------------------
 

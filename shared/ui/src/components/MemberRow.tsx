@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Avatar, Box, Menu, MenuItem, Slider, Typography, Chip, IconButton, Divider } from '@mui/material';
+import { Avatar, Box, Menu, MenuItem, Slider, Typography, Chip, IconButton, Divider, Button } from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
 import HeadsetOffIcon from '@mui/icons-material/HeadsetOff';
@@ -72,6 +72,9 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
     [screenShareTracks, participant.sid],
   );
 
+  // open state only when popup is open AND there is at least one screen share
+  const isPreviewOpen = popupState.isOpen && participantScreenShares.length > 0;
+
   // context-menu (right-click) handling
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const openMenu = (e: React.MouseEvent<HTMLElement>) => {
@@ -104,8 +107,9 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
         borderRadius: 1,
         cursor: 'context-menu',
         border: '1px solid rgba(255,255,255,0.05)',
+        bgcolor: isPreviewOpen ? '#2B2D31' : 'transparent',
         '&:hover': {
-          bgcolor: 'rgba(255,255,255,0.04)',
+          bgcolor: '#2B2D31',
           border: '1px solid rgba(255,255,255,0.15)',
         },
         transition: 'background-color .15s, border-color .15s',
@@ -197,24 +201,30 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
           keepMounted
           anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
           transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-          slotProps={{ paper: { sx: { bgcolor: '#1b1c22', p: 1, borderRadius: 2, border:'1px solid rgba(255,255,255,0.1)', boxShadow:'0 10px 24px rgba(0,0,0,0.8)', minWidth: 380, ml: '5px' } } }}
+          slotProps={{ paper: { sx: { bgcolor: '#2B2D31', p: 1, borderRadius: 1, border: '1px solid rgba(255,255,255,0.15)', boxShadow:'none', width: 'auto', ml: 1 } } }}
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
             {participantScreenShares.map((track, idx) => (
               <React.Fragment key={track.publication.trackSid}>
-                <Box sx={{ display:'flex', alignItems:'center', gap: 1.5, py:0.5, px:0.5, borderRadius:1, transition:'background-color .15s', '&:hover':{ bgcolor:'rgba(255,255,255,0.06)' } }}>
-                  <ScreenSharePreview trackRef={track} width={120} height={68} />
-                  <Typography variant="body2" sx={{ flexGrow:1, color: 'white', fontWeight: 500 }}>
-                    Стрим №{idx + 1}
-                  </Typography>
-                  <Chip label="Смотреть" size="small" color="primary" sx={{ fontWeight:600, px:1.5 }} onClick={(e)=>{e.stopPropagation(); setActiveStream(track.publication.trackSid);}} />
-                  <IconButton size="small" onClick={(e)=>{e.stopPropagation(); openStream(track.publication.trackSid);}} sx={{ ml:0.5, color:'grey.300' }}>
-                    <OpenInNewIcon fontSize="inherit" />
-                  </IconButton>
+                <Box sx={{ position:'relative', width: 230, height: 130, borderRadius:1, overflow:'hidden', cursor:'pointer' }} onClick={(e)=>{e.stopPropagation(); setActiveStream(track.publication.trackSid);}}>
+                  <ScreenSharePreview trackRef={track} width={230} height={130} />
+                  <Box sx={{ position:'absolute', inset:0, bgcolor:'rgba(0,0,0,0.35)', display:'flex', flexDirection:'column', justifyContent:'space-between', alignItems:'center', p:0.5 }}>
+                    <Chip label={`Стрим №${idx + 1}`} size="small" sx={{ bgcolor:'rgba(44, 44, 44, 0.67)', color:'#fff', fontWeight:600 }} />
+                    <Box sx={{ display:'flex', gap:0.5 }}>
+                      <Chip label="Смотреть" size="small" color="primary" sx={{ fontWeight:600, px:1.5 }} onClick={(e)=>{e.stopPropagation(); setActiveStream(track.publication.trackSid);}} />
+                      <IconButton onClick={(e)=>{e.stopPropagation(); openStream(track.publication.trackSid);}} sx={{ bgcolor:'primary.main', color:'#fff', width: 32, height: 24, borderRadius: 1, p:0, '&:hover':{ bgcolor:'primary.dark' } }}>
+                        <OpenInNewIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </Box>
                 </Box>
                 {idx !== participantScreenShares.length-1 && <Divider sx={{ bgcolor:'rgba(255,255,255,0.06)' }}/>} 
               </React.Fragment>
             ))}
+            <Divider sx={{ bgcolor:'rgba(255,255,255,0.06)' }} />
+            <Button variant="outlined" size="small" fullWidth onClick={(e)=>{e.stopPropagation(); (useStreamViewStore.getState() as any).setMultiView(true);}}>
+              Мультипросмотр
+            </Button>
           </Box>
         </HoverPopover>
       )}

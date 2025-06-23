@@ -15,6 +15,9 @@ export default defineConfig(() => ({
     host: 'localhost',
   },
   plugins: [nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
+  resolve: {
+    dedupe: ['react', 'react-dom', '@emotion/react']
+  },
   // Uncomment this if you are using workers.
   // worker: {
   //  plugins: [ nxViteTsPaths() ],

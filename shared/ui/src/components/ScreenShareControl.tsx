@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { IconButton, Tooltip, Menu, MenuItem, Badge } from '@mui/material';
 import ScreenShareIcon from '@mui/icons-material/ScreenShare';
 import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
-import { useScreenShare } from '@shared/livekit';
+import { useScreenShare, MAX_SHARES } from '@shared/livekit';
 
 /**
  * Кнопка управления трансляциями экрана.
- * Открывает меню, где можно запустить до трёх экранов и остановить каждый отдельно.
+ * Открывает меню, где можно запустить до четырёх экранов и остановить каждый отдельно.
  */
 export const ScreenShareControl: React.FC = () => {
   const { shares, count, startNew, stopShare, stopAll } = useScreenShare();
@@ -48,7 +48,7 @@ export const ScreenShareControl: React.FC = () => {
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
         transformOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        {count < 3 && <MenuItem onClick={handleStart}>Поделиться ещё экраном</MenuItem>}
+        {count < MAX_SHARES && <MenuItem onClick={handleStart}>Поделиться ещё экраном</MenuItem>}
         {shares.map((idx) => (
           <MenuItem key={idx} onClick={() => { stopShare(idx); closeMenu(); }}>
             Остановить экран {idx + 1}
