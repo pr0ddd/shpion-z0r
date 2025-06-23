@@ -1,38 +1,62 @@
 // @ts-nocheck
-import React from 'react';
-import { Box, Chip } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, IconButton } from '@mui/material';
 import { useTracks } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import { CustomChat } from '@shared/ui';
 import { useServer, useStreamViewStore } from '@shared/hooks';
 import { StreamPlayer } from '@shared/ui';
 import { AnimatePresence, motion } from 'framer-motion';
+import StreamControlsDock from './StreamControlsDock';
 
 const ServerContent = () => {
     const allVideoTracks = useTracks([Track.Source.ScreenShare, Track.Source.Camera]);
     const { selectedServer: server } = useServer();
-    const activeStreamSid = useStreamViewStore((state:any)=>state.activeStreamSid);
-    const multiView = useStreamViewStore((state:any)=>state.multiView);
-    const setActiveStream = useStreamViewStore((state:any)=>state.setActiveStream);
     const resetView = useStreamViewStore((state:any)=>state.resetView);
+    const multiView = useStreamViewStore((state:any)=>state.multiView);
+    const setMultiView = useStreamViewStore((state:any)=>state.setMultiView);
+    const chatSidebar = useStreamViewStore((state:any)=>state.chatSidebar);
+    const toggleChatSidebar = useStreamViewStore((state:any)=>state.toggleChatSidebar);
+    const showStats = useStreamViewStore((state:any)=>state.showStats);
+    const toggleShowStats = useStreamViewStore((state:any)=>state.toggleShowStats);
 
-    const activeStreamRef = activeStreamSid ? allVideoTracks.find(t=> t.publication.trackSid===activeStreamSid) ?? null : null;
     const screenShareTracks = allVideoTracks.filter(t=> t.source === Track.Source.ScreenShare);
+    const maxVideoWidth = 'calc(100vh * (16 / 9))';
 
-    // helper to compute grid styles depending on count
-    const getGridStyles = (count:number)=>{
-        if(count<=1){
-            return {cols:'1fr', rows:'1fr', itemSpan:undefined };
+    // determine primary (big) stream
+    const [primarySid, setPrimarySid] = useState<string | null>(null);
+
+    // initialize / update primary when track list changes
+    useEffect(() => {
+        if (screenShareTracks.length === 0) {
+            setPrimarySid(null);
+            return;
         }
-        if(count===2){
-            return {cols:'repeat(2, 1fr)', rows:'auto', itemSpan:undefined};
+        // if current primary missing, set to first track
+        if (!primarySid || !screenShareTracks.some(t=> t.publication.trackSid===primarySid)) {
+            setPrimarySid(screenShareTracks[0].publication.trackSid);
         }
-        if(count===3){
-            return {cols:'repeat(2, 1fr)', rows:'auto auto', itemSpan:undefined};
+    }, [screenShareTracks.map(t=>t.publication.trackSid).join(',' )]);
+
+    // auto-disable multiview when no streams
+    useEffect(()=>{
+        if(screenShareTracks.length===0 && multiView){
+            setMultiView(false);
         }
-        return {cols:'repeat(2, 1fr)', rows:'auto auto', itemSpan:undefined}; // 4+
+    }, [screenShareTracks.length, multiView]);
+
+    const isStreamer = screenShareTracks.some(t=> t.participant?.isLocal);
+
+    const stopViewing = ()=>{
+        // unsubscribe from all remote screen share tracks
+        screenShareTracks.forEach(t=>{
+            if(!t.participant?.isLocal){
+                try{ t.publication?.setSubscribed?.(false);}catch(e){}
+            }
+        });
+        resetView();
+        setMultiView(false);
     };
-    const gridCfg = getGridStyles(screenShareTracks.length);
 
     if (!server) {
         return (
@@ -44,59 +68,116 @@ const ServerContent = () => {
 
     return (
         <Box sx={{ display: 'flex', height: '100%', minHeight: 0, flexGrow:1 }}>
-            <AnimatePresence mode="wait">
-                {multiView ? (
-                    <motion.div
-                        key="multiview"
-                        style={{ flexGrow:1, display:'flex', alignItems:'center', justifyContent:'center', minHeight:0, background:'#36393f', padding: screenShareTracks.length>1 ? 16 : 0, overflow:'hidden', position:'relative' }}
-                        initial={{ opacity:0 }}
-                        animate={{ opacity:1 }}
-                        exit={{ opacity:0 }}
-                        transition={{ duration:0.25 }}
-                    >
-                        <Box sx={{ width:'100%', height:'100%', position:'relative', display:'grid', gap:2,
-                                   gridTemplateColumns: gridCfg.cols,
-                                   gridTemplateRows: gridCfg.rows, overflow:'hidden', alignContent:'start' }}>
-                            {screenShareTracks.map((track,idx)=>(
-                                <Box key={track.publication.trackSid}
-                                     sx={{ width:'100%', position:'relative', ...(screenShareTracks.length>1 ? {aspectRatio:'16/9'} : {height:'100%'}), ...(gridCfg.itemSpan && idx===2 ? {gridColumn:`1 / span ${gridCfg.itemSpan}`} : {}) }}>
-                                    <StreamPlayer trackRef={track} />
-                                </Box>
-                            ))}
-                        </Box>
-                        <Box sx={{ position:'absolute', top:8, left:8 }}>
-                            <Chip label='Вернуться к чату' onClick={()=>resetView()} color='default' clickable />
-                        </Box>
-                    </motion.div>
-                ) : activeStreamRef ? (
-                    <motion.div
-                        key="player"
-                        style={{ flexGrow:1, display:'flex', alignItems:'center', justifyContent:'center', minHeight:0, background:'#36393f' }}
-                        initial={{ opacity:0 }}
-                        animate={{ opacity:1 }}
-                        exit={{ opacity:0 }}
-                        transition={{ duration:0.25 }}
-                    >
-                        <Box sx={{ width:'100%', height:'100%', position:'relative', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                            <StreamPlayer trackRef={activeStreamRef} />
-                            <Box sx={{ position:'absolute', top:8, left:8 }}>
-                                <Chip label='Вернуться к чату' onClick={()=>setActiveStream(null)} color='default' clickable />
+            {/* Main content area */}
+            <Box sx={{ position: 'relative', flexGrow: 1, minWidth: 0, minHeight: 0 }}>
+                <AnimatePresence mode="wait">
+                    {multiView && screenShareTracks.length > 0 ? (
+                        <motion.div
+                            key="multiview"
+                            style={{
+                                flexGrow: 1,
+                                height: '100%',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                background: '#000',
+                                overflow: 'hidden',
+                                minHeight: 0,
+                            }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.25 }}
+                        >
+                            {/* Streams area */}
+                            <Box sx={{ flex:1, display:'flex', flexDirection:'column', width:'100%', boxSizing:'border-box', gap:2, ...(screenShareTracks.length===1 ? {justifyContent:'center', alignItems:'center', p:2} : {p:2, justifyContent:'center', alignItems:'center'}) }}>
+                               {/* Big primary */}
+                               <AnimatePresence mode="wait">
+                               {primarySid && (
+                                 <motion.div key={primarySid} initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:0.25}} style={{display:'flex', alignItems:'center', justifyContent:'center', width:'auto'}}>
+                                    <Box sx={{ position:'relative', width:'100%', maxWidth:maxVideoWidth, mx:'auto', aspectRatio:'16/9', overflow:'hidden', borderRadius:1 }}>
+                                       <StreamPlayer trackRef={screenShareTracks.find(t=> t.publication.trackSid===primarySid) || screenShareTracks[0]} />
+                                    </Box>
+                                 </motion.div>
+                               )}
+                               </AnimatePresence>
+
+                               {/* Thumbnails row */}
+                               {screenShareTracks.length > 1 && (
+                                 <Box sx={{ display:'flex', gap:2, justifyContent:'center', width:'100%', maxWidth:maxVideoWidth, mx:'auto' }}>
+                                    <AnimatePresence>
+                                    {screenShareTracks.filter(t=> t.publication.trackSid!==primarySid).slice(0,3).map((track)=>(
+                                       <motion.div key={track.publication.trackSid}
+                                           initial={{ opacity: 0, scale: 0.8 }}
+                                           animate={{ opacity: 1, scale: 1 }}
+                                           exit={{ opacity: 0, scale: 0.8 }}
+                                           transition={{ duration: 0.25 }}
+                                           style={{ width: 170 }}
+                                       >
+                                          <Box sx={{ width:'100%', aspectRatio:'16/9', position:'relative', cursor:'pointer', borderRadius:1, overflow:'hidden' }} onClick={()=> setPrimarySid(track.publication.trackSid)}>
+                                             <StreamPlayer trackRef={track} />
+                                          </Box>
+                                       </motion.div>
+                                    ))}
+                                    </AnimatePresence>
+                                 </Box>
+                               )}
                             </Box>
-                        </Box>
-                    </motion.div>
-                ) : (
-                    <motion.div
-                        key="chat"
-                        style={{ flexGrow:1, minHeight:0, background:'#36393f' }}
-                        initial={{ opacity:0 }}
-                        animate={{ opacity:1 }}
-                        exit={{ opacity:0 }}
-                        transition={{ duration:0.25 }}
+
+                            {/* Dock pinned bottom */}
+                            <StreamControlsDock
+                                chatVisible={chatSidebar}
+                                onToggleChat={toggleChatSidebar}
+                                showStats={showStats}
+                                onToggleStats={toggleShowStats}
+                                isStreamer={isStreamer}
+                                showStop={screenShareTracks.length>0}
+                                onStopView={stopViewing}
+                                sxOverride={{ right: chatSidebar ? 330 : 0, px:2 }}
+                            />
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            key="chat"
+                            style={{
+                                flexGrow: 1,
+                                minHeight: 0,
+                                background: '#36393f',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                height: '100%',
+                            }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.25 }}
+                        >
+                            <CustomChat />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </Box>
+
+            {/* Chat sidebar */}
+            <motion.div
+                initial={false}
+                animate={{ width: chatSidebar ? 330 : 0 }}
+                transition={{ duration: 0.25 }}
+                style={{ overflow: 'hidden', flexShrink: 0, height: '100%' }}
+            >
+                {chatSidebar && (
+                    <Box
+                        sx={{
+                            width: 330,
+                            height: '100%',
+                            borderLeft: '1px solid rgba(255,255,255,0.08)',
+                            overflowY: 'auto',
+                            bgcolor: 'background.default',
+                        }}
                     >
                         <CustomChat />
-                    </motion.div>
+                    </Box>
                 )}
-            </AnimatePresence>
+            </motion.div>
         </Box>
     );
 };

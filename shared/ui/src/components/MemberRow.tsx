@@ -53,8 +53,6 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const setActiveStream = useStreamViewStore((state:any)=>state.setActiveStream);
-
   const remoteDeaf = isDeafened ?? false;
   const headphoneOff = participant.isLocal ? !listeningSelf : remoteDeaf;
 
@@ -206,12 +204,11 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
             {participantScreenShares.map((track, idx) => (
               <React.Fragment key={track.publication.trackSid}>
-                <Box sx={{ position:'relative', width: 230, height: 130, borderRadius:1, overflow:'hidden', cursor:'pointer' }} onClick={(e)=>{e.stopPropagation(); setActiveStream(track.publication.trackSid);}}>
+                <Box sx={{ position:'relative', width: 230, height: 130, borderRadius:1, overflow:'hidden' }}>
                   <ScreenSharePreview trackRef={track} width={230} height={130} />
                   <Box sx={{ position:'absolute', inset:0, bgcolor:'rgba(0,0,0,0.35)', display:'flex', flexDirection:'column', justifyContent:'space-between', alignItems:'center', p:0.5 }}>
-                    <Chip label={`Стрим №${idx + 1}`} size="small" sx={{ bgcolor:'rgba(44, 44, 44, 0.67)', color:'#fff', fontWeight:600 }} />
+                    <Chip label={(track.publication.trackName ?? `Стрим №${idx+1}`).slice(0,30)} size="small" sx={{ bgcolor:'rgba(44, 44, 44, 0.67)', color:'#fff', fontWeight:600, pointerEvents:'none' }} />
                     <Box sx={{ display:'flex', gap:0.5 }}>
-                      <Chip label="Смотреть" size="small" color="primary" sx={{ fontWeight:600, px:1.5 }} onClick={(e)=>{e.stopPropagation(); setActiveStream(track.publication.trackSid);}} />
                       <IconButton onClick={(e)=>{e.stopPropagation(); openStream(track.publication.trackSid);}} sx={{ bgcolor:'primary.main', color:'#fff', width: 32, height: 24, borderRadius: 1, p:0, '&:hover':{ bgcolor:'primary.dark' } }}>
                         <OpenInNewIcon fontSize="small" />
                       </IconButton>
@@ -222,8 +219,8 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
               </React.Fragment>
             ))}
             <Divider sx={{ bgcolor:'rgba(255,255,255,0.06)' }} />
-            <Button variant="outlined" size="small" fullWidth onClick={(e)=>{e.stopPropagation(); (useStreamViewStore.getState() as any).setMultiView(true);}}>
-              Мультипросмотр
+            <Button variant="contained" color="success" size="small" fullWidth onClick={(e)=>{e.stopPropagation(); (useStreamViewStore.getState() as any).setMultiView(true);}}>
+              Смотреть
             </Button>
           </Box>
         </HoverPopover>

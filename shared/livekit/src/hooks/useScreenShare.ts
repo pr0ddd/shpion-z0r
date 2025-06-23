@@ -75,7 +75,51 @@ class ScreenShareManager {
       audioTrack = new LocalAudioTrack(stream.getAudioTracks()[0]);
     }
 
-    await room.localParticipant.publishTrack(videoTrack, { source: Track.Source.ScreenShare });
+    // Формируем читаемое название шэра
+    const rawLabel = videoTrack.mediaStreamTrack?.label ?? '';
+    const settings: any = videoTrack.mediaStreamTrack?.getSettings?.() ?? {};
+    const surface = settings.displaySurface as string | undefined;
+
+    let title: string;
+
+    const isGeneric = (str: string) => {
+      if (!str) return true;
+      const lower = str.toLowerCase();
+      return (
+        lower.startsWith('web-contents-media-stream') ||
+        lower.startsWith('screen:') ||
+        /window:\d+/i.test(lower)
+      );
+    };
+
+    switch (surface) {
+      case 'monitor':
+        // Всегда нумеруем мониторы, как Google Meet
+        title = `Экран ${instance + 1}`;
+        break;
+      case 'window': {
+        const cleaned = rawLabel.replace(/^Window:\s*/i, '').trim();
+        title = isGeneric(cleaned) ? `Окно` : cleaned;
+        break;
+      }
+      case 'browser': {
+        const cleaned = rawLabel.replace(/^(Tab):\s*/i, '').trim();
+        title = isGeneric(cleaned) ? `Вкладка` : cleaned;
+        break;
+      }
+      case 'application': {
+        const cleaned = rawLabel.trim();
+        title = isGeneric(cleaned) ? `Приложение` : cleaned;
+        break;
+      }
+      default:
+        title = isGeneric(rawLabel) ? 'Экран' : rawLabel;
+    }
+
+    // укоротим, чтобы не ломать UI
+    if (title.length > 40) title = title.slice(0, 40) + '…';
+
+    await room.localParticipant.publishTrack(videoTrack, { source: Track.Source.ScreenShare, name: title });
     if (audioTrack) {
       try {
         await room.localParticipant.publishTrack(audioTrack, { source: Track.Source.ScreenShareAudio });

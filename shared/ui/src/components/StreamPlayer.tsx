@@ -26,7 +26,8 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({ trackRef, mode }) =>
       t.publication?.source === Track.Source.ScreenShareAudio,
   );
 
-  // Attach / detach LiveKit track manually
+  // Re-attach only when publication SID changes to avoid flicker on every render
+  const pubSid = trackRef?.publication?.trackSid;
   useEffect(() => {
     const videoEl = videoRef.current;
     if (!trackRef || !videoEl) return;
@@ -46,7 +47,7 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({ trackRef, mode }) =>
         trackRef.publication?.track?.detach(videoEl as HTMLMediaElement);
       } catch {}
     };
-  }, [trackRef, mode]);
+  }, [pubSid, mode]);
 
   return (
     <Box sx={{ width: '100%', height: '100%', bgcolor: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
