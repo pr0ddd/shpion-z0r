@@ -8,6 +8,8 @@ import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import { AudioTrack, useIsSpeaking, useIsMuted, useTracks, useRoomContext } from '@livekit/components-react';
 import { Participant, Track } from 'livekit-client';
 import { User } from '@shared/types';
@@ -90,6 +92,10 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
       ))}
     </Box>
   );
+
+  const selectedSids = useStreamViewStore((s:any)=> s.selectedSids);
+
+  const participantSelected = useMemo(()=> participantScreenShares.some(tr=> selectedSids.includes(tr.publication.trackSid)), [participantScreenShares, selectedSids]);
 
   return (
     <Box
@@ -212,6 +218,15 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
                       <IconButton onClick={(e)=>{e.stopPropagation(); openStream(track.publication.trackSid);}} sx={{ bgcolor:'primary.main', color:'#fff', width: 32, height: 24, borderRadius: 1, p:0, '&:hover':{ bgcolor:'primary.dark' } }}>
                         <OpenInNewIcon fontSize="small" />
                       </IconButton>
+                      {selectedSids.includes(track.publication.trackSid) ? (
+                        <IconButton onClick={(e)=>{e.stopPropagation(); (useStreamViewStore.getState() as any).removeFromMultiView(track.publication.trackSid);}} sx={{ bgcolor:'error.main', color:'#fff', width: 32, height: 24, borderRadius: 1, p:0, '&:hover':{ bgcolor:'error.dark' } }}>
+                          <RemoveCircleOutlineIcon fontSize="small" />
+                        </IconButton>
+                      ) : (
+                        <IconButton onClick={(e)=>{e.stopPropagation(); (useStreamViewStore.getState() as any).addToMultiView(track.publication.trackSid);}} sx={{ bgcolor:'success.main', color:'#fff', width: 32, height: 24, borderRadius: 1, p:0, '&:hover':{ bgcolor:'success.dark' } }}>
+                          <AddCircleOutlineIcon fontSize="small" />
+                        </IconButton>
+                      )}
                     </Box>
                   </Box>
                 </Box>
@@ -219,8 +234,8 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
               </React.Fragment>
             ))}
             <Divider sx={{ bgcolor:'rgba(255,255,255,0.06)' }} />
-            <Button variant="contained" color="success" size="small" fullWidth onClick={(e)=>{e.stopPropagation(); (useStreamViewStore.getState() as any).setMultiView(true);}}>
-              Смотреть
+            <Button variant="contained" color={participantSelected? 'error':'success'} size="small" fullWidth onClick={(e)=>{e.stopPropagation(); if(participantSelected){ participantScreenShares.forEach(tr=> (useStreamViewStore.getState() as any).removeFromMultiView(tr.publication.trackSid)); } else { (useStreamViewStore.getState() as any).setMultiView(true, participantScreenShares[0]?.publication.trackSid); }}}>
+              {participantSelected ? 'Убрать все' : 'Смотреть все'}
             </Button>
           </Box>
         </HoverPopover>

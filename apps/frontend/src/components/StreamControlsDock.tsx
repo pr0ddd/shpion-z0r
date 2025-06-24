@@ -8,7 +8,7 @@ import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 
 interface Props {
   chatVisible?: boolean;
-  onToggleChat?: () => void;
+  onToggleChat?: (() => void) | undefined;
   showStats?: boolean;
   onToggleStats?: () => void;
   isStreamer?: boolean;
@@ -21,7 +21,7 @@ interface Props {
 
 const StreamControlsDock: React.FC<Props> = ({ chatVisible=true, onToggleChat, showStats=false, onToggleStats, isStreamer=false, showStop=false, onStopView, fullscreen=false, onToggleFullscreen, sxOverride }) => {
   return (
-    <Box sx={{ width:'100%', px:2, py:1, display:'flex', alignItems:'center', background:'rgba(0,0,0,0.55)', backdropFilter:'blur(8px)', ...sxOverride }}>
+    <Box sx={{ width:'100%', px:2, py:1, display:'flex', alignItems:'center', background:'rgb(26, 26, 26)', backdropFilter:'blur(8px)', ...sxOverride }}>
       <Box sx={{ ml:'auto', display:'flex', alignItems:'center', gap:1 }}>
         {onToggleFullscreen && (
           <IconButton size='small' onClick={onToggleFullscreen}>
@@ -38,7 +38,7 @@ const StreamControlsDock: React.FC<Props> = ({ chatVisible=true, onToggleChat, s
             <BarChartIcon fontSize='inherit' />
           </IconButton>
         )}
-        <IconButton size='small' onClick={onToggleChat ?? (()=>{})} color={chatVisible? 'primary':'default'}>
+        <IconButton size='small' onClick={onToggleChat} disabled={!onToggleChat} color={chatVisible? 'primary':'default'}>
           <ChatBubbleOutlineIcon fontSize='inherit' />
         </IconButton>
       </Box>
