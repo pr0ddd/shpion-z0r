@@ -2,9 +2,11 @@ import { useEffect } from 'react';
 import { TrackReference } from '@livekit/components-react';
 import { useSocket } from './contexts/SocketContext';
 import { usePreviewStore } from './store/usePreview';
+import { useAppStore } from '../store/useAppStore';
 
 export const useUploadPreview = (trackRef: TrackReference | null, intervalMs = 2000) => {
   const { socket } = useSocket();
+  const selectedServerId = useAppStore(s=>s.selectedServerId);
   const setPreview = usePreviewStore((s)=> s.setPreview);
 
   useEffect(() => {
@@ -40,7 +42,9 @@ export const useUploadPreview = (trackRef: TrackReference | null, intervalMs = 2
         reader.onloadend = () => {
           const dataUrl = reader.result as string;
           setPreview(trackSid, dataUrl);
-          socket?.emit?.('preview:update', trackSid, dataUrl);
+          if(selectedServerId){
+            socket?.emit?.('preview:update', { serverId: selectedServerId, sid: trackSid, dataUrl } as any, '');
+          }
         };
         reader.readAsDataURL(blob);
       }, 'image/jpeg', 0.5);

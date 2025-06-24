@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, IconButton, Tooltip, Menu, MenuItem } from '@mui/material';
 import { useRoomContext, useMediaDeviceSelect } from '@livekit/components-react';
 import { useEffect, useState } from 'react';
-import { useServer, useServerStore, useNotification, useSocket, useAuth } from '@shared/hooks';
+import { useServer, useServerStore, useNotification, useSocket, useAuth, useAppStore } from '@shared/hooks';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
 import VideocamIcon from '@mui/icons-material/Videocam';
@@ -201,6 +201,7 @@ const SpeakerControl = () => {
   const { socket } = useSocket();
   const { user } = useAuth();
   const room = useRoomContext();
+  const selectedServerId = useAppStore(s=>s.selectedServerId);
 
   const listening = useServerStore((s) => (user?.id ? s.listeningStates[user.id] : true) ?? true);
   const setListeningState = useServerStore((s) => s.setListeningState);
@@ -234,7 +235,9 @@ const SpeakerControl = () => {
     if (!user) return;
     const newVal = !listening;
     setListeningState(user.id, newVal);
-    socket?.emit('user:listening', newVal);
+    if(selectedServerId){
+      socket?.emit('user:listening', { serverId: selectedServerId, listening: newVal } as any);
+    }
     localStorage.setItem('voice_listening', String(newVal));
     try {
       const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
@@ -270,7 +273,7 @@ const SpeakerControl = () => {
     const desired = saved === 'true';
     if (desired !== listening) {
       setListeningState(user.id, desired);
-      socket.emit('user:listening', desired);
+      if(selectedServerId){ socket.emit('user:listening', { serverId: selectedServerId, listening: desired } as any); }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, socket, room]);

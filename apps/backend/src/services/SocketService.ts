@@ -80,36 +80,59 @@ export class SocketService {
         }
       });
 
-      socket.on('user:listening', (listening: boolean) => {
+      socket.on('user:listening', (payload: any) => {
         const userId = socket.data.user?.id;
         if (!userId) return;
-        const serverId = this.userCurrentServer.get(userId);
+
+        let serverId: string | undefined;
+        let listening: boolean;
+
+        if (typeof payload === 'object' && payload !== null) {
+          serverId = payload.serverId;
+          listening = !!payload.listening;
+        } else {
+          listening = !!payload;
+        }
+
+        if (!serverId) {
+          serverId = this.userCurrentServer.get(userId);
+          if (!serverId) {
+            for (const room of socket.rooms) {
+              if (room.startsWith('server:')) {
+                serverId = room.slice('server:'.length);
+                this.userCurrentServer.set(userId, serverId);
+                break;
+              }
+            }
+          }
+        }
+
         if (!serverId) return;
         this.io.to(`server:${serverId}`).emit('user:listening', userId, listening);
       });
 
-      socket.on('preview:update', (sid: string, dataUrl: string) => {
+      socket.on('preview:update', (payload: any) => {
         const userId = socket.data.user?.id;
         if (!userId) return;
-        let serverId = this.userCurrentServer.get(userId);
 
-        // Fallback: derive serverId from socket rooms if mapping missing
+        let serverId: string | undefined = payload?.serverId;
+        const sid = payload?.sid ?? payload?.[0];
+        const dataUrl = payload?.dataUrl ?? payload?.[1];
+
         if (!serverId) {
-          for (const room of socket.rooms) {
-            if (room.startsWith('server:')) {
-              serverId = room.slice('server:'.length);
-              break;
+          serverId = this.userCurrentServer.get(userId);
+          if (!serverId) {
+            for (const room of socket.rooms) {
+              if (room.startsWith('server:')) {
+                serverId = room.slice('server:'.length);
+                this.userCurrentServer.set(userId, serverId);
+                break;
+              }
             }
           }
-          // cache for future events
-          if (serverId) this.userCurrentServer.set(userId, serverId);
         }
 
-        if (!serverId) {
-          console.warn('[preview] missing serverId for user', userId, 'sid', sid?.slice?.(0,6));
-          return;
-        }
-        console.log('[preview] relay from', userId, 'server', serverId, 'sid', sid?.slice?.(0,6), 'size', dataUrl?.length);
+        if (!serverId) return;
         socket.to(`server:${serverId}`).emit('preview:update', sid, dataUrl);
       });
 
