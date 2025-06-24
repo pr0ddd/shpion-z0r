@@ -131,13 +131,9 @@ jobs:
             echo "POSTGRES_DB=$POSTGRES_DB" >> backend-prod.env
             echo "PORT=3001" >> backend-prod.env
 
-            # Pull latest images & recreate backend container to ensure new digest is used
-            docker compose -f docker-compose.prod.yml pull backend
-            docker compose -f docker-compose.prod.yml up -d --force-recreate --no-deps backend
-
-            # Pull and recreate frontend as well
-            docker compose -f docker-compose.prod.yml pull frontend
-            docker compose -f docker-compose.prod.yml up -d --force-recreate --no-deps frontend
+            # Build fresh images on the server and recreate containers
+            docker compose -f docker-compose.prod.yml build backend frontend
+            docker compose -f docker-compose.prod.yml up -d --force-recreate --no-deps backend frontend
 
             # Optional: clean up unused images
             docker image prune -af 
