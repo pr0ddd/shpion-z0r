@@ -21,6 +21,9 @@ services:
     build:
       context: .
       dockerfile: apps/frontend/Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL}
+        - VITE_LIVEKIT_URL=${VITE_LIVEKIT_URL}
     image: shpion-frontend:latest
     container_name: shpion-frontend-prod
     restart: unless-stopped
