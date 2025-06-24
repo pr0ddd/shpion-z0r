@@ -19,6 +19,8 @@ const ServerContent = () => {
     const toggleChatSidebar = useStreamViewStore((state:any)=>state.toggleChatSidebar);
     const showStats = useStreamViewStore((state:any)=>state.showStats);
     const toggleShowStats = useStreamViewStore((state:any)=>state.toggleShowStats);
+    const fullscreen = useStreamViewStore((state:any)=>state.fullscreen);
+    const toggleFullscreen = useStreamViewStore((state:any)=>state.toggleFullscreen);
 
     const screenShareTracks = allVideoTracks.filter(t=> t.source === Track.Source.ScreenShare);
     const maxVideoWidth = 'calc(100vh * (16 / 9))';
@@ -82,6 +84,7 @@ const ServerContent = () => {
                                 background: '#000',
                                 overflow: 'hidden',
                                 minHeight: 0,
+                                ...(fullscreen ? { position:'fixed', top:0, left:0, width:'100vw', height:'100vh', zIndex:1300 } : {})
                             }}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -132,6 +135,8 @@ const ServerContent = () => {
                                 isStreamer={isStreamer}
                                 showStop={screenShareTracks.length>0}
                                 onStopView={stopViewing}
+                                fullscreen={fullscreen}
+                                onToggleFullscreen={toggleFullscreen}
                                 sxOverride={{ right: chatSidebar ? 330 : 0, px:2 }}
                             />
                         </motion.div>
