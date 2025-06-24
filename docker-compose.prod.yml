@@ -3,8 +3,8 @@ version: '3.8'
 services:
   backend:
     build:
-      context: ./apps/backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/backend/Dockerfile
     image: shpion-backend:latest   # tag locally-built image so it can be reused
     container_name: shpion-backend-prod
     restart: unless-stopped
@@ -19,8 +19,8 @@ services:
 
   frontend:
     build:
-      context: ./apps/frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/frontend/Dockerfile
     image: shpion-frontend:latest
     container_name: shpion-frontend-prod
     restart: unless-stopped
