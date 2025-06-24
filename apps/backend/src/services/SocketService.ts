@@ -91,7 +91,20 @@ export class SocketService {
       socket.on('preview:update', (sid: string, dataUrl: string) => {
         const userId = socket.data.user?.id;
         if (!userId) return;
-        const serverId = this.userCurrentServer.get(userId);
+        let serverId = this.userCurrentServer.get(userId);
+
+        // Fallback: derive serverId from socket rooms if mapping missing
+        if (!serverId) {
+          for (const room of socket.rooms) {
+            if (room.startsWith('server:')) {
+              serverId = room.slice('server:'.length);
+              break;
+            }
+          }
+          // cache for future events
+          if (serverId) this.userCurrentServer.set(userId, serverId);
+        }
+
         if (!serverId) return;
         socket.to(`server:${serverId}`).emit('preview:update', sid, dataUrl);
       });

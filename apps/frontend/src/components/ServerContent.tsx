@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, IconButton, Typography } from '@mui/material';
 import { useTracks } from '@livekit/components-react';
-import { Track } from 'livekit-client';
+import { Track, VideoQuality } from 'livekit-client';
 import { CustomChat } from '@shared/ui';
 import { useServer, useStreamViewStore, useUploadPreview } from '@shared/hooks';
 import { StreamPlayer, ScreenSharePreview } from '@shared/ui';
@@ -43,6 +43,15 @@ const ServerContent = () => {
         }
     }, [screenShareTracks.map(t=>t.publication.trackSid).join(',' )]);
 
+    // Request highest simulcast layer for primary track
+    useEffect(() => {
+        if(!primarySid) return;
+        const pub = screenShareTracksAll.find(t=> t.publication.trackSid===primarySid)?.publication as any;
+        if(pub?.setVideoQuality){
+            try{ pub.setVideoQuality(VideoQuality.HIGH); }catch{}
+        }
+    }, [primarySid]);
+
     // auto-disable multiview when no streams
     useEffect(()=>{
         if(screenShareTracks.length===0 && multiView){
@@ -55,8 +64,10 @@ const ServerContent = () => {
     // manage subscriptions to minimize bandwidth
     useEffect(()=>{
       screenShareTracksAll.forEach(t=>{
-        const shouldSub = t.publication.trackSid===primarySid;
-        t.publication.setSubscribed?.(shouldSub);
+        if(t.participant?.isLocal){
+          const shouldSub = t.publication.trackSid===primarySid;
+          t.publication.setSubscribed?.(shouldSub);
+        }
       });
     }, [primarySid, screenShareTracksAll.length]);
 
