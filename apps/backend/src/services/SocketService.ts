@@ -105,7 +105,11 @@ export class SocketService {
           if (serverId) this.userCurrentServer.set(userId, serverId);
         }
 
-        if (!serverId) return;
+        if (!serverId) {
+          console.warn('[preview] missing serverId for user', userId, 'sid', sid?.slice?.(0,6));
+          return;
+        }
+        console.log('[preview] relay from', userId, 'server', serverId, 'sid', sid?.slice?.(0,6), 'size', dataUrl?.length);
         socket.to(`server:${serverId}`).emit('preview:update', sid, dataUrl);
       });
 
