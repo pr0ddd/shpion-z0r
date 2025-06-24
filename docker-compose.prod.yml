@@ -2,7 +2,10 @@ version: '3.8'
 
 services:
   backend:
-    image: ${REGISTRY:-ghcr.io}/${IMAGE_OWNER:-твой-username}/shpion-backend:latest
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    image: shpion-backend:latest   # tag locally-built image so it can be reused
     container_name: shpion-backend-prod
     restart: unless-stopped
     env_file:
@@ -15,7 +18,10 @@ services:
       - shpion-net
 
   frontend:
-    image: ${REGISTRY:-ghcr.io}/${IMAGE_OWNER:-твой-username}/shpion-frontend:latest
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+    image: shpion-frontend:latest
     container_name: shpion-frontend-prod
     restart: unless-stopped
     ports:
