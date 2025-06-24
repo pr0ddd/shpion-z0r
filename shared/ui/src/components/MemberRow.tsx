@@ -234,7 +234,7 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
               </React.Fragment>
             ))}
             <Divider sx={{ bgcolor:'rgba(255,255,255,0.06)' }} />
-            <Button variant="contained" color={participantSelected? 'error':'success'} size="small" fullWidth onClick={(e)=>{e.stopPropagation(); if(participantSelected){ participantScreenShares.forEach(tr=> (useStreamViewStore.getState() as any).removeFromMultiView(tr.publication.trackSid)); } else { (useStreamViewStore.getState() as any).setMultiView(true, participantScreenShares[0]?.publication.trackSid); }}}>
+            <Button variant="contained" color={participantSelected? 'error':'success'} size="small" fullWidth onClick={(e)=>{e.stopPropagation(); const store = (useStreamViewStore.getState() as any); if(participantSelected){ participantScreenShares.forEach(tr=> store.removeFromMultiView(tr.publication.trackSid)); } else { store.setMultiView(true); participantScreenShares.forEach(tr=> store.addToMultiView(tr.publication.trackSid)); } }}>
               {participantSelected ? 'Убрать все' : 'Смотреть все'}
             </Button>
           </Box>

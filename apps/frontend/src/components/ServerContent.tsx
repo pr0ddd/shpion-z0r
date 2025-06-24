@@ -146,24 +146,24 @@ const ServerContent = () => {
 
                                    {/* Thumbnails row */}
                                    {screenShareTracks.length > 1 && (
-                                     <Box sx={{ display:'flex', gap:2, justifyContent:'center', width:'100%', maxWidth:'100%', mx:'auto' }}>
+                                     <Box sx={{ display:'flex', gap:2, justifyContent:'center', width:'100%', maxWidth:'100%', mx:'auto', overflowX:'auto', py:1 }}>
                                         <AnimatePresence>
-                                        {screenShareTracks.filter(t=> t.publication.trackSid!==primarySid).slice(0,3).map((track)=>(
-                                           <motion.div key={track.publication.trackSid}
-                                               initial={{ opacity: 0, scale: 0.8 }}
-                                               animate={{ opacity: 1, scale: 1 }}
-                                               exit={{ opacity: 0, scale: 0.8 }}
-                                               transition={{ duration: 0.25 }}
-                                               style={{ width: 170 }}
-                                           >
-                                              <Box sx={{ width:'100%', aspectRatio:'16/9', position:'relative', cursor:'pointer', borderRadius:1, overflow:'hidden' }} onClick={()=> setPrimarySid(track.publication.trackSid)}>
-                                                 <StreamPlayer trackRef={track} />
-                                              </Box>
-                                           </motion.div>
-                                        ))}
-                                        </AnimatePresence>
-                                     </Box>
-                                   )}
+                                        {screenShareTracks.filter(t=> t.publication.trackSid!==primarySid).map((track)=> (
+                                            <motion.div key={track.publication.trackSid}
+                                                initial={{ opacity: 0, scale: 0.8 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                exit={{ opacity: 0, scale: 0.8 }}
+                                                transition={{ duration: 0.25 }}
+                                                style={{ width: 170 }}
+                                            >
+                                               <Box sx={{ width:'100%', aspectRatio:'16/9', position:'relative', cursor:'pointer', borderRadius:1, overflow:'hidden' }} onClick={()=> setPrimarySid(track.publication.trackSid)}>
+                                                  <StreamPlayer trackRef={track} />
+                                               </Box>
+                                            </motion.div>
+                                         ))}
+                                         </AnimatePresence>
+                                      </Box>
+                                    )}
                                  </>
                                )}
                             </Box>

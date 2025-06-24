@@ -30,7 +30,10 @@ export const useStreamViewStore = create<StreamViewState>((set) => ({
   setActiveStream: (sid) => set({ activeStreamSid: sid, multiView: false, selectedSids: [] }),
   setMultiView: (on, initialSid=null) => set((s)=>({ multiView: on, activeStreamSid: null, selectedSids: on ? (initialSid ? Array.from(new Set([...s.selectedSids, initialSid])) : s.selectedSids) : [] })),
   addToMultiView: (sid) => set((s)=>({ selectedSids: s.selectedSids.includes(sid) ? s.selectedSids : [...s.selectedSids, sid], multiView:true, activeStreamSid:null })),
-  removeFromMultiView: (sid) => set((s)=>({ selectedSids: s.selectedSids.filter((x)=>x!==sid) })),
+  removeFromMultiView: (sid) => set((s)=>{
+    const arr = s.selectedSids.filter((x)=> x!==sid);
+    return { selectedSids: arr, multiView: arr.length>0 };
+  }),
   setGridCols: (cols) => set({ gridCols: cols }),
   toggleChatSidebar: () => set((s)=>({ chatSidebar: !s.chatSidebar })),
   toggleShowStats: () => set((s)=>({ showStats: !s.showStats })),
