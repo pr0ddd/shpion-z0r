@@ -14,9 +14,8 @@ COPY apps/backend/ ./
 # Copy shared tsconfig base for TypeScript compilation
 COPY tsconfig.base.json /tsconfig.base.json
 
-# Copy prisma schema into expected path if not already (it's inside backend)
-# Генерируем Prisma Client, передавая временный URL через переменную среды только на время команды
-RUN DATABASE_URL="file:dummy.db" npx prisma generate
+# Skip Prisma generate during build to avoid external binary download;
+# it will run on container startup (see CMD).
 
 # Build TypeScript
 RUN npm run build
