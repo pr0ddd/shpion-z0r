@@ -24,11 +24,16 @@ export const useUploadPreview = (trackRef: TrackReference | null, intervalMs = 2
 
     const sendFrame = async () => {
       if (!videoEl.videoWidth) return;
-      canvas.width = videoEl.videoWidth;
-      canvas.height = videoEl.videoHeight;
+      // Downscale to keep payload small (max 320px on longer side)
+      const maxDim = 320;
+      const ratio = Math.min(1, maxDim / Math.max(videoEl.videoWidth, videoEl.videoHeight));
+      const w = Math.round(videoEl.videoWidth * ratio);
+      const h = Math.round(videoEl.videoHeight * ratio);
+      canvas.width = w;
+      canvas.height = h;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(videoEl, 0, 0, w, h);
       canvas.toBlob((blob) => {
         if (!blob) return;
         const reader = new FileReader();

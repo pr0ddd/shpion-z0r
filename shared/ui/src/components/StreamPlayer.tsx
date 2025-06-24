@@ -36,7 +36,7 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({ trackRef, mode }) =>
       trackRef.publication?.track?.attach(videoEl as HTMLMediaElement);
       videoEl.controls = true;
       videoEl.muted = mode === 'tab';
-      videoEl.style.objectFit = 'cover';
+      videoEl.style.objectFit = 'contain';
       videoEl.play().catch(() => {});
     } catch (e) {
       console.error('Attach track failed', e);
