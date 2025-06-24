@@ -62,7 +62,7 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
   const effectiveVolume = listeningSelf ? sliderVolume : 0;
 
   // detect if participant is currently publishing at least one screen-share track
-  const screenShareTracks = useTracks([Track.Source.ScreenShare]);
+  const screenShareTracks = useTracks([Track.Source.ScreenShare], { onlySubscribed: false });
   const isLive = useMemo(
     () => screenShareTracks.some((t) => t.participant?.sid === participant.sid),
     [screenShareTracks, participant.sid],
@@ -88,7 +88,7 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
   const preload = (
     <Box sx={{ display: 'none' }}>
       {participantScreenShares.map((track) => (
-        <ScreenSharePreview key={`preload-${track.publication.trackSid}`} trackRef={track} />
+        <ScreenSharePreview key={`preload-${track.publication.trackSid}`} trackRef={track} staticImage />
       ))}
     </Box>
   );
@@ -211,32 +211,36 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
             {participantScreenShares.map((track, idx) => (
               <React.Fragment key={track.publication.trackSid}>
                 <Box sx={{ position:'relative', width: 230, height: 130, borderRadius:1, overflow:'hidden' }}>
-                  <ScreenSharePreview trackRef={track} width={230} height={130} />
+                  <ScreenSharePreview trackRef={track} width={230} height={130} staticImage />
                   <Box sx={{ position:'absolute', inset:0, bgcolor:'rgba(0,0,0,0.35)', display:'flex', flexDirection:'column', justifyContent:'space-between', alignItems:'center', p:0.5 }}>
                     <Chip label={(track.publication.trackName ?? `Стрим №${idx+1}`).slice(0,30)} size="small" sx={{ bgcolor:'rgba(44, 44, 44, 0.67)', color:'#fff', fontWeight:600, pointerEvents:'none' }} />
-                    <Box sx={{ display:'flex', gap:0.5 }}>
-                      <IconButton onClick={(e)=>{e.stopPropagation(); openStream(track.publication.trackSid);}} sx={{ bgcolor:'primary.main', color:'#fff', width: 32, height: 24, borderRadius: 1, p:0, '&:hover':{ bgcolor:'primary.dark' } }}>
-                        <OpenInNewIcon fontSize="small" />
-                      </IconButton>
-                      {selectedSids.includes(track.publication.trackSid) ? (
-                        <IconButton onClick={(e)=>{e.stopPropagation(); (useStreamViewStore.getState() as any).removeFromMultiView(track.publication.trackSid);}} sx={{ bgcolor:'error.main', color:'#fff', width: 32, height: 24, borderRadius: 1, p:0, '&:hover':{ bgcolor:'error.dark' } }}>
-                          <RemoveCircleOutlineIcon fontSize="small" />
+                    {!isSelf && (
+                      <Box sx={{ display:'flex', gap:0.5 }}>
+                        <IconButton onClick={(e)=>{e.stopPropagation(); openStream(track.publication.trackSid);}} sx={{ bgcolor:'primary.main', color:'#fff', width: 32, height: 24, borderRadius: 1, p:0, '&:hover':{ bgcolor:'primary.dark' } }}>
+                          <OpenInNewIcon fontSize="small" />
                         </IconButton>
-                      ) : (
-                        <IconButton onClick={(e)=>{e.stopPropagation(); (useStreamViewStore.getState() as any).addToMultiView(track.publication.trackSid);}} sx={{ bgcolor:'success.main', color:'#fff', width: 32, height: 24, borderRadius: 1, p:0, '&:hover':{ bgcolor:'success.dark' } }}>
-                          <AddCircleOutlineIcon fontSize="small" />
-                        </IconButton>
-                      )}
-                    </Box>
+                        {selectedSids.includes(track.publication.trackSid) ? (
+                          <IconButton onClick={(e)=>{e.stopPropagation(); (useStreamViewStore.getState() as any).removeFromMultiView(track.publication.trackSid);}} sx={{ bgcolor:'error.main', color:'#fff', width: 32, height: 24, borderRadius: 1, p:0, '&:hover':{ bgcolor:'error.dark' } }}>
+                            <RemoveCircleOutlineIcon fontSize="small" />
+                          </IconButton>
+                        ) : (
+                          <IconButton onClick={(e)=>{e.stopPropagation(); (useStreamViewStore.getState() as any).addToMultiView(track.publication.trackSid);}} sx={{ bgcolor:'success.main', color:'#fff', width: 32, height: 24, borderRadius: 1, p:0, '&:hover':{ bgcolor:'success.dark' } }}>
+                            <AddCircleOutlineIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                      </Box>
+                    )}
                   </Box>
                 </Box>
                 {idx !== participantScreenShares.length-1 && <Divider sx={{ bgcolor:'rgba(255,255,255,0.06)' }}/>} 
               </React.Fragment>
             ))}
             <Divider sx={{ bgcolor:'rgba(255,255,255,0.06)' }} />
-            <Button variant="contained" color={participantSelected? 'error':'success'} size="small" fullWidth onClick={(e)=>{e.stopPropagation(); const store = (useStreamViewStore.getState() as any); if(participantSelected){ participantScreenShares.forEach(tr=> store.removeFromMultiView(tr.publication.trackSid)); } else { store.setMultiView(true); participantScreenShares.forEach(tr=> store.addToMultiView(tr.publication.trackSid)); } }}>
-              {participantSelected ? 'Убрать все' : 'Смотреть все'}
-            </Button>
+            {!isSelf && (
+              <Button variant="contained" color={participantSelected? 'error':'success'} size="small" fullWidth onClick={(e)=>{e.stopPropagation(); const store = (useStreamViewStore.getState() as any); if(participantSelected){ participantScreenShares.forEach(tr=> store.removeFromMultiView(tr.publication.trackSid)); } else { store.setMultiView(true); participantScreenShares.forEach(tr=> store.addToMultiView(tr.publication.trackSid)); } }}>
+                {participantSelected ? 'Убрать все' : 'Смотреть все'}
+              </Button>
+            )}
           </Box>
         </HoverPopover>
       )}

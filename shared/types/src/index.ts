@@ -93,6 +93,7 @@ export interface ServerToClientEvents {
   'server:deleted': (serverId: string) => void;
   'server:updated': (server: Server) => void;
   'server:created': (server: Server) => void;
+  'preview:update': (sid: string, dataUrl: string) => void;
 }
 
 export interface ClientToServerEvents {
@@ -103,6 +104,7 @@ export interface ClientToServerEvents {
     callback: (ack: { success: boolean }) => void,
   ) => void;
   'user:listening': (listening: boolean) => void;
+  'preview:update': (sid: string, dataUrl: string) => void;
 }
 
 export interface SfuServer {

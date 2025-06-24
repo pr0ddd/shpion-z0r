@@ -16,6 +16,7 @@ import invitePublicRoutes from './routes/invite.public.routes';
 import inviteProtectedRoutes from './routes/invite.protected.routes';
 import userRoutes from './routes/users';
 import sfuRoutes from './routes/sfu';
+import previewRouter from './routes/preview';
 
 // Middleware
 import { authMiddleware } from './middleware/auth';
@@ -86,6 +87,7 @@ app.use('/api/invite', invitePublicRoutes);
 app.use('/api/invite', authMiddleware, inviteProtectedRoutes);
 app.use('/api/livekit', authMiddleware, livekitRoutes);
 app.use('/api/sfu', sfuRoutes);
+app.use('/api/preview', previewRouter);
 
 // Initialize Socket.IO
 const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents, {}, SocketData>(httpServer, {

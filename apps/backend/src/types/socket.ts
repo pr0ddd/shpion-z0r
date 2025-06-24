@@ -19,6 +19,7 @@ export interface ServerToClientEvents {
     'server:deleted': (serverId: string) => void;
     'server:updated': (server: any) => void;
     'server:created': (server: any) => void;
+    'preview:update': (sid: string, dataUrl: string) => void;
 }
   
 // Client to Server Events
@@ -27,6 +28,7 @@ export interface ClientToServerEvents {
     'server:leave': (serverId:string) => void;
     'message:send': (data: { serverId: string; content: string; }, callback: (ack: { success: boolean }) => void) => void;
     'user:listening': (listening: boolean) => void;
+    'preview:update': (sid: string, dataUrl: string) => void;
 }
 
 // Socket data attached to each connection

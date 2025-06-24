@@ -88,6 +88,14 @@ export class SocketService {
         this.io.to(`server:${serverId}`).emit('user:listening', userId, listening);
       });
 
+      socket.on('preview:update', (sid: string, dataUrl: string) => {
+        const userId = socket.data.user?.id;
+        if (!userId) return;
+        const serverId = this.userCurrentServer.get(userId);
+        if (!serverId) return;
+        socket.to(`server:${serverId}`).emit('preview:update', sid, dataUrl);
+      });
+
       socket.on('disconnect', () => {
         const userId = socket.data.user?.id;
         if (userId) {
