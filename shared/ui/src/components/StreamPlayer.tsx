@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { Box, CircularProgress } from '@mui/material';
-import { TrackReference, useTracks, AudioTrack } from '@livekit/components-react';
-import { Track } from 'livekit-client';
+import { TrackReference, useTracks, useRoomContext } from '@livekit/components-react';
+import { Track, RoomEvent, TrackPublication } from 'livekit-client';
+import { isRemotePublication } from '@shared/hooks/lib/livekitUtils';
 
 export interface StreamPlayerProps {
   trackRef: TrackReference | null;
@@ -17,7 +18,9 @@ export interface StreamPlayerProps {
  */
 export const StreamPlayer: React.FC<StreamPlayerProps> = ({ trackRef, mode }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  // We only care about screen-share audio here, no microphone tracks
+  // текущий Room
+  const room = useRoomContext();
+  // ищем аудиотрек той же публикации (ScreenShareAudio)
   const audioTracks = useTracks([Track.Source.ScreenShareAudio]);
   const audioRef = audioTracks.find(
     (t) =>
@@ -26,28 +29,74 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({ trackRef, mode }) =>
       t.publication?.source === Track.Source.ScreenShareAudio,
   );
 
-  // Re-attach only when publication SID changes to avoid flicker on every render
-  const pubSid = trackRef?.publication?.trackSid;
+  // Когда меняется видеотрек или аудио-трек, формируем общий MediaStream
+  const deps = [trackRef?.publication?.trackSid, audioRef?.publication?.trackSid, mode] as const;
   useEffect(() => {
     const videoEl = videoRef.current;
-    if (!trackRef || !videoEl) return;
+    if (!videoEl) return;
+
+    // holder for cleanup fn
+    let detach: (()=>void) | null = null;
+
+    // Сброс предыдущего srcObject
+    videoEl.srcObject = null;
+
+    if (!trackRef) return;
+
+    const pub: TrackPublication = trackRef.publication as TrackPublication;
+    if (isRemotePublication(pub)) {
+      const attempt = () => {
+        try { pub.setSubscribed(true); } catch {}
+      };
+
+      // если participant уже зарегистрирован — подписываемся сразу
+      if ((room as any)?.getRemoteParticipantBySid?.(trackRef.participant?.sid)) {
+        attempt();
+      } else if (room && room.on) {
+        // иначе ждём события подключения
+        const onJoin = (p:any) => {
+          if(p.sid===trackRef.participant?.sid){
+            attempt();
+          }
+        };
+        room.on(RoomEvent.ParticipantConnected, onJoin);
+
+        detach = () => room.off(RoomEvent.ParticipantConnected, onJoin);
+      } else {
+        // fallback: вызываем при следующем рендере через microtask
+        Promise.resolve().then(attempt);
+      }
+    }
+
+    const vTrack = (pub as any)?.track;
+    const aTrack = audioRef?.publication?.track;
+
+    if (!vTrack) return;
 
     try {
-      trackRef.publication?.track?.attach(videoEl as HTMLMediaElement);
+      const tracks: MediaStreamTrack[] = [];
+      if (vTrack.mediaStreamTrack) tracks.push(vTrack.mediaStreamTrack);
+      if (aTrack?.mediaStreamTrack) tracks.push(aTrack.mediaStreamTrack);
+
+      // Если аудио найдено – отдаём один общий MediaStream, чтобы controls показали громкость
+      const stream = new MediaStream(tracks);
+      videoEl.srcObject = stream;
+
       videoEl.controls = true;
       videoEl.muted = mode === 'tab';
       videoEl.style.objectFit = 'contain';
       videoEl.play().catch(() => {});
     } catch (e) {
-      console.error('Attach track failed', e);
+      // eslint-disable-next-line no-console
+      console.error('Failed to attach combined media stream:', e);
     }
 
     return () => {
-      try {
-        trackRef.publication?.track?.detach(videoEl as HTMLMediaElement);
-      } catch {}
+      videoEl.pause();
+      videoEl.srcObject = null;
+      if (detach) detach();
     };
-  }, [pubSid, mode]);
+  }, deps);
 
   return (
     <Box sx={{ width: '100%', height: '100%', bgcolor: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -56,7 +105,6 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({ trackRef, mode }) =>
       ) : (
         <CircularProgress />
       )}
-      {audioRef && <AudioTrack trackRef={audioRef} volume={1} />}
     </Box>
   );
 }; 

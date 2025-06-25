@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { Avatar, Box, Menu, MenuItem, Slider, Typography, Chip, IconButton, Divider, Button } from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
@@ -21,6 +21,7 @@ import ScreenSharePreview from './ScreenSharePreview';
 import { useStreamViewStore } from '@shared/hooks';
 import HoverPopover from 'material-ui-popup-state/HoverPopover';
 import { usePopupState, bindHover, bindPopover } from 'material-ui-popup-state/hooks';
+import { isRemotePublication } from '@shared/hooks/lib/livekitUtils';
 
 interface MemberRowProps {
   participant: Participant;
@@ -93,7 +94,7 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
     </Box>
   );
 
-  const selectedSids = useStreamViewStore((s:any)=> s.selectedSids);
+  const selectedSids = useStreamViewStore((s) => s.selectedSids);
 
   const participantSelected = useMemo(()=> participantScreenShares.some(tr=> selectedSids.includes(tr.publication.trackSid)), [participantScreenShares, selectedSids]);
 
@@ -214,33 +215,47 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
                   <ScreenSharePreview trackRef={track} width={230} height={130} staticImage />
                   <Box sx={{ position:'absolute', inset:0, bgcolor:'rgba(0,0,0,0.35)', display:'flex', flexDirection:'column', justifyContent:'space-between', alignItems:'center', p:0.5 }}>
                     <Chip label={(track.publication.trackName ?? `Стрим №${idx+1}`).slice(0,30)} size="small" sx={{ bgcolor:'rgba(44, 44, 44, 0.67)', color:'#fff', fontWeight:600, pointerEvents:'none' }} />
-                    {!isSelf && (
-                      <Box sx={{ display:'flex', gap:0.5 }}>
-                        <IconButton onClick={(e)=>{e.stopPropagation(); openStream(track.publication.trackSid);}} sx={{ bgcolor:'primary.main', color:'#fff', width: 32, height: 24, borderRadius: 1, p:0, '&:hover':{ bgcolor:'primary.dark' } }}>
-                          <OpenInNewIcon fontSize="small" />
+                    <Box sx={{ display:'flex', gap:0.5 }}>
+                      <IconButton onClick={(e)=>{e.stopPropagation(); openStream(track.publication.trackSid);}} sx={{ bgcolor:'primary.main', color:'#fff', width: 32, height: 24, borderRadius: 1, p:0, '&:hover':{ bgcolor:'primary.dark' } }}>
+                        <OpenInNewIcon fontSize="small" />
+                      </IconButton>
+                      {selectedSids.includes(track.publication.trackSid) ? (
+                        <IconButton onClick={(e)=>{e.stopPropagation(); const store = useStreamViewStore.getState(); if(isRemotePublication(track.publication)){ void track.publication.setSubscribed(false); } store.removeFromMultiView(track.publication.trackSid);}} sx={{ bgcolor:'error.main', color:'#fff', width: 32, height: 24, borderRadius: 1, p:0, '&:hover':{ bgcolor:'error.dark' } }}>
+                          <RemoveCircleOutlineIcon fontSize="small" />
                         </IconButton>
-                        {selectedSids.includes(track.publication.trackSid) ? (
-                          <IconButton onClick={(e)=>{e.stopPropagation(); (useStreamViewStore.getState() as any).removeFromMultiView(track.publication.trackSid);}} sx={{ bgcolor:'error.main', color:'#fff', width: 32, height: 24, borderRadius: 1, p:0, '&:hover':{ bgcolor:'error.dark' } }}>
-                            <RemoveCircleOutlineIcon fontSize="small" />
-                          </IconButton>
-                        ) : (
-                          <IconButton onClick={(e)=>{e.stopPropagation(); (useStreamViewStore.getState() as any).addToMultiView(track.publication.trackSid);}} sx={{ bgcolor:'success.main', color:'#fff', width: 32, height: 24, borderRadius: 1, p:0, '&:hover':{ bgcolor:'success.dark' } }}>
-                            <AddCircleOutlineIcon fontSize="small" />
-                          </IconButton>
-                        )}
-                      </Box>
-                    )}
+                      ) : (
+                        <IconButton onClick={(e)=>{e.stopPropagation(); const store = useStreamViewStore.getState(); if(isRemotePublication(track.publication)){ void track.publication.setSubscribed(true); } store.addToMultiView(track.publication.trackSid);}} sx={{ bgcolor:'success.main', color:'#fff', width: 32, height: 24, borderRadius: 1, p:0, '&:hover':{ bgcolor:'success.dark' } }}>
+                          <AddCircleOutlineIcon fontSize="small" />
+                        </IconButton>
+                      )}
+                    </Box>
                   </Box>
                 </Box>
                 {idx !== participantScreenShares.length-1 && <Divider sx={{ bgcolor:'rgba(255,255,255,0.06)' }}/>} 
               </React.Fragment>
             ))}
             <Divider sx={{ bgcolor:'rgba(255,255,255,0.06)' }} />
-            {!isSelf && (
-              <Button variant="contained" color={participantSelected? 'error':'success'} size="small" fullWidth onClick={(e)=>{e.stopPropagation(); const store = (useStreamViewStore.getState() as any); if(participantSelected){ participantScreenShares.forEach(tr=> store.removeFromMultiView(tr.publication.trackSid)); } else { store.setMultiView(true); participantScreenShares.forEach(tr=> store.addToMultiView(tr.publication.trackSid)); } }}>
-                {participantSelected ? 'Убрать все' : 'Смотреть все'}
-              </Button>
-            )}
+            {/* Кнопка управления всеми стримами участника */}
+            <Button variant="contained" color={participantSelected? 'error':'success'} size="small" fullWidth onClick={(e)=>{
+              e.stopPropagation();
+              const store = useStreamViewStore.getState();
+              if (participantSelected) {
+                // Убираем все треки данного участника из просмотра и отписываемся
+                participantScreenShares.forEach(tr => {
+                  if(isRemotePublication(tr.publication)) void tr.publication.setSubscribed(false);
+                  store.removeFromMultiView(tr.publication.trackSid);
+                });
+              } else {
+                const firstSid = participantScreenShares[0]?.publication.trackSid;
+                store.setMultiView(true, firstSid);
+                participantScreenShares.forEach(tr => {
+                  if(isRemotePublication(tr.publication)) void tr.publication.setSubscribed(true);
+                  store.addToMultiView(tr.publication.trackSid);
+                });
+              }
+            }}>
+              {participantSelected ? 'Убрать все' : 'Смотреть все'}
+            </Button>
           </Box>
         </HoverPopover>
       )}

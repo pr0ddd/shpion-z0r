@@ -19,10 +19,10 @@ export const ParticipantVideoTile: React.FC<ParticipantVideoTileProps> = ({ trac
         window.open(url, '_blank', 'noopener,noreferrer');
     };
 
-    // find corresponding audio track (microphone or screenshare audio)
-    const audioTracks = useTracks([Track.Source.Microphone, Track.Source.ScreenShareAudio]);
-    const participantAudioRefs = useMemo(()=>
-        audioTracks.filter(t=> t.participant?.sid === trackRef.participant?.sid),
+    // берём только микрофонные треки, звук экран-шара уже встроен в <StreamPlayer>
+    const audioTracks = useTracks([Track.Source.Microphone]);
+    const participantAudioRefs = useMemo(() =>
+        audioTracks.filter(t => t.participant?.sid === trackRef.participant?.sid),
         [audioTracks, trackRef]);
 
     return (

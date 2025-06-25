@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, IconButton, Typography } from '@mui/material';
 import { useTracks } from '@livekit/components-react';
 import { Track, VideoQuality } from 'livekit-client';
+import { isRemotePublication } from '@shared/hooks/lib/livekitUtils';
 import { CustomChat } from '@shared/ui';
 import { useServer, useStreamViewStore, useUploadPreview } from '@shared/hooks';
 import { StreamPlayer, ScreenSharePreview } from '@shared/ui';
@@ -64,9 +65,9 @@ const ServerContent = () => {
     // manage subscriptions to minimize bandwidth
     useEffect(()=>{
       screenShareTracksAll.forEach(t=>{
-        if(t.participant?.isLocal){
+        if(isRemotePublication(t.publication) && t.participant?.isLocal){
           const shouldSub = t.publication.trackSid===primarySid;
-          t.publication.setSubscribed?.(shouldSub);
+          t.publication.setSubscribed(shouldSub).catch(()=>{});
         }
       });
     }, [primarySid, screenShareTracksAll.length]);
@@ -74,8 +75,8 @@ const ServerContent = () => {
     const stopViewing = ()=>{
         // unsubscribe from all remote screen share tracks
         screenShareTracks.forEach(t=>{
-            if(!t.participant?.isLocal){
-                try{ t.publication?.setSubscribed?.(false);}catch(e){}
+            if(isRemotePublication(t.publication) && !t.participant?.isLocal){
+                void t.publication.setSubscribed(false);
             }
         });
         resetView();
