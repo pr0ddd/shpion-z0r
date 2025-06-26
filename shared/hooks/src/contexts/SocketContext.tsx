@@ -30,6 +30,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         path: '/api/socket.io',
         auth: { token },
         transports: ['websocket'],
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 2000,
+        reconnectionDelayMax: 15000,
+        randomizationFactor: 0.5,
       });
 
       socketRef.current = socket;
@@ -50,10 +55,32 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setIsConnected(false);
       });
 
+      let manualPing: ReturnType<typeof setInterval> | null = null;
+      const ensureConnected = () => {
+        if (socket.connected) {
+          if (manualPing) {
+            clearInterval(manualPing);
+            manualPing = null;
+          }
+        } else if (!manualPing) {
+          manualPing = setInterval(() => {
+            if (!socket.connected) {
+              socket.connect();
+            }
+          }, 10000); // 10 сек – реже, чем throttle браузера
+        }
+      };
+
+      socket.on('disconnect', ensureConnected);
+      socket.on('connect', ensureConnected);
+
       return () => {
         socket.off('connect');
         socket.off('disconnect');
+        socket.off('connect', ensureConnected);
+        socket.off('disconnect', ensureConnected);
         socket.disconnect();
+        if (manualPing) clearInterval(manualPing);
       };
     } else if (socketRef.current) {
         socketRef.current.disconnect();

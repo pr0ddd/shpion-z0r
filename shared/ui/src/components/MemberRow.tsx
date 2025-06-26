@@ -14,7 +14,7 @@ import { AudioTrack, useIsSpeaking, useIsMuted, useTracks, useRoomContext } from
 import { Participant, Track } from 'livekit-client';
 import { User } from '@shared/types';
 import { dicebearAvatar } from '../lib/ui';
-import { useAuth } from '@shared/hooks';
+import { useAuth, useNotification } from '@shared/hooks';
 import { useServerStore } from '@shared/hooks';
 import { useAppStore } from '@shared/hooks';
 import ScreenSharePreview from './ScreenSharePreview';
@@ -98,6 +98,19 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
 
   const participantSelected = useMemo(()=> participantScreenShares.some(tr=> selectedSids.includes(tr.publication.trackSid)), [participantScreenShares, selectedSids]);
 
+  // snackbar on stream start
+  const { showNotification } = useNotification();
+  const prevStreamCountRef = useRef<number>(participantScreenShares.length);
+
+  useEffect(() => {
+    const prev = prevStreamCountRef.current;
+    const curr = participantScreenShares.length;
+    if (curr > prev && !isSelf) {
+      showNotification(`${user.username} начинает видеотрансляцию`, 'info');
+    }
+    prevStreamCountRef.current = curr;
+  }, [participantScreenShares.length, isSelf, showNotification, user.username]);
+
   return (
     <Box
       {...bindHover(popupState)}
@@ -146,7 +159,7 @@ const MemberRowInner: React.FC<MemberRowProps> = ({ participant, user, isDeafene
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 'auto', mr: 1 }}>
           {isLive && (
-            <Chip label="В эфире" size="small" color="error" />
+            <Chip label={`В эфире${participantScreenShares.length > 1 ? ` (${participantScreenShares.length})` : ''}`} size="small" color="error" />
           )}
           {isMuted && (
             <MicOffIcon fontSize="small" sx={{ color: 'text.secondary' }} />

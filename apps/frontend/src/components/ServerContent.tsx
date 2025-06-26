@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Box, IconButton, Typography } from '@mui/material';
 import { useTracks } from '@livekit/components-react';
 import { Track, VideoQuality } from 'livekit-client';
@@ -96,6 +96,26 @@ const ServerContent = () => {
       return member?.user?.username || participant.identity;
     };
 
+    // --- participant color palette ---
+    const palette = ['#10B981', '#8B5CF6', '#F59E0B', '#EC4899', '#3B82F6', '#EF4444'];
+    const userColor = (pid:string)=>{
+      let hash = 0;
+      for(let i=0;i<pid.length;i++){ hash = (hash<<5)-hash + pid.charCodeAt(i); hash|=0; }
+      const idx = Math.abs(hash)%palette.length;
+      return palette[idx];
+    };
+
+    // Group tracks by participant
+    const groupedTracks = useMemo(()=>{
+      const map: Record<string, TrackReference[]> = {} as any;
+      screenShareTracks.forEach(t=>{
+        const pid = t.participant?.sid || 'unknown';
+        if(!map[pid]) map[pid] = [];
+        map[pid].push(t);
+      });
+      return Object.entries(map);
+    }, [screenShareTracks]);
+
     if (!server) {
         return (
             <Box sx={{ flexGrow: 1, minHeight: 0, background: '#36393f' }}>
@@ -137,23 +157,34 @@ const ServerContent = () => {
                                  <>
                                    {/* Thumbnails column on the left */}
                                    {screenShareTracks.length > 1 && (
-                                     <Box sx={{ display:'flex', flexDirection:'column', alignItems:'center', gap:2, overflowY:'auto', p:2, width:320, flexShrink:0 }}>
+                                     <Box sx={{ display:'flex', flexDirection:'column', alignItems:'stretch', justifyContent:'flex-start', gap:1, overflowY:'auto', py:1, px:1, width:260, flexShrink:0 }}>
                                        <AnimatePresence>
-                                         {screenShareTracks.filter(t=> t.publication.trackSid!==primarySid).map((track)=>(
-                                           <motion.div key={track.publication.trackSid}
-                                             initial={{ opacity: 0, scale: 0.8 }}
-                                             animate={{ opacity: 1, scale: 1 }}
-                                             exit={{ opacity: 0, scale: 0.8 }}
-                                             transition={{ duration: 0.25 }}
-                                             style={{ width:'100%' }}
-                                           >
-                                             <Box sx={{ width:'100%', aspectRatio:'16/9', position:'relative', cursor:'pointer', borderRadius:1, overflow:'hidden' }} onClick={()=> setPrimarySid(track.publication.trackSid)}>
-                                               <ScreenSharePreview trackRef={track} staticImage />
-                                               <Box sx={{ position:'absolute', top:4, left:4, bgcolor:'rgba(0,0,0,0.6)', px:1, py:0.2, borderRadius:1 }}>
-                                                 <Typography variant="caption" sx={{ color:'#fff', fontSize:10 }}>{getUsername(track.participant)}</Typography>
-                                               </Box>
+                                         {groupedTracks.map(([pid, tracks])=> (
+                                           <React.Fragment key={pid}>
+                                             {/* header */}
+                                             <Box sx={{ mb:0.5, display:'flex', alignItems:'center', gap:0.5, pl:0.5 }}>
+                                               <Box sx={{ width:10, height:10, bgcolor:userColor(pid), borderRadius:'50%' }} />
+                                               <Typography variant="caption" sx={{ color:'#fff', fontWeight:700 }}>
+                                                 {getUsername(tracks[0]?.participant)}
+                                               </Typography>
                                              </Box>
-                                           </motion.div>
+                                             {tracks.filter(t=> t.publication.trackSid!==primarySid).map(track=>(
+                                               <motion.div key={track.publication.trackSid}
+                                                 initial={{ opacity: 0, scale: 0.8 }}
+                                                 animate={{ opacity: 1, scale: 1 }}
+                                                 exit={{ opacity: 0, scale: 0.8 }}
+                                                 transition={{ duration: 0.25 }}
+                                                 style={{ width:'100%' }}
+                                               >
+                                                 <Box sx={{ width:'100%', aspectRatio:'16/9', position:'relative', cursor:'pointer', borderRadius:1, overflow:'hidden' }} onClick={()=> setPrimarySid(track.publication.trackSid)}>
+                                                   <ScreenSharePreview trackRef={track} staticImage />
+                                                   <Box sx={{ position:'absolute', top:4, left:4, bgcolor: userColor(pid), px:0.5, py:0.1, borderRadius:1, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                                                     <Typography variant="caption" sx={{ color:'#fff', fontSize:10, fontWeight:600 }}>{getUsername(track.participant)}</Typography>
+                                                   </Box>
+                                                 </Box>
+                                               </motion.div>
+                                             ))}
+                                           </React.Fragment>
                                          ))}
                                        </AnimatePresence>
                                      </Box>
@@ -163,10 +194,10 @@ const ServerContent = () => {
                                    <AnimatePresence mode="wait">
                                      {primarySid && (
                                        <motion.div key={primarySid} initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:0.25}} style={{display:'flex', alignItems:'center', justifyContent:'flex-end', flex:1, minHeight:0}}>
-                                         <Box sx={{ position:'relative', width:'100%', height:'100%', aspectRatio:'16/9', overflow:'hidden', borderRadius: fullscreen ? 0 : 1 }}>
+                                         <Box sx={{ position:'relative', height:'100%', width:'auto', flexGrow:1, overflow:'hidden', borderRadius: fullscreen ? 0 : 1 }}>
                                            <StreamPlayer trackRef={screenShareTracks.find(t=> t.publication.trackSid===primarySid) || screenShareTracks[0]} />
-                                           <Box sx={{ position:'absolute', top:8, left:8, bgcolor:'rgba(0,0,0,0.6)', px:1, py:0.3, borderRadius:1 }}>
-                                             <Typography variant="caption" sx={{ color:'#fff' }}>{getUsername(screenShareTracks.find(t=> t.publication.trackSid===primarySid)?.participant)}</Typography>
+                                           <Box sx={{ position:'absolute', top:8, left:8, bgcolor: userColor(screenShareTracks.find(t=> t.publication.trackSid===primarySid)?.participant?.sid || 'x'), px:1, py:0.3, borderRadius:1, maxWidth:'50%', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                                             <Typography variant="caption" sx={{ color:'#fff', fontWeight:600 }}>{getUsername(screenShareTracks.find(t=> t.publication.trackSid===primarySid)?.participant)}</Typography>
                                            </Box>
                                          </Box>
                                        </motion.div>
@@ -181,8 +212,8 @@ const ServerContent = () => {
                                      <motion.div key={primarySid} initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:0.25}} style={{display:'flex', alignItems:'center', justifyContent:'center', width:'100%'}}>
                                         <Box sx={{ position:'relative', height:'auto', width:'100%', maxHeight:maxVideoHeight, maxWidth:'100%', mx:'auto', aspectRatio:'16/9', overflow:'hidden', borderRadius:1 }}>
                                            <StreamPlayer trackRef={screenShareTracks.find(t=> t.publication.trackSid===primarySid) || screenShareTracks[0]} />
-                                           <Box sx={{ position:'absolute', top:8, left:8, bgcolor:'rgba(0,0,0,0.6)', px:1, py:0.3, borderRadius:1 }}>
-                                             <Typography variant="caption" sx={{ color:'#fff' }}>{getUsername(screenShareTracks.find(t=> t.publication.trackSid===primarySid)?.participant)}</Typography>
+                                           <Box sx={{ position:'absolute', top:8, left:8, bgcolor: userColor(screenShareTracks.find(t=> t.publication.trackSid===primarySid)?.participant?.sid || 'x'), px:1, py:0.3, borderRadius:1, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                                             <Typography variant="caption" sx={{ color:'#fff', fontWeight:600 }}>{getUsername(screenShareTracks.find(t=> t.publication.trackSid===primarySid)?.participant)}</Typography>
                                            </Box>
                                         </Box>
                                      </motion.div>
@@ -203,8 +234,8 @@ const ServerContent = () => {
                                             >
                                                <Box sx={{ width:'100%', aspectRatio:'16/9', position:'relative', cursor:'pointer', borderRadius:1, overflow:'hidden' }} onClick={()=> setPrimarySid(track.publication.trackSid)}>
                                                   <ScreenSharePreview trackRef={track} staticImage />
-                                                  <Box sx={{ position:'absolute', top:4, left:4, bgcolor:'rgba(0,0,0,0.6)', px:1, py:0.2, borderRadius:1 }}>
-                                                    <Typography variant="caption" sx={{ color:'#fff', fontSize:10 }}>{getUsername(track.participant)}</Typography>
+                                                  <Box sx={{ position:'absolute', top:4, left:4, bgcolor: userColor(track.participant?.sid || 'x'), px:1, py:0.2, borderRadius:1, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                                                    <Typography variant="caption" sx={{ color:'#fff', fontSize:10, fontWeight:600 }}>{getUsername(track.participant)}</Typography>
                                                   </Box>
                                                </Box>
                                             </motion.div>
