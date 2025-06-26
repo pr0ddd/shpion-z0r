@@ -77,6 +77,7 @@ export const RoomWrapper: React.FC<RoomWrapperProps> = ({ server }) => {
             echoCancellation: true,
             noiseSuppression: true,
             autoGainControl: true,
+            voiceIsolation: true
           },
         }}
         style={{ display: 'flex', flexGrow: 1, minWidth: 0, position: 'relative' }}
