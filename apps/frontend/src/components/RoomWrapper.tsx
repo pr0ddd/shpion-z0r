@@ -69,7 +69,7 @@ export const RoomWrapper: React.FC<RoomWrapperProps> = ({ server }) => {
             videoCodec: 'av1',
             videoEncoding: encoding1080p30_3m,
             screenShareEncoding: encoding1080p30_3m,
-            audioPreset: audioPresets.musicHighQuality,
+            audioPreset: AudioPresets.musicHighQuality,
             dtx: true,
             red: false,
           },
