@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Box } from '@mui/material';
 import { TrackReference } from '@livekit/components-react';
 import { useAppStore, useSocket, usePreviewStore } from '@shared/hooks';
@@ -19,6 +19,7 @@ export const ScreenSharePreview: React.FC<ScreenSharePreviewProps> = ({ trackRef
   const boxH:any = height ?? '100%';
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [ready, setReady] = useState(false);
 
   const selectedServerId = useAppStore((s) => s.selectedServerId);
   const { socket } = useSocket();
@@ -34,7 +35,11 @@ export const ScreenSharePreview: React.FC<ScreenSharePreviewProps> = ({ trackRef
     }, [socket, setPreview]);
     return (
       <Box sx={{ width: boxW, height: boxH, borderRadius:1, overflow:'hidden', bgcolor:'#000', border:'1px solid rgba(255,255,255,0.1)', boxShadow:'0 0 4px rgba(0,0,0,0.4)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-        {img ? <img src={img} style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : null}
+        {img ? (
+          <img src={img} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+        ) : (
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spin"><circle cx="12" cy="12" r="10" strokeOpacity="0.25"/><path d="M22 12a10 10 0 0 1-10 10" /></svg>
+        )}
       </Box>
     );
   }
@@ -67,6 +72,7 @@ export const ScreenSharePreview: React.FC<ScreenSharePreviewProps> = ({ trackRef
     // fast attempt loop until first frame is available
     const waitForFirstFrame = () => {
       if (draw()) {
+        setReady(true);
         // after first successful draw switch to slower interval
         intervalRef.current = setInterval(draw, 1500);
       } else {
@@ -91,8 +97,13 @@ export const ScreenSharePreview: React.FC<ScreenSharePreviewProps> = ({ trackRef
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      <Box sx={{ width, height, borderRadius: 1, overflow: 'hidden', bgcolor: '#000', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 0 4px rgba(0,0,0,0.4)' }}>
+      <Box sx={{ width, height, borderRadius: 1, overflow: 'hidden', bgcolor: '#000', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 0 4px rgba(0,0,0,0.4)', position:'relative' }}>
         <canvas ref={canvasRef} width={width} height={height} style={{ display: 'block', width: '100%', height: '100%' }} />
+        {!ready && (
+          <Box sx={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spin"><circle cx="12" cy="12" r="10" strokeOpacity="0.25"/><path d="M22 12a10 10 0 0 1-10 10" /></svg>
+          </Box>
+        )}
       </Box>
     </Box>
   );

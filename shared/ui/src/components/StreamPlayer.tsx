@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import { TrackReference, useTracks, useRoomContext } from '@livekit/components-react';
 import { Track, RoomEvent, TrackPublication } from 'livekit-client';
@@ -18,6 +18,7 @@ export interface StreamPlayerProps {
  */
 export const StreamPlayer: React.FC<StreamPlayerProps> = ({ trackRef, mode }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [ready, setReady] = useState(false);
   // текущий Room
   const room = useRoomContext();
   // ищем аудиотрек той же публикации (ScreenShareAudio)
@@ -85,6 +86,7 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({ trackRef, mode }) =>
       videoEl.controls = true;
       videoEl.muted = mode === 'tab';
       videoEl.style.objectFit = 'contain';
+      videoEl.onloadeddata = ()=> setReady(true);
       videoEl.play().catch(() => {});
     } catch (e) {
       // eslint-disable-next-line no-console
@@ -99,11 +101,12 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({ trackRef, mode }) =>
   }, deps);
 
   return (
-    <Box sx={{ width: '100%', height: '100%', bgcolor: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      {trackRef ? (
-        <video ref={videoRef} style={{ width: '100%', height: '100%' }} playsInline />
-      ) : (
-        <CircularProgress />
+    <Box sx={{ width: '100%', height: '100%', bgcolor: 'black', position:'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {trackRef && <video ref={videoRef} style={{ width: '100%', height: '100%' }} playsInline />}
+      {(!ready || !trackRef) && (
+        <Box sx={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', bgcolor:'rgba(0,0,0,0.4)' }}>
+          <CircularProgress />
+        </Box>
       )}
     </Box>
   );
