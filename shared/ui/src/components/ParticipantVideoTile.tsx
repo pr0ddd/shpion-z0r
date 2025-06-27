@@ -4,7 +4,7 @@ import { TrackReference, useTracks, AudioTrack } from '@livekit/components-react
 import { Track } from 'livekit-client';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { StreamPlayer } from '@shared/ui';
-import { useServer } from '@shared/hooks';
+import { useServer } from '@features/servers';
 
 interface ParticipantVideoTileProps {
   trackRef: TrackReference;

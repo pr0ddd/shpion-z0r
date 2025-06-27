@@ -4,7 +4,11 @@ import './index.css';
 import App from './App';
 import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, GlobalStyles } from '@mui/material';
-import { AuthProvider, SocketProvider, ServerProvider, NotificationProvider } from '@shared/hooks';
+import { ServerProvider } from '@shared/hooks'; // REMOVE ??? !!!
+import { AuthProvider } from '@features/auth';
+import { SocketProvider } from '@features/socket';
+import { NotificationProvider } from '@features/notifications';
+
 import { theme } from './theme';
 import reportWebVitals from './reportWebVitals';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

@@ -10,7 +10,7 @@ import {
   useDisconnectButton,
 } from '@livekit/components-react';
 import { Track } from 'livekit-client';
-import { useServer } from '@shared/hooks';
+import { useServer } from '@features/servers';
 import { ScreenShareControl } from './ScreenShareControl';
 
 export const MediaControlBar = () => {

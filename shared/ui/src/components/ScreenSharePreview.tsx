@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Box } from '@mui/material';
 import { TrackReference } from '@livekit/components-react';
-import { useAppStore, useSocket, usePreviewStore } from '@shared/hooks';
+import { useAppStore } from '../../../../apps/frontend/src/stores/useAppStore';
+import { useSocket } from '@features/socket';
+import { usePreviewStore } from '@features/streams';
 
 interface ScreenSharePreviewProps {
   trackRef: TrackReference;

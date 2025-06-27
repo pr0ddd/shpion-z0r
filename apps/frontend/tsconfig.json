@@ -1,4 +1,5 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "target": "es5",
     "lib": [
@@ -25,7 +26,9 @@
       "@shared/hooks": ["../../shared/hooks/src/index.ts"],
       "@shared/data": ["../../shared/data/src/index.ts"],
       "@shared/types": ["../../shared/types/src/index.ts"],
-      "@shared/livekit": ["../../shared/livekit/src/index.ts"]
+      "@shared/livekit": ["../../shared/livekit/src/index.ts"],
+      "@features/*": ["src/features/*"],
+      "@hooks/*": ["src/hooks/*"],
     },
     "useUnknownInCatchVariables": false
   },

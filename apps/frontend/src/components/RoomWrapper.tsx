@@ -6,7 +6,9 @@ import { useLiveKitToken } from '@shared/livekit';
 import { AudioPresets, RoomEvent } from 'livekit-client';
 import { StatsOverlay, ServerMembers } from '@shared/livekit';
 import ServerContent from './ServerContent';
-import { useAppStore, useStreamViewStore } from '@shared/hooks';
+import { useStreamViewStore } from '@shared/hooks';
+import { useAppStore } from '../stores/useAppStore';
+
 import type { Server } from '@shared/types';
 
 // Fixed 1080p @30 fps, 3 Mbps encoding for both camera and screen share.

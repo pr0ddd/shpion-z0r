@@ -1,11 +1,12 @@
 // @ts-nocheck
 import React, { useState, useEffect, useMemo } from 'react';
-import { Box, IconButton, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { useTracks } from '@livekit/components-react';
 import { Track, VideoQuality } from 'livekit-client';
 import { isRemotePublication } from '@shared/hooks/lib/livekitUtils';
-import { CustomChat } from '@shared/ui';
-import { useServer, useStreamViewStore, useUploadPreview } from '@shared/hooks';
+import { CustomChat } from '@features/messages';
+import { useStreamViewStore, useUploadPreview } from '@features/streams';
+import { useServer } from '@features/servers';
 import { StreamPlayer, ScreenSharePreview } from '@shared/ui';
 import { AnimatePresence, motion } from 'framer-motion';
 import StreamControlsDock from './StreamControlsDock';

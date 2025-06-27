@@ -21,13 +21,13 @@ module.exports = [
   },
   // Base TypeScript + React config
   {
-    files: ['**/*.{js,jsx,ts,tsx}'],
+    files: ['apps/**/*.{js,jsx,ts,tsx}'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
-        project: ['./backend/tsconfig.json', './frontend/tsconfig.json'],
+        project: ['./apps/backend/tsconfig.json', './apps/frontend/tsconfig.json'],
       },
     },
     plugins: {

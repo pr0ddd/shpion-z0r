@@ -20,7 +20,8 @@
       "@shared/hooks/*": ["shared/hooks/src/*"],
       "@shared/types": ["shared/types/src/index.ts"],
       "@shared/ui": ["shared/ui/src/index.ts"],
-      "@shared/livekit": ["shared/livekit/src/index.ts"]
+      "@shared/livekit": ["shared/livekit/src/index.ts"],
+      "@features/*": ["apps/frontend/src/features/*"], // TODO: remove from root config !!!!!
     }
   },
   "exclude": ["node_modules", "tmp"]

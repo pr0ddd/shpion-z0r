@@ -3,12 +3,12 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { LiveKitRoom, useTracks, TrackReference } from '@livekit/components-react';
 import { Track } from 'livekit-client';
-import { useServersQuery } from '@shared/hooks';
 import { livekitAPI } from '@shared/data';
 import { useQuery } from '@tanstack/react-query';
 import { StreamPlayer } from '@shared/ui';
+import { useServersQuery } from '@features/servers';
 
-export const StreamPage: React.FC = () => {
+const StreamPage: React.FC = () => {
   const { serverId, trackSid } = useParams<{ serverId: string; trackSid: string }>();
 
   const { data: servers = [] } = useServersQuery();
@@ -85,3 +85,5 @@ const Player: React.FC<{ trackSid: string }> = ({ trackSid }) => {
     </Box>
   );
 };
+
+export default StreamPage;

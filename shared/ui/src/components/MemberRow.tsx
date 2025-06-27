@@ -14,9 +14,10 @@ import { AudioTrack, useIsSpeaking, useIsMuted, useTracks, useRoomContext } from
 import { Participant, Track } from 'livekit-client';
 import { User } from '@shared/types';
 import { dicebearAvatar } from '../lib/ui';
-import { useAuth, useNotification } from '@shared/hooks';
-import { useServerStore } from '@shared/hooks';
-import { useAppStore } from '@shared/hooks';
+import { useAuth } from '@features/auth';
+import { useNotification } from '@features/notifications';
+import { useServerStore } from '@features/servers';
+import { useAppStore } from '../../../../apps/frontend/src/stores/useAppStore';
 import ScreenSharePreview from './ScreenSharePreview';
 import { useStreamViewStore } from '@shared/hooks';
 import HoverPopover from 'material-ui-popup-state/HoverPopover';

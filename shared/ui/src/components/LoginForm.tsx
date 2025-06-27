@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '@shared/hooks';
+import { useAuth } from '@features/auth';
 import { Box, TextField, Button, CircularProgress, Typography } from '@mui/material';
 
 const LoginForm: React.FC = () => {

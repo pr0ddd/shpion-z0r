@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useSyncExternalStore, useRef } from 'react';
 import { Room, LocalVideoTrack, LocalAudioTrack, Track, RoomEvent } from 'livekit-client';
-import { useServer } from '@shared/hooks';
 import { useRoomContext } from '@livekit/components-react';
+import { useServer } from '@features/servers';
 
 // Config: maximum simultaneous screen shares (per client)
 export const MAX_SHARES = 4;

@@ -1,10 +1,10 @@
 import React from 'react';
 import { Box, Typography, Avatar, Paper, Divider, IconButton } from '@mui/material';
-import { useAuth } from '@shared/hooks';
+import { useAuth } from '@features/auth';
 import { ConnectionState, Room, Track } from 'livekit-client';
 import { useConnectionState, useMaybeRoomContext, useTrackMutedIndicator, useTracks } from '@livekit/components-react';
 import { useScreenShare } from '@shared/livekit';
-import { useNotification } from '@shared/hooks';
+import { useNotification } from '@features/notifications';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
 import CallEndIcon from '@mui/icons-material/CallEnd';
