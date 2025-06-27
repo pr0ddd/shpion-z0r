@@ -9,9 +9,11 @@ import {
 } from '@mui/material';
 import { useParticipants } from '@livekit/components-react';
 import { useServer, useServerStore } from '@features/servers';
-import { VoiceControlBar, MemberRow } from '@shared/ui';
 import { Participant } from 'livekit-client';
 import { User, Member } from '@shared/types';
+
+import { MemberRow } from './MemberRow';
+import { VoiceControlBar } from './VoiceControlBar';
 
 const MemberSkeleton = () => (
   <ListItem>

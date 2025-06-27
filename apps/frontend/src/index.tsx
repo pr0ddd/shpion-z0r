@@ -4,7 +4,6 @@ import './index.css';
 import App from './App';
 import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, GlobalStyles } from '@mui/material';
-import { ServerProvider } from '@shared/hooks'; // REMOVE ??? !!!
 import { AuthProvider } from '@features/auth';
 import { SocketProvider } from '@features/socket';
 import { NotificationProvider } from '@features/notifications';
@@ -44,11 +43,9 @@ root.render(
         <BrowserRouter>
           <AuthProvider>
             <SocketProvider>
-              <ServerProvider>
-                <NotificationProvider>
-                  <App />
-                </NotificationProvider>
-              </ServerProvider>
+              <NotificationProvider>
+                <App />
+              </NotificationProvider>
             </SocketProvider>
           </AuthProvider>
         </BrowserRouter>

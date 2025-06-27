@@ -3,13 +3,11 @@ import { Room } from 'livekit-client';
 import { useRtcStats } from '../hooks/useRtcStats';
 import { useRoomContext } from '@livekit/components-react';
 
-interface StatsOverlayProps {
-  room?: Room | null;
-}
+type StatsOverlayProps = void
 
-export const StatsOverlay: React.FC<StatsOverlayProps> = ({ room }) => {
+export const StatsOverlay: React.FC<StatsOverlayProps> = () => {
   const contextRoom = useRoomContext?.();
-  const stats = useRtcStats(room ?? contextRoom ?? null, 2000);
+  const stats = useRtcStats(contextRoom ?? null, 2000);
 
   if (!stats) return null;
 

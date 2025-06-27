@@ -5,7 +5,7 @@ import { LiveKitRoom, useTracks, TrackReference } from '@livekit/components-reac
 import { Track } from 'livekit-client';
 import { livekitAPI } from '@shared/data';
 import { useQuery } from '@tanstack/react-query';
-import { StreamPlayer } from '@shared/ui';
+import { StreamPlayer } from '@components/StreamPlayer';
 import { useServersQuery } from '@features/servers';
 
 const StreamPage: React.FC = () => {

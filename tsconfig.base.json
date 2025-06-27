@@ -22,6 +22,7 @@
       "@shared/ui": ["shared/ui/src/index.ts"],
       "@shared/livekit": ["shared/livekit/src/index.ts"],
       "@features/*": ["apps/frontend/src/features/*"], // TODO: remove from root config !!!!!
+      "@shared/lib/*": ["shared/lib/src/*"],
     }
   },
   "exclude": ["node_modules", "tmp"]

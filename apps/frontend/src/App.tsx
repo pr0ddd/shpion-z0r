@@ -6,8 +6,9 @@ import { useAuth } from '@features/auth';
 
 import AuthPage from './pages/AuthPage';
 import InvitePage from './pages/InvitePage';
-import ServerPage from './pages/ServerPage';
 import StreamPage from './pages/StreamPage';
+import ServerPage from './pages/ServerPage';
+
 
 const RequireAuth = () => {
   const { user, loading } = useAuth();

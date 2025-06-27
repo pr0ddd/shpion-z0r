@@ -85,6 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
     try {
       const response = await authAPI.login(email, password);
+
       if (response.success && response.data) {
         handleAuthSuccess(response.data);
       } else {

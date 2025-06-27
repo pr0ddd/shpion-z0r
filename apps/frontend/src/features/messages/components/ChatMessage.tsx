@@ -3,7 +3,7 @@ import { Box, ListItem, ListItemAvatar, Avatar, Typography } from '@mui/material
 import { useAuth } from '@features/auth';
 import { Message } from '@shared/types';
 import { Interweave } from 'interweave';
-import { dicebearAvatar } from '@shared/ui';
+import { dicebearAvatar } from '@shared/lib';
 
 interface ChatMessageProps {
   message: Message;

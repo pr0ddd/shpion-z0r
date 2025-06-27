@@ -36,6 +36,7 @@ const MessageList: React.FC = () => {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
 
   useEffect(() => {
+    console.log('data', data);
     if (!data) return;
 
     if (prevPagesRef.current === 0) {

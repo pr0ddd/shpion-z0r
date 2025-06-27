@@ -27,8 +27,11 @@
       "@shared/data": ["../../shared/data/src/index.ts"],
       "@shared/types": ["../../shared/types/src/index.ts"],
       "@shared/livekit": ["../../shared/livekit/src/index.ts"],
+      "@shared/lib": ["../../shared/lib/index.ts"], // TODO: remove from frontend config !!!!!
       "@features/*": ["src/features/*"],
       "@hooks/*": ["src/hooks/*"],
+      "@stores/*": ["src/stores/*"],
+      "@components/*": ["src/components/*"],
     },
     "useUnknownInCatchVariables": false
   },

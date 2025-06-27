@@ -4,10 +4,11 @@ import { Send } from '@mui/icons-material';
 import { useQueryClient } from '@tanstack/react-query';
 import { Message } from '@shared/types';
 
-import { useAppStore } from '../../../stores/useAppStore';
+import { useAppStore } from '@stores/useAppStore';
 import { useAuth } from '@features/auth';
 import { useSocket } from '@features/socket';
-import { patchFirstMessagesPage } from '@shared/hooks';
+
+import { patchFirstMessagesPage } from '../utils/queryUtils';
 
 /**
  * MessageComposer – textarea + send-button для ввода и отправки сообщений.
