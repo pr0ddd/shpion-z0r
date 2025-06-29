@@ -3,7 +3,7 @@ name: CI/CD Deploy
 on:
   push:
     branches:
-      - master
+      - staging
 
 # Shared environment variables
 env:
