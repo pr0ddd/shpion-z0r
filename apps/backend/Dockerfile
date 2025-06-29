@@ -26,12 +26,6 @@ RUN npm run build
 # Prune development dependencies already omitted above if needed
 RUN npm prune --production
 
-# Copy compiled code from builder
-COPY --from=builder /app/dist ./dist
-
-# Copy Prisma schema and client
-COPY --from=builder /app/prisma ./prisma
-
 # Stage 2: Production
 FROM node:22-alpine
 
@@ -41,10 +35,8 @@ WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
-# Copy compiled code from builder
+# Application code and Prisma client
 COPY --from=builder /app/dist ./dist
-
-# Copy Prisma schema and client
 COPY --from=builder /app/prisma ./prisma
 
 # Copy production env so dotenv can load variables inside container
