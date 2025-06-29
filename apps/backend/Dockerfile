@@ -29,8 +29,8 @@ RUN npm prune --production
 # Copy compiled code from builder
 COPY --from=builder /app/dist ./dist
 
-# Copy production env so dotenv can load variables inside container
-COPY apps/backend/.env.production ./
+# Copy Prisma schema and client
+COPY --from=builder /app/prisma ./prisma
 
 # Stage 2: Production
 FROM node:22-alpine
@@ -46,6 +46,9 @@ COPY --from=builder /app/dist ./dist
 
 # Copy Prisma schema and client
 COPY --from=builder /app/prisma ./prisma
+
+# Copy production env so dotenv can load variables inside container
+COPY apps/backend/.env.production ./
 
 # Expose the application port
 EXPOSE 3001
