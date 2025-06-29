@@ -94,7 +94,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }: ChatMessa
                         }}>
                            <Interweave content={message.content} />
                            {(message as any).status === 'thinking' && (
-                             <CircularProgress size={12} sx={{ ml: 0.5 }} />
+                             <span>...</span>
                            )}
                         </Typography>
                         <Typography variant="caption" sx={{ color: 'chat.textSecondary', ml: 1, alignSelf: 'flex-end', whiteSpace: 'nowrap' }}>

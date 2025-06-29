@@ -98,7 +98,8 @@ export const MessageComposer: React.FC = () => {
         // добавляем в кэш, если ещё не прилетел socket
         patchFirstMessagesPage(qc, serverId, (msgs) => [...msgs, savedMsg]);
 
-        // --- Шаг 2: запускаем LLM, передавая replyToId и replyTo ---
+        // --- Шаг 2: очищаем инпут и запускаем LLM асинхронно ---
+        setText('');
         await sendOllamaPrompt({
           serverId,
           prompt,
@@ -109,11 +110,8 @@ export const MessageComposer: React.FC = () => {
           notify: showNotification,
         });
       }
-    } catch (err) {
-      console.error(err);
-      showNotification('Не удалось отправить сообщение', 'error');
-    } finally {
-      setText('');
+    } catch {
+      /* handled above */
     }
   };
 
