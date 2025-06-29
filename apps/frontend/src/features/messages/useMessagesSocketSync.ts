@@ -30,9 +30,16 @@ export const useMessagesSocketSync = () => {
         let { messages: firstMsgs } = old.pages[firstPageIdx];
 
         // remove optimistic temp duplicates
-        firstMsgs = firstMsgs.filter(
-          (m) => !(m.id.startsWith('temp_') && m.content === msg.content && m.authorId === msg.authorId),
-        );
+        firstMsgs = firstMsgs.filter((m) => {
+          if (m.id.startsWith('temp_') && m.content === msg.content && m.authorId === msg.authorId) {
+            return false;
+          }
+          // remove bot thinking placeholders
+          if (m.id.startsWith('ollama_')) {
+            return false;
+          }
+          return true;
+        });
 
         // skip if real already present
         if (firstMsgs.some((m) => m.id === msg.id)) return old;

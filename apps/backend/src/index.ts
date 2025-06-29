@@ -6,6 +6,7 @@ import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import prisma from './lib/prisma';
 import morgan from 'morgan';
+import dotenv from 'dotenv';
 
 // Routes
 import authRoutes from './routes/auth';
@@ -34,6 +35,15 @@ for (const varName of requiredEnvVars) {
     throw new Error(`Environment variable ${varName} is not set. Please check your .env file.`);
   }
 }
+
+// -------------------- ENV LOAD --------------------
+// По умолчанию ищем .env (dev) либо .env.production (если NODE_ENV=production).
+// Это гарантирует, что переменные (включая BOT_*) окажутся в process.env
+// даже если хост-окружение их не задаёт явно (например при простом docker build).
+
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
+dotenv.config({ path: envFile });
+// --------------------------------------------------
 
 const app = express();
 const httpServer = createServer(app);

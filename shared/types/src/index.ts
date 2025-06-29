@@ -58,7 +58,7 @@ export interface Message {
     username: string;
     avatar: string | null;
   };
-  status?: 'sending' | 'failed';
+  status?: 'sending' | 'failed' | 'thinking';
 }
 
 // Auth responses

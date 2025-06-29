@@ -93,8 +93,8 @@ export const RoomWrapper: React.FC<RoomWrapperProps> = ({
             video={false}
             audio
             options={{
-              adaptiveStream: false,
-              dynacast: false,
+              adaptiveStream: true,
+              dynacast: true,
               publishDefaults: {
                 videoCodec: 'av1',
                 videoEncoding: encoding1080p30_3m,

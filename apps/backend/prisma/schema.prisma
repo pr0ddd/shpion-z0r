@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://jes:123123JesS@localhost:5432/shpion"
+  url      = env("DATABASE_URL")
 }
 
 // ---- ENUMS ----

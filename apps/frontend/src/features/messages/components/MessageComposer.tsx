@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Box, TextField, IconButton } from '@mui/material';
-import { Send } from '@mui/icons-material';
+import { Send, SmartToy } from '@mui/icons-material';
 import { useQueryClient } from '@tanstack/react-query';
 import { Message } from '@shared/types';
 
 import { useAppStore } from '@stores/useAppStore';
 import { useAuth } from '@features/auth';
 import { useSocket } from '@features/socket';
+import { handleSlashCommand, sendOllamaPrompt } from '../utils/ollamaUtils';
+import { useNotification } from '@features/notifications';
 
 import { patchFirstMessagesPage } from '../utils/queryUtils';
 
@@ -20,6 +22,7 @@ export const MessageComposer: React.FC = () => {
   const qc = useQueryClient();
   const { user } = useAuth();
   const { socket } = useSocket();
+  const { showNotification } = useNotification();
   const [text, setText] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   // keep track of pending timeout IDs so we can clear them on unmount
@@ -30,9 +33,24 @@ export const MessageComposer: React.FC = () => {
     inputRef.current?.focus();
   }, []);
 
-  const doSend = () => {
+  const doSend = async () => {
     const value = text.trim();
-    if (!value || !serverId) return;
+    if (!value) return;
+
+    // --- Slash commands ---------------------------------------------------
+    const handled = await handleSlashCommand({
+      text: value,
+      serverId,
+      qc,
+      currentUserId: user?.id,
+      notify: showNotification,
+    });
+    if (handled) {
+      setText('');
+      return;
+    }
+
+    if (!serverId) return; // For regular messages we need serverId
 
     // optimistic update: insert temp message into cache
     const clientNonce = `${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
@@ -64,6 +82,20 @@ export const MessageComposer: React.FC = () => {
         }
       });
     }
+    setText('');
+  };
+
+  const doSendAI = async () => {
+    const prompt = text.trim();
+    if (!prompt) return;
+
+    await sendOllamaPrompt({
+      serverId: serverId ?? '',
+      prompt,
+      qc,
+      notify: showNotification,
+    });
+
     setText('');
   };
 
@@ -119,7 +151,10 @@ export const MessageComposer: React.FC = () => {
             },
           }}
         />
-        <IconButton type="submit" sx={{ p: '10px', color: 'chat.inputPlaceholder' }} disabled={!text.trim()}>
+        <IconButton onClick={doSendAI} sx={{ p: '10px', color: 'chat.inputPlaceholder' }} disabled={!text.trim() || !serverId}>
+          <SmartToy />
+        </IconButton>
+        <IconButton type="submit" sx={{ p: '10px', color: 'chat.inputPlaceholder' }} disabled={!text.trim() || !serverId}>
           <Send />
         </IconButton>
       </Box>

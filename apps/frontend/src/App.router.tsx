@@ -16,7 +16,7 @@ const RequireAuth = () => {
   const { user, loading } = useAuth();
 
   if (loading) return <div>Loading...</div>;
-  return user ? <Outlet /> : <Navigate to="/auth" replace />;
+  return user ? <Outlet /> : <Navigate to="/login" replace />;
 };
 
 const AppRouter: React.FC = () => {

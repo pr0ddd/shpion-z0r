@@ -22,4 +22,9 @@ export const messageAPI = {
 
   deleteMessage: (id: string) =>
     http.delete<ApiResponse<null>>(`/messages/${id}`).then((res) => res.data),
+
+  sendBotMessage: (serverId: string, content: string) =>
+    http
+      .post<ApiResponse<Message>>(`/messages/${serverId}/bot`, { content })
+      .then((res) => res.data),
 };
