@@ -40,7 +40,6 @@ export const useServer = () => {
 
   const { user } = useAuth();
   const { socket } = useSocket();
-  const queryClient = useQueryClient();
 
   // Ref for selectedServer to avoid stale closures
   const selectedServerRef = useRef<Server | null>(null);
@@ -59,6 +58,7 @@ export const useServer = () => {
   useEffect(() => {
     if (!serversQueryData) return;
     if (selectedServerRef.current) return;
+    console.log(serversQueryData);
     const saved = localStorage.getItem('lastSelectedServerId');
     if (saved) {
       const toSel = serversQueryData.find((s) => s.id === saved);
@@ -68,12 +68,12 @@ export const useServer = () => {
 
   // derive loading / error from query
   const servers = serversQueryData ?? [];
-  const setServers = (updater: Server[] | ((prev: Server[])=> Server[])) => {
-    queryClient.setQueryData<Server[]>(['servers'], (old)=>{
-      const prev = old ?? [];
-      return typeof updater==='function' ? (updater as any)(prev) : updater;
-    });
-  };
+  // const setServers = (updater: Server[] | ((prev: Server[])=> Server[])) => {
+  //   queryClient.setQueryData<Server[]>(['servers'], (old)=>{
+  //     const prev = old ?? [];
+  //     return typeof updater==='function' ? (updater as any)(prev) : updater;
+  //   });
+  // };
 
   const isLoading = serversQueryLoading || isLoadingStore;
   const error = serversQueryError ? serversQueryError.message : errorStore;
@@ -203,7 +203,6 @@ export const useServer = () => {
     areMembersLoading,
     error,
     selectServer,
-    setServers,
     setMembers,
     fetchServers: () => {},
     sendMessage,

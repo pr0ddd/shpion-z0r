@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { IconButton, Tooltip, Menu, MenuItem, Badge } from '@mui/material';
 import ScreenShareIcon from '@mui/icons-material/ScreenShare';
 import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
-import { useScreenShare, MAX_SHARES } from '@shared/livekit';
+import { useScreenShare, MAX_SHARES } from './useScreenShare';
 
 /**
  * Кнопка управления трансляциями экрана.

@@ -89,6 +89,7 @@ export const ServerProvider: React.FC<{ children: ReactNode }> = ({
   );
 
   const fetchServers = useCallback(async () => {
+    console.log('fetchServers');
     if (!user) return;
     setIsLoading(true);
     setError(null);

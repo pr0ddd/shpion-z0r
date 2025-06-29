@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { serverAPI } from '@shared/data';
-import { useAppStore } from '../../../stores/useAppStore';
+import { useAppStore } from '@stores/useAppStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSocket } from '@features/socket';
 
@@ -13,27 +13,22 @@ import { useSocket } from '@features/socket';
  */
 export const useSelectServer = () => {
   const qc = useQueryClient();
-  // Access actions lazily to avoid unnecessary subscriptions
-  const getActions = () => {
-    const { startTransition, endTransition, setSelected } = useAppStore.getState();
-    return { startTransition, endTransition, setSelected };
-  };
+  const { startTransition, endTransition, setSelected } = useAppStore()
 
   const { socket } = useSocket();
 
   return useCallback(
-    async (serverId: string | null, serverName?: string) => {
+    async (serverId: string | null) => {
       if (!serverId) {
         const prevId = useAppStore.getState().selectedServerId;
         if (socket?.connected && prevId) {
           socket.emit('server:leave', prevId);
         }
-        getActions().setSelected(null);
+        setSelected(null);
         return;
       }
 
-      const { startTransition, setSelected, endTransition } = getActions();
-      startTransition(`Переходим на сервер «${serverName ?? ''}» …`);
+      startTransition();
       setSelected(serverId);
 
       // join socket room for messages
@@ -50,8 +45,10 @@ export const useSelectServer = () => {
           // Кэшируем членов, если нужен отдельный query
           qc.setQueryData(['members', serverId], members);
         }
+      } catch (error) {
+        console.error(error);
       } finally {
-        getActions().endTransition();
+        endTransition();
       }
     },
     [qc, socket],

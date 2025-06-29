@@ -1,7 +1,7 @@
 import React from 'react';
 import { Room } from 'livekit-client';
-import { useRtcStats } from '../hooks/useRtcStats';
 import { useRoomContext } from '@livekit/components-react';
+import { useRtcStats } from './useRtcStats';
 
 type StatsOverlayProps = void
 

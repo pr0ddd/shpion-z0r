@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Box, Typography } from '@mui/material';
 import { useTracks } from '@livekit/components-react';
 import { Track, VideoQuality } from 'livekit-client';
-import { isRemotePublication } from '@shared/hooks/lib/livekitUtils';
+import { isRemotePublication } from '@utils/livekitUtils';
 import { CustomChat } from '@features/messages';
 import { useStreamViewStore, useUploadPreview } from '@features/streams';
 import { useServer } from '@features/servers';

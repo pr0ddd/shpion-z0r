@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import { TrackReference, useTracks, useRoomContext } from '@livekit/components-react';
 import { Track, RoomEvent, TrackPublication } from 'livekit-client';
-import { isRemotePublication } from '@shared/hooks/lib/livekitUtils';
+import { isRemotePublication } from '@utils/livekitUtils';
 
 export interface StreamPlayerProps {
   trackRef: TrackReference | null;

@@ -19,8 +19,8 @@ export const SidebarWrapper = styled(Box)(({ theme }) => ({
 
 // Round-ish button for server avatar / action
 export const ServerButton = styled(Box, {
-  shouldForwardProp: (prop) => prop !== 'isselected',
-})<{ isselected?: string }>(({ theme, isselected }) => ({
+  shouldForwardProp: (prop) => prop !== 'isSelected',
+})<{ isSelected?: string }>(({ theme, isSelected }) => ({
   width: 50,
   height: 50,
   display: 'flex',
@@ -36,7 +36,7 @@ export const ServerButton = styled(Box, {
   color: theme.palette.text.secondary,
 
   // gradient styles for selected
-  ...(isselected === 'true' && {
+  ...(isSelected === 'true' && {
     backgroundColor: theme.palette.primary.main,
     color: theme.palette.primary.contrastText,
   }),
@@ -51,13 +51,13 @@ export const ServerButton = styled(Box, {
     height: 8,
     borderRadius: '50%',
     backgroundColor: theme.palette.primary.main,
-    opacity: isselected === 'true' ? 1 : 0,
+    opacity: isSelected === 'true' ? 1 : 0,
     transition: 'opacity .2s',
   },
 
   '&:hover': {
     transform: 'scale(1.05)',
-    ...(isselected === 'true'
+    ...(isSelected === 'true'
       ? {
           backgroundColor: lighten(theme.palette.primary.main, 0.15),
           color: theme.palette.primary.contrastText,
@@ -74,3 +74,11 @@ export const StyledDivider = styled(Divider)(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
   margin: theme.spacing(0.5, 'auto'),
 })); 
+
+export const ActionButtons = styled(Box)({
+  marginTop: 'auto',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 8,
+  paddingBottom: 8,
+});

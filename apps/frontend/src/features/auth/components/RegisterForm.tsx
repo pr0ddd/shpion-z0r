@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '@features/auth';
-import { Box, TextField, Button, CircularProgress, Typography } from '@mui/material';
+import {
+  Box,
+  TextField,
+  Button,
+  CircularProgress,
+  Typography,
+} from '@mui/material';
 
 export const RegisterForm: React.FC = () => {
   const { register, loading, error } = useAuth();
@@ -14,7 +20,11 @@ export const RegisterForm: React.FC = () => {
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%', maxWidth: '400px' }}>
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      sx={{ mt: 1, width: '100%', maxWidth: '400px' }}
+    >
       <TextField
         variant="outlined"
         margin="normal"
@@ -60,11 +70,21 @@ export const RegisterForm: React.FC = () => {
           {error}
         </Typography>
       )}
-      <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }} disabled={loading}>
-        {loading ? <CircularProgress size={24} color="inherit" /> : 'Зарегистрироваться'}
+      <Button
+        type="submit"
+        fullWidth
+        variant="contained"
+        sx={{ mt: 3, mb: 2 }}
+        disabled={loading}
+      >
+        {loading ? (
+          <CircularProgress size={24} color="inherit" />
+        ) : (
+          'Зарегистрироваться'
+        )}
       </Button>
     </Box>
   );
 };
 
-export default RegisterForm; 
+export default RegisterForm;

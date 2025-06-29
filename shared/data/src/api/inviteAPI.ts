@@ -10,11 +10,4 @@ export const inviteAPI = {
 
   useInvite: (code: string) =>
     http.post<ApiResponse<Server>>(`/invites/${code}`).then((res) => res.data),
-
-  regenerateInviteCode: (serverId: string) =>
-    http
-      .post<ApiResponse<{ inviteCode: string }>>(
-        `/invites/${serverId}/regenerate`
-      )
-      .then((res) => res.data),
 };

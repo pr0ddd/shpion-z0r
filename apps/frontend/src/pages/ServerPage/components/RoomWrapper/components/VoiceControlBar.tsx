@@ -16,7 +16,7 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { RoomEvent, RemoteParticipant } from 'livekit-client';
-import { ScreenShareControl } from './ScreenShareControl';
+import { ScreenShareControl } from './components/ScreenShareControl';
 
 interface VoiceControlBarProps {
   onDisconnect: () => void;

@@ -1,36 +1,37 @@
 import React from 'react';
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+
+import { BrowserRouter } from 'react-router-dom';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+import { AuthProvider } from '@features/auth';
+import { SocketProvider } from '@features/socket';
+import { NotificationProvider } from '@features/notifications';
+
 import './App.css';
+import { theme } from './App.theme';
+import AppRouter from './App.router';
 
-import { useAuth } from '@features/auth';
-
-import AuthPage from './pages/AuthPage';
-import InvitePage from './pages/InvitePage';
-import StreamPage from './pages/StreamPage';
-import ServerPage from './pages/ServerPage';
-
-
-const RequireAuth = () => {
-  const { user, loading } = useAuth();
-
-  if (loading) return <div>Loading...</div>;
-  return user ? <Outlet /> : <Navigate to="/auth" replace />;
-};
+const queryClient = new QueryClient();
 
 const App: React.FC = () => {
   return (
-    <>
-      <Routes>
-        <Route path="/auth" element={<AuthPage />} />
-
-        <Route element={<RequireAuth />}>
-          <Route path="/" element={<ServerPage />} />
-          <Route path="/invite/:inviteCode" element={<InvitePage />} />
-          <Route path="/stream/:serverId/:trackSid" element={<StreamPage />} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Route>
-      </Routes>
-    </>
+    <React.StrictMode>
+      <ThemeProvider theme={theme}>
+        <QueryClientProvider client={queryClient}>
+          <CssBaseline />
+          <BrowserRouter>
+            <AuthProvider>
+              <SocketProvider>
+                <NotificationProvider>
+                  <AppRouter />
+                </NotificationProvider>
+              </SocketProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </React.StrictMode>
   );
 };
 

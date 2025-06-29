@@ -5,11 +5,12 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 export interface InviteDialogProps {
   open: boolean;
   onClose: () => void;
-  inviteLink: string;
+  inviteCode: string;
 }
 
-const InviteDialog: React.FC<InviteDialogProps> = ({ open, onClose, inviteLink }) => {
+const InviteDialog: React.FC<InviteDialogProps> = ({ open, onClose, inviteCode }) => {
   const [copied, setCopied] = useState(false);
+  const inviteLink = `${window.location.origin}/invite/${inviteCode}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(inviteLink).then(() => {

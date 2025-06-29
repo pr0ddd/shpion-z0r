@@ -1,24 +1,19 @@
 import { create } from 'zustand';
 
-interface TransitionState {
-  active: boolean;
-  text: string | null;
-}
-
 interface AppState {
   /** id выбранного сервера; null = домашний «@» */
   selectedServerId: string | null;
   /** глобальный оверлей перехода между серверами */
-  transition: TransitionState;
+  transition: boolean; // TODO: remove ?
   // --- actions ---
   setSelected: (id: string | null) => void;
-  startTransition: (text: string) => void;
+  startTransition: () => void;
   endTransition: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
   selectedServerId: localStorage.getItem('lastSelectedServerId'),
-  transition: { active: false, text: null },
+  transition: false,
   setSelected: (id) => {
     if (id) {
       localStorage.setItem('lastSelectedServerId', id);
@@ -27,6 +22,6 @@ export const useAppStore = create<AppState>((set) => ({
     }
     set({ selectedServerId: id });
   },
-  startTransition: (text) => set({ transition: { active: true, text } }),
-  endTransition: () => set({ transition: { active: false, text: null } }),
+  startTransition: () => set({ transition: true }),
+  endTransition: () => set({ transition: false }),
 }));

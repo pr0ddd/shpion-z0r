@@ -27,30 +27,11 @@ export class InviteController {
       data: info,
     });
   }
-  
-  // Сгенерировать новый код приглашения
-  static async regenerateInviteCode(req: AuthenticatedRequest, res: Response<ApiResponse>) {
-    const userId = req.user?.id;
-    if (!userId) throw new ApiError(401, 'Not authenticated');
-
-    const updatedServer = await InviteService.refreshInviteCode(req.params.serverId, userId);
-
-    return res.json({
-      success: true,
-      data: updatedServer,
-      message: 'New invite code has been generated',
-    });
-  }
 
   static async joinServerWithInviteCode(req: AuthenticatedRequest, res: Response<ApiResponse>) {
     const userId = req.user!.id;
     const updatedServer = await InviteService.joinServerWithInviteCode(req.params.inviteCode, userId);
 
-    res.json({ success: true, data: updatedServer });
-  }
-
-  static async refreshInviteCodeForServer(req: AuthenticatedRequest, res: Response<ApiResponse>) {
-    const updatedServer = await InviteService.refreshInviteCode(req.params.serverId, req.user!.id);
     res.json({ success: true, data: updatedServer });
   }
 } 
