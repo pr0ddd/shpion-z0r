@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, ListItem, ListItemAvatar, Avatar, Typography } from '@mui/material';
+import { Box, ListItem, ListItemAvatar, Avatar, Typography, CircularProgress, Chip } from '@mui/material';
 import { useAuth } from '@features/auth';
 import { Message } from '@shared/types';
 import { Interweave } from 'interweave';
@@ -29,19 +29,55 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }: ChatMessa
                         borderRadius: '20px',
                         backgroundColor: (theme) => {
                             const chatPalette = (theme as any).palette.chat;
+                            if ((message as any).status === 'thinking') return chatPalette.theirMessage + '40'; // light grey
                             return isMe ? chatPalette.myMessage : chatPalette.theirMessage;
                         },
-                        maxWidth: '70%',
+                        maxWidth: '60ch',
                     }}
                 >
                     {!isMe && (
-                         <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'text.secondary', mb: 0.5, textAlign: isMe ? 'right' : 'left' }}>
-                            {message.author?.username || (isMe ? 'Я' : 'Неизвестный')}
-                         </Typography>
+                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5, gap: 0.75 }}>
+                           <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'text.secondary', textAlign: isMe ? 'right' : 'left' }}>
+                             {message.author?.username || (isMe ? 'Я' : 'Неизвестный')}
+                           </Typography>
+                           {message.status === 'failed' && (
+                             <Chip
+                               label="ошибка"
+                               color="error"
+                               size="small"
+                               variant="outlined"
+                               component="span"
+                               clickable={false}
+                               sx={{
+                                 fontSize: '0.65rem',
+                                 height: 16,
+                                 lineHeight: '16px',
+                                 px: 0.5,
+                                 py: 0,
+                                 display: 'flex',
+                                 alignItems: 'center',
+                                 pointerEvents: 'none',
+                               }}
+                             />
+                           )}
+                         </Box>
                     )}
                     <Box sx={{ display: 'flex', alignItems: 'flex-end', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                        <Typography component="div" variant="body1" sx={{ color: 'chat.textPrimary', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
+                        <Typography component="div" variant="body1" sx={{
+                          color: 'chat.textPrimary',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          minWidth: 0,
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'anywhere',
+                          overflowX: 'hidden',
+                        }}>
                            <Interweave content={message.content} />
+                           {(message as any).status === 'thinking' && (
+                             <CircularProgress size={12} sx={{ ml: 0.5 }} />
+                           )}
                         </Typography>
                         <Typography variant="caption" sx={{ color: 'chat.textSecondary', ml: 1, alignSelf: 'flex-end', whiteSpace: 'nowrap' }}>
                             {time}

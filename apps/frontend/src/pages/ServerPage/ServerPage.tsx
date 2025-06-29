@@ -39,7 +39,7 @@ const ServerPage: React.FC = () => {
         // Если сервер выбран
         <RoomWrapper
           server={selectedServer!}
-          renderContent={() => true ? <></> : <ServerContent />}
+          renderContent={() => false ? <></> : <ServerContent />}
         />
       ) : (
         // Ничего не выбрано: показываем лобби / плейсхолдер во всё оставшееся пространство
