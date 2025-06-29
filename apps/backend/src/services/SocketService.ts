@@ -111,6 +111,13 @@ export class SocketService {
         this.io.to(`server:${serverId}`).emit('user:listening', userId, listening);
       });
 
+      socket.on('bot:thinking', (payload: any) => {
+        const { serverId } = payload || {};
+        if (!serverId) return;
+        // Re-broadcast to everyone including sender (to keep behaviour consistent)
+        this.io.to(`server:${serverId}`).emit('bot:thinking', payload);
+      });
+
       socket.on('preview:update', (payload: any) => {
         const userId = socket.data.user?.id;
         if (!userId) return;

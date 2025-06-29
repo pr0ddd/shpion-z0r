@@ -35,6 +35,24 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }: ChatMessa
                         maxWidth: '60ch',
                     }}
                 >
+                    {message.replyTo && (
+                      <Box sx={{
+                        mb: 0.5,
+                        px: 1,
+                        py: 0.5,
+                        borderLeft: '3px solid',
+                        borderColor: 'primary.main',
+                        bgcolor: 'chat.inputBackground',
+                        borderRadius: 1,
+                      }}>
+                        <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
+                          {message.replyTo.author?.username || 'Сообщение'}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display:'block', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:'45ch' }}>
+                          {message.replyTo.content}
+                        </Typography>
+                      </Box>
+                    )}
                     {!isMe && (
                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5, gap: 0.75 }}>
                            <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'text.secondary', textAlign: isMe ? 'right' : 'left' }}>

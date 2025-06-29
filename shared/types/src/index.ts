@@ -53,6 +53,8 @@ export interface Message {
   serverId: string;
   createdAt: string;
   updatedAt: string;
+  replyToId?: string | null;
+  replyTo?: Message | null;
   author: {
     id: string;
     username: string;
@@ -94,6 +96,7 @@ export interface ServerToClientEvents {
   'server:updated': (server: Server) => void;
   'server:created': (server: Server) => void;
   'preview:update': (sid: string, dataUrl: string) => void;
+  'bot:thinking': (payload: any) => void;
 }
 
 export interface ClientToServerEvents {
@@ -105,6 +108,7 @@ export interface ClientToServerEvents {
   ) => void;
   'user:listening': (listening: boolean) => void;
   'preview:update': (sid: string, dataUrl: string) => void;
+  'bot:thinking': (payload: any) => void;
 }
 
 export interface SfuServer {

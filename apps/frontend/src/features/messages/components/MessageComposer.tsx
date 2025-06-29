@@ -11,6 +11,7 @@ import { handleSlashCommand, sendOllamaPrompt } from '../utils/ollamaUtils';
 import { useNotification } from '@features/notifications';
 
 import { patchFirstMessagesPage } from '../utils/queryUtils';
+import { messageAPI } from '@shared/data';
 
 /**
  * MessageComposer – textarea + send-button для ввода и отправки сообщений.
@@ -86,17 +87,34 @@ export const MessageComposer: React.FC = () => {
   };
 
   const doSendAI = async () => {
+    // 1) Сохраняем введённый текст, т.к. doSend() обнулит `text`
     const prompt = text.trim();
-    if (!prompt) return;
+    if (!prompt || !serverId) return;
 
-    await sendOllamaPrompt({
-      serverId: serverId ?? '',
-      prompt,
-      qc,
-      notify: showNotification,
-    });
+    // --- Шаг 1: сохраняем сообщение пользователя через REST, чтобы сразу знать его id ---
+    try {
+      const { success, data: savedMsg } = await messageAPI.sendMessage(serverId, prompt);
+      if (success && savedMsg) {
+        // добавляем в кэш, если ещё не прилетел socket
+        patchFirstMessagesPage(qc, serverId, (msgs) => [...msgs, savedMsg]);
 
-    setText('');
+        // --- Шаг 2: запускаем LLM, передавая replyToId и replyTo ---
+        await sendOllamaPrompt({
+          serverId,
+          prompt,
+          qc,
+          socket,
+          replyToId: savedMsg.id,
+          replyTo: savedMsg,
+          notify: showNotification,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      showNotification('Не удалось отправить сообщение', 'error');
+    } finally {
+      setText('');
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {

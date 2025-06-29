@@ -10,9 +10,9 @@ export const messageAPI = {
       )
       .then((res) => res.data),
 
-  sendMessage: (serverId: string, content: string) =>
+  sendMessage: (serverId: string, content: string, replyToId?: string) =>
     http
-      .post<ApiResponse<Message>>(`/messages/${serverId}`, { content })
+      .post<ApiResponse<Message>>(`/messages/${serverId}`, { content, replyToId })
       .then((res) => res.data),
 
   editMessage: (id: string, content: string) =>
@@ -23,8 +23,8 @@ export const messageAPI = {
   deleteMessage: (id: string) =>
     http.delete<ApiResponse<null>>(`/messages/${id}`).then((res) => res.data),
 
-  sendBotMessage: (serverId: string, content: string) =>
+  sendBotMessage: (serverId: string, content: string, replyToId?: string) =>
     http
-      .post<ApiResponse<Message>>(`/messages/${serverId}/bot`, { content })
+      .post<ApiResponse<Message>>(`/messages/${serverId}/bot`, { content, replyToId })
       .then((res) => res.data),
 };

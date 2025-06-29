@@ -66,6 +66,9 @@ export interface SendOllamaOptions {
   prompt: string;
   model?: string;
   qc: QueryClient;
+  socket?: any;
+  replyToId?: string;
+  replyTo?: Message;
   notify?: (msg: string, severity?: Severity) => void;
 }
 
@@ -197,6 +200,9 @@ export async function sendOllamaPrompt({
   prompt,
   model,
   qc,
+  socket,
+  replyToId,
+  replyTo,
   notify,
 }: SendOllamaOptions): Promise<void> {
   if (!serverId) {
@@ -228,6 +234,8 @@ export async function sendOllamaPrompt({
     content: '',
     authorId: BOT_USER_ID,
     serverId,
+    replyToId,
+    replyTo: replyTo ?? undefined,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     author: {
@@ -241,12 +249,20 @@ export async function sendOllamaPrompt({
 
   patchFirstMessagesPage(qc, serverId, (msgs) => [...msgs, placeholder]);
 
+  // Broadcast placeholder to other connected clients so they also see bot «thinking»
   try {
-    let thinkingAccum = '';
-    let answerText = '';
-    let inThinkingPhase = true;
-    let lastThinkingRender = 0;
+    socket?.emit?.('bot:thinking', {
+      serverId,
+      message: placeholder,
+    });
+  } catch {}
 
+  let thinkingAccum = '';
+  let answerText = '';
+  let inThinkingPhase = true;
+  let lastThinkingRender = 0;
+
+  try {
     await ollamaStream(
       { model: effectiveModel, prompt },
       {
@@ -262,6 +278,10 @@ export async function sendOllamaPrompt({
                 m.id === placeholderId ? { ...m, content: styled, status: 'thinking' } : m,
               ),
             );
+            socket?.emit?.('bot:thinking', {
+              serverId,
+              message: { ...placeholder, content: styled },
+            });
           }
         },
         async onAnswer(chunk: string, finished: boolean) {
@@ -276,10 +296,14 @@ export async function sendOllamaPrompt({
               m.id === placeholderId ? { ...m, content: answerText, status: 'sending' } : m,
             ),
           );
+          socket?.emit?.('bot:thinking', {
+            serverId,
+            message: { ...placeholder, content: answerText, status: 'sending' },
+          });
 
           if (finished && answerText.trim().length) {
             try {
-              const saved = await messageAPI.sendBotMessage(serverId, answerText.trim());
+              const saved = await messageAPI.sendBotMessage(serverId, answerText.trim(), replyToId);
               patchFirstMessagesPage(qc, serverId, (msgs) =>
                 msgs.map((m): Message =>
                   m.id === placeholderId ? saved.data! : m,

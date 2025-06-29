@@ -25,7 +25,18 @@ export const useMessagesSocketSync = () => {
     const add = (msg: Message) => {
       if (msg.serverId !== serverId) return;
       qc.setQueryData<InfiniteData<MessagesPage>>(['messages', serverId], (old) => {
-        if (!old) return old;
+        if (!old) {
+          const init: InfiniteData<MessagesPage> = {
+            pages: [
+              {
+                messages: [msg],
+                hasMore: true, // unknown yet – assume there can be more
+              },
+            ],
+            pageParams: [undefined],
+          };
+          return init;
+        }
         const firstPageIdx = 0;
         let { messages: firstMsgs } = old.pages[firstPageIdx];
 
@@ -55,9 +66,36 @@ export const useMessagesSocketSync = () => {
       });
     };
 
+    const onBotThinking = (payload: any) => {
+      const msg: Message = payload.message ?? payload; // allow either structure
+      if (!msg || msg.serverId !== serverId) return;
+      qc.setQueryData<InfiniteData<MessagesPage>>(['messages', serverId], (old) => {
+        if (!old) {
+          return {
+            pages: [{ messages: [msg], hasMore: true }],
+            pageParams: [undefined],
+          } as InfiniteData<MessagesPage>;
+        }
+        const firstPageIdx = 0;
+        let page = old.pages[firstPageIdx];
+        let msgs = [...page.messages];
+        const idx = msgs.findIndex((m) => m.id === msg.id);
+        if (idx >= 0) {
+          msgs[idx] = { ...msgs[idx], ...msg };
+        } else {
+          msgs.push(msg);
+        }
+        const pages = [...old.pages];
+        pages[firstPageIdx] = { ...page, messages: msgs };
+        return { ...old, pages } as InfiniteData<MessagesPage>;
+      });
+    };
+
     socket.on('message:new', add as any);
+    socket.on('bot:thinking', onBotThinking as any);
     return () => {
       socket.off('message:new', add as any);
+      socket.off('bot:thinking', onBotThinking as any);
     };
   }, [socket, qc, serverId]);
 }; 
