@@ -26,6 +26,12 @@ RUN npm run build
 # Prune development dependencies already omitted above if needed
 RUN npm prune --production
 
+# Copy compiled code from builder
+COPY --from=builder /app/dist ./dist
+
+# Copy production env so dotenv can load variables inside container
+COPY apps/backend/.env.production ./
+
 # Stage 2: Production
 FROM node:22-alpine
 

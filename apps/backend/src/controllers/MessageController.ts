@@ -93,12 +93,16 @@ export class MessageController {
     }
 
     // --- Upsert бота ---
-    const BOT_USER_ID = process.env.BOT_USER_ID as string;
-    const BOT_USERNAME = process.env.BOT_USERNAME as string;
-    const BOT_AVATAR = process.env.BOT_AVATAR_URL as string;
+    // Позволяем задать через переменные окружения, но если их нет — используем
+    // безопасные значения по умолчанию, чтобы прод-деплой не падал ошибкой 500.
 
-    if (!BOT_USER_ID || !BOT_USERNAME || !BOT_AVATAR) {
-      throw new Error('BOT_USER_ID, BOT_USERNAME, BOT_AVATAR_URL env variables must be set');
+    const BOT_USER_ID = process.env.BOT_USER_ID ?? 'ollama-bot';
+    const BOT_USERNAME = process.env.BOT_USERNAME ?? 'Shpion AI';
+    const BOT_AVATAR = process.env.BOT_AVATAR_URL ?? '/bot-avatar.png';
+
+    if (!process.env.BOT_USER_ID || !process.env.BOT_USERNAME || !process.env.BOT_AVATAR_URL) {
+      // Логируем предупреждение, но не прерываем работу.
+      console.warn('[Warning] BOT_* env vars are not fully set; using default values');
     }
 
     await prisma.user.upsert({
