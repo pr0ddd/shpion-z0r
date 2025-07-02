@@ -1,10 +1,11 @@
 // @ts-nocheck
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { LiveKitRoom, useRoomContext } from '@livekit/components-react';
 import { AudioPresets, RoomEvent } from 'livekit-client';
 import { useStreamViewStore } from '@features/streams';
 import { useAppStore } from '@stores/useAppStore';
+import { useDeepFilter } from '@features/audio';
 
 import type { Server } from '@shared/types';
 
@@ -33,13 +34,35 @@ export const RoomWrapper: React.FC<RoomWrapperProps> = ({
   const transition = useAppStore((s) => s.transition);
   const showStats = useStreamViewStore((s: any) => s.showStats);
 
+  // 🎤 DeepFilterNet состояние
+  const [deepFilterEnabled, setDeepFilterEnabled] = useState(false);
+  const [deepFilterSettings, setDeepFilterSettings] = useState({
+    attenLim: 100,        // дБ ослабления
+    postFilterBeta: 0.05  // пост-фильтр
+  });
+
+  // 🎤 Инициализируем DeepFilter (AudioWorklet)
+  const { processor: deepFilterProcessor, isReady: isDeepFilterReady, error: deepFilterError, isLoading: isDeepFilterLoading } = useDeepFilter({
+    enabled: deepFilterEnabled,
+    ...deepFilterSettings
+  });
+
   useEffect(() => {
     console.log('RoomWrapper', RoomWrapper);
-  }, []);
+    console.log('🎤 DeepFilter:', { deepFilterEnabled, isDeepFilterReady, deepFilterError });
+  }, [deepFilterEnabled, isDeepFilterReady, deepFilterError]);
 
   const serverUrl: string | undefined = import.meta.env.DEV
     ? (import.meta.env.VITE_LIVEKIT_URL as string) || undefined
     : server.sfu?.url ?? (import.meta.env.VITE_LIVEKIT_URL as string);
+
+  // 🎤 Настройки аудио с DeepFilter
+  const audioCaptureDefaults = useMemo(() => ({
+    echoCancellation: true,
+    noiseSuppression: !deepFilterEnabled, // Отключаем встроенное, если DeepFilter включен
+    autoGainControl: true,
+    voiceIsolation: false,                // Отключаем, используем DeepFilter
+  }), [deepFilterEnabled]);
 
   const canShow = !!livekitToken;
   const showOverlay = isTokenLoading || transition || !isConnected;
@@ -103,12 +126,7 @@ export const RoomWrapper: React.FC<RoomWrapperProps> = ({
                 dtx: true,
                 red: false,
               },
-              audioCaptureDefaults: {
-                echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: true,
-                voiceIsolation: true,
-              },
+              audioCaptureDefaults,
             }}
             style={{
               display: 'flex',
@@ -129,7 +147,17 @@ export const RoomWrapper: React.FC<RoomWrapperProps> = ({
                 }}
               >
                 {/* Sidebar members list */}
-                <ServerMembers />
+                <ServerMembers 
+                  deepFilterSettings={{ enabled: deepFilterEnabled, ...deepFilterSettings }}
+                  onDeepFilterChange={(settings) => {
+                    setDeepFilterEnabled(settings.enabled);
+                    setDeepFilterSettings({
+                      attenLim: settings.attenLim,
+                      postFilterBeta: settings.postFilterBeta
+                    });
+                  }}
+                  deepFilterState={{ processor: deepFilterProcessor, isReady: isDeepFilterReady, error: deepFilterError, isLoading: isDeepFilterLoading }}
+                />
 
                 {/* Main content */}
                 <Box
