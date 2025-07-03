@@ -27,24 +27,27 @@ const ServerPage: React.FC = () => {
     <Box
       sx={{
         display: 'flex',
+        flexDirection: 'column',
         height: '100vh',
         width: '100vw',
       }}
     >
-      {/* Колонка 1: список серверов (72px) */}
+      {/* Горизонтальная панель серверов сверху */}
       <ServersSidebar />
 
-      {/* Колонка 2 + 3: основное содержимое */}
-      {selectedServer ? (
-        // Если сервер выбран
-        <RoomWrapper
-          server={selectedServer!}
-          renderContent={() => false ? <></> : <ServerContent />}
-        />
-      ) : (
-        // Ничего не выбрано: показываем лобби / плейсхолдер во всё оставшееся пространство
-        <ServerPlaceholder />
-      )}
+      {/* Основное содержимое */}
+      <Box sx={{ display: 'flex', flexGrow: 1, minHeight: 0 }}>
+        {selectedServer ? (
+          // Если сервер выбран
+          <RoomWrapper
+            server={selectedServer!}
+            renderContent={() => false ? <></> : <ServerContent />}
+          />
+        ) : (
+          // Ничего не выбрано: показываем лобби / плейсхолдер во всё оставшееся пространство
+          <ServerPlaceholder />
+        )}
+      </Box>
     </Box>
   );
 };

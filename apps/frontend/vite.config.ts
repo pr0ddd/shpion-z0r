@@ -9,6 +9,7 @@ export default defineConfig(() => ({
   server: {
     port: 4200,
     host: 'localhost',
+    compress: false,
   },
   preview: {
     port: 4300,

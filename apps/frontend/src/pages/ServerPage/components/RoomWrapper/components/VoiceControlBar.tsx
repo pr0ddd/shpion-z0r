@@ -17,9 +17,15 @@ import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { RoomEvent, RemoteParticipant, ParticipantEvent } from 'livekit-client';
 import { ScreenShareControl } from './components/ScreenShareControl';
+import { DeepFilterToggle, DeepFilterSettings } from '@components/DeepFilterToggle';
+import { DeepFilterState } from '@features/audio';
 
 interface VoiceControlBarProps {
   onDisconnect: () => void;
+  // 🎤 DeepFilter пропсы
+  deepFilterSettings?: DeepFilterSettings;
+  onDeepFilterChange?: (settings: DeepFilterSettings) => void;
+  deepFilterState?: DeepFilterState;
 }
 
 const ToggleButton: React.FC<{
@@ -344,7 +350,12 @@ const CameraControl = () => (
   />
 );
 
-export const VoiceControlBar: React.FC<VoiceControlBarProps> = ({ onDisconnect }) => {
+export const VoiceControlBar: React.FC<VoiceControlBarProps> = ({ 
+  onDisconnect,
+  deepFilterSettings,
+  onDeepFilterChange,
+  deepFilterState
+}) => {
   const room = useRoomContext();
   const { selectServer } = useServer();
 
@@ -369,9 +380,22 @@ export const VoiceControlBar: React.FC<VoiceControlBarProps> = ({ onDisconnect }
           border: '1px solid #2f3136',
         }}
       >
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'nowrap', justifyContent: 'center', minWidth: 220, '& ul': { listStyle: 'none', p: 0, m: 0 } }}>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'nowrap', justifyContent: 'center', minWidth: 280, '& ul': { listStyle: 'none', p: 0, m: 0 } }}>
           <MicControl />
           <SpeakerControl />
+          
+          {/* 🎤 DeepFilter Controls */}
+          {deepFilterSettings && onDeepFilterChange && deepFilterState && (
+            <DeepFilterToggle
+              settings={deepFilterSettings}
+              onChange={onDeepFilterChange}
+              isReady={deepFilterState.isReady}
+              isLoading={deepFilterState.isLoading}
+              error={deepFilterState.error}
+              stats={deepFilterState.stats}
+            />
+          )}
+          
           <CameraControl />   
           <ScreenShareControl />
           <Tooltip title="Выйти из комнаты" placement="top" arrow slotProps={{ popper: { modifiers:[{name:'offset',options:{offset:[0,-80]}}] } }}>

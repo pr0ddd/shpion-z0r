@@ -30,9 +30,7 @@ export class MessageController {
     const fetched = await prisma.message.findMany({
       where,
       include: {
-        author: {
-          select: { id: true, username: true, avatar: true },
-        },
+        author: { select: { id: true, username: true, avatar: true } },
       },
       orderBy: { createdAt: "desc" },
       take: PAGE_SIZE,
@@ -47,11 +45,18 @@ export class MessageController {
   // Отправить сообщение
   static async sendMessage(req: AuthenticatedRequest, res: Response<ApiResponse>) {
     const { serverId } = req.params;
-    const { content } = req.body;
+    const { content, replyToId } = req.body;
     const userId = req.user!.id;
 
     if (!content) {
       throw new ApiError(400, "Message content cannot be empty");
+    }
+
+    if (replyToId) {
+      const parent = await prisma.message.findUnique({ where: { id: replyToId } });
+      if (!parent || parent.serverId !== serverId) {
+        throw new ApiError(400, 'Invalid replyToId');
+      }
     }
 
     const member = await prisma.member.findUnique({
@@ -62,10 +67,15 @@ export class MessageController {
       throw new ApiError(403, "You are not a member of this server");
     }
 
-    const message = await prisma.message.create({
-      data: { content, serverId, authorId: userId },
-      include: { author: { select: { id: true, username: true, avatar: true } } },
-    });
+    // For user message block
+    const createArgs1: any = {
+      data: { content, serverId, authorId: userId, replyToId },
+      include: {
+        author: { select: { id: true, username: true, avatar: true } },
+        replyTo: { include: { author: { select: { id: true, username: true, avatar: true } } } },
+      },
+    };
+    const message = await (prisma.message as any).create(createArgs1);
 
     // Отправляем сообщение через сокеты всем участникам сервера
     socketService.notifyNewMessage(serverId, message);
@@ -76,11 +86,18 @@ export class MessageController {
   // Отправить сообщение от бота (LLM)
   static async sendBotMessage(req: AuthenticatedRequest, res: Response<ApiResponse>) {
     const { serverId } = req.params;
-    const { content } = req.body;
+    const { content, replyToId } = req.body;
     const userId = req.user!.id;
 
     if (!content) {
       throw new ApiError(400, 'Message content cannot be empty');
+    }
+
+    if (replyToId) {
+      const parent = await prisma.message.findUnique({ where: { id: replyToId } });
+      if (!parent || parent.serverId !== serverId) {
+        throw new ApiError(400, 'Invalid replyToId');
+      }
     }
 
     // Проверяем, что отправитель является участником сервера
@@ -127,13 +144,15 @@ export class MessageController {
       update: {},
     });
 
-    // Создаём сообщение
-    const message = await prisma.message.create({
-      data: { content, serverId, authorId: BOT_USER_ID },
+    // For bot message block
+    const createArgs2: any = {
+      data: { content, serverId, authorId: BOT_USER_ID, replyToId },
       include: {
         author: { select: { id: true, username: true, avatar: true } },
+        replyTo: { include: { author: { select: { id: true, username: true, avatar: true } } } },
       },
-    });
+    };
+    const message = await (prisma.message as any).create(createArgs2);
 
     socketService.notifyNewMessage(serverId, message);
 

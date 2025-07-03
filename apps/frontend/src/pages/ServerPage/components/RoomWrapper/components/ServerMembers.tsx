@@ -14,6 +14,8 @@ import { User, Member } from '@shared/types';
 
 import { MemberRow } from './MemberRow';
 import { VoiceControlBar } from './VoiceControlBar';
+import { DeepFilterSettings } from '@components/DeepFilterToggle';
+import { DeepFilterState } from '@features/audio';
 
 const MemberSkeleton = () => (
   <ListItem>
@@ -24,7 +26,18 @@ const MemberSkeleton = () => (
   </ListItem>
 );
 
-export const ServerMembers: React.FC = () => {
+interface ServerMembersProps {
+  // 🎤 DeepFilter пропсы
+  deepFilterSettings?: DeepFilterSettings;
+  onDeepFilterChange?: (settings: DeepFilterSettings) => void;
+  deepFilterState?: DeepFilterState;
+}
+
+export const ServerMembers: React.FC<ServerMembersProps> = ({
+  deepFilterSettings,
+  onDeepFilterChange,
+  deepFilterState
+}) => {
   const { selectedServer, members: allServerMembers, areMembersLoading } = useServer() as any;
   const listeningStates = useServerStore(s=>s.listeningStates);
   const participants = useParticipants();
@@ -72,7 +85,12 @@ export const ServerMembers: React.FC = () => {
         </List>
       </Box>
       <Box sx={{ mt: 'auto', pt: 2 }}>
-        <VoiceControlBar onDisconnect={() => {}} />
+        <VoiceControlBar 
+          onDisconnect={() => {}}
+          deepFilterSettings={deepFilterSettings}
+          onDeepFilterChange={onDeepFilterChange}
+          deepFilterState={deepFilterState}
+        />
       </Box>
     </Box>
   );

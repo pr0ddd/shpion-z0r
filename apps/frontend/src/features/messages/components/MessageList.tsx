@@ -24,10 +24,15 @@ const MessageList: React.FC = () => {
   // Flatten pages to chronological (oldest → newest) without resorting each render
   const messages = useMemo(() => {
     if (!data) return [];
-    // pages[0] = newest range, older pages are pushed later; reverse to prepend
-    return [...data.pages]
+    const all = [...data.pages]
       .reverse() // oldest page first
       .flatMap((p) => p.messages);
+    const seen = new Set<string>();
+    return all.filter((m) => {
+      if (seen.has(m.id)) return false;
+      seen.add(m.id);
+      return true;
+    });
   }, [data]);
 
   // Maintain firstItemIndex so Virtuoso compensates scroll when we prepend
