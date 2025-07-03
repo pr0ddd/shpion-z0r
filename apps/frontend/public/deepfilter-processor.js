@@ -24,6 +24,10 @@ class DeepFilterProcessor extends AudioWorkletProcessor {
     this.attenLim = this.initOptions.attenLim || 100; // максимальное ослабление шума, дБ
     this.postFilterBeta = this.initOptions.postFilterBeta || 0.05;
 
+    // Код glue df.js и бинарник передаются с главного потока, чтобы обойти отсутствие fetch
+    this.dfJsCode = this.initOptions.dfJsCode || null;
+    this.wasmBytes = this.initOptions.wasmBytes || null;
+
     // Модель DeepFilterNet передаётся байтами (Uint8Array)
     this.modelBytes = this.initOptions.modelBytes || null;
 
@@ -46,24 +50,47 @@ class DeepFilterProcessor extends AudioWorkletProcessor {
         throw new Error('Model bytes not provided – DeepFilter работает в passthrough режиме');
       }
 
-      // 1. Загружаем glue-код df.js «ручками», т.к. dynamic import и importScripts запрещены
-      //    в AudioWorkletGlobalScope. Используем fetch + eval, что подходит под CSP Worklet-ов.
-      if (typeof wasm_bindgen === 'undefined') {
+      // 1. Загружаем glue-код df.js. fetch недоступен внутри AudioWorklet, поэтому
+      //    ожидаем, что dfJsCode был передан из главного потока (processorOptions.dfJsCode).
+      if (this.dfJsCode) {
+        // Вставляем хвост, который пробрасывает wasm_bindgen в глобальную область,
+        // чтобы он был доступен за пределами eval-модуля.
+        const patched = `${this.dfJsCode}\nglobalThis.wasm_bindgen = wasm_bindgen;`;
+        // eslint-disable-next-line no-eval
+        (0, eval)(patched);
+      } else if (typeof fetch !== 'undefined') {
+        // На всякий случай fallback, если fetch существует (например Chrome 123+)
         const resp = await fetch('/wasm/df.js');
         if (!resp.ok) throw new Error(`Cannot load df.js (${resp.status})`);
         const code = await resp.text();
         // eslint-disable-next-line no-eval
-        (0, eval)(code); // определит глобальный wasm_bindgen
+        (0, eval)(`${code}\nglobalThis.wasm_bindgen = wasm_bindgen;`);
+      } else {
+        throw new Error('df.js code not provided and fetch is unavailable in AudioWorklet');
       }
 
-      if (typeof wasm_bindgen !== 'function') {
+      if (typeof globalThis.wasm_bindgen !== 'function') {
         throw new Error('wasm_bindgen is not available after evaluating df.js');
       }
 
+      console.log('🎤 DF-DEBUG: wasm_bindgen available:', typeof globalThis.wasm_bindgen);
+
       // 2. Инициализируем wasm, передав путь до бинарника.
       //    wasm_bindgen возвращает объект экспорта после полной готовности.
-      await wasm_bindgen('/wasm/df_bg.wasm');
-      this.wasm = wasm_bindgen; // Экспортируемые функции доступны прямо в wasm_bindgen
+      if (this.wasmBytes && this.wasmBytes.length) {
+        console.log('🎤 DF-DEBUG: инициализируем wasm из байтов, size =', this.wasmBytes.length);
+        await globalThis.wasm_bindgen(this.wasmBytes);
+      } else {
+        console.log('🎤 DF-DEBUG: инициализируем wasm из /wasm/df_bg.wasm');
+        await globalThis.wasm_bindgen('/wasm/df_bg.wasm');
+      }
+      this.wasm = globalThis.wasm_bindgen; // Экспортируемые функции доступны прямо в wasm_bindgen
+
+      console.log('🎤 DF-DEBUG: wasm init done, attempting df_create. Model bytes =', this.modelBytes?.length);
+      if (this.modelBytes && this.modelBytes.length) {
+        const header = Array.from(this.modelBytes.slice(0, 4)).map(b=>b.toString(16).padStart(2,'0')).join(' ');
+        console.log('🎤 DF-DEBUG: model header (first 4 bytes):', header);
+      }
 
       // 3. Создаём состояние DeepFilterNet.
       this.dfState = this.wasm.df_create(this.modelBytes, this.attenLim);

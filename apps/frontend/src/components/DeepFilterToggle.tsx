@@ -153,86 +153,83 @@ export const DeepFilterToggle: React.FC<DeepFilterToggleProps> = ({
           />
         </Box>
 
-        {settings.enabled && (
-          <>
-            <Divider sx={{ my: 2 }} />
-            
-            {/* Настройка ослабления */}
-            <Box sx={{ mb: 3 }}>
-              <Typography gutterBottom>
-                Ослабление шума: {settings.attenLim} дБ
+        {settings.enabled && [
+          // Разделитель
+          <Divider key="divider-top" sx={{ my: 2 }} />,
+
+          /* Настройка ослабления */
+          <Box key="atten" sx={{ mb: 3 }}>
+            <Typography gutterBottom>
+              Ослабление шума: {settings.attenLim} дБ
+            </Typography>
+            <Slider
+              value={settings.attenLim}
+              onChange={handleAttenLimChange}
+              min={10}
+              max={200}
+              step={5}
+              valueLabelDisplay="auto"
+              disabled={!isReady}
+            />
+            <Typography variant="caption" color="text.secondary">
+              Чем больше значение, тем сильнее подавление шума
+            </Typography>
+          </Box>,
+
+          /* Настройка пост-фильтра */
+          <Box key="post-filter" sx={{ mb: 2 }}>
+            <Typography gutterBottom>
+              Пост-фильтр: {(settings.postFilterBeta * 100).toFixed(1)}%
+            </Typography>
+            <Slider
+              value={settings.postFilterBeta}
+              onChange={handlePostFilterChange}
+              min={0}
+              max={0.1}
+              step={0.005}
+              valueLabelDisplay="auto"
+              valueLabelFormat={(value) => `${(value * 100).toFixed(1)}%`}
+              disabled={!isReady}
+            />
+            <Typography variant="caption" color="text.secondary">
+              Дополнительное ослабление очень шумных участков
+            </Typography>
+          </Box>,
+
+          /* Статистика */
+          ...(stats ? [
+            <Divider key="stats-divider" sx={{ my: 2 }} />,
+            <Box key="stats-box">
+              <Typography variant="caption" display="block" gutterBottom>
+                Статистика:
               </Typography>
-              <Slider
-                value={settings.attenLim}
-                onChange={handleAttenLimChange}
-                min={10}
-                max={200}
-                step={5}
-                valueLabelDisplay="auto"
-                disabled={!isReady}
-              />
               <Typography variant="caption" color="text.secondary">
-                Чем больше значение, тем сильнее подавление шума
+                Обработано кадров: {stats.framesProcessed}
               </Typography>
+              {stats.lastSnr && (
+                <Typography variant="caption" color="text.secondary" display="block">
+                  SNR: {stats.lastSnr.toFixed(2)} дБ
+                </Typography>
+              )}
             </Box>
+          ] : []),
 
-            {/* Настройка пост-фильтра */}
-            <Box sx={{ mb: 2 }}>
-              <Typography gutterBottom>
-                Пост-фильтр: {(settings.postFilterBeta * 100).toFixed(1)}%
-              </Typography>
-              <Slider
-                value={settings.postFilterBeta}
-                onChange={handlePostFilterChange}
-                min={0}
-                max={0.1}
-                step={0.005}
-                valueLabelDisplay="auto"
-                valueLabelFormat={(value) => `${(value * 100).toFixed(1)}%`}
-                disabled={!isReady}
+          /* Статус */
+          <Box key="status" sx={{ mt: 2, p: 1, bgcolor: 'grey.100', borderRadius: 1 }}>
+            <Typography variant="caption" display="flex" alignItems="center">
+              <Box
+                sx={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  bgcolor: isReady ? 'success.main' : 'warning.main',
+                  mr: 1
+                }}
               />
-              <Typography variant="caption" color="text.secondary">
-                Дополнительное ослабление очень шумных участков
-              </Typography>
-            </Box>
-
-            {/* Статистика */}
-            {stats && (
-              <>
-                <Divider sx={{ my: 2 }} />
-                <Box>
-                  <Typography variant="caption" display="block" gutterBottom>
-                    Статистика:
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Обработано кадров: {stats.framesProcessed}
-                  </Typography>
-                  {stats.lastSnr && (
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      SNR: {stats.lastSnr.toFixed(2)} дБ
-                    </Typography>
-                  )}
-                </Box>
-              </>
-            )}
-
-            {/* Статус */}
-            <Box sx={{ mt: 2, p: 1, bgcolor: 'grey.100', borderRadius: 1 }}>
-              <Typography variant="caption" display="flex" alignItems="center">
-                <Box
-                  sx={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    bgcolor: isReady ? 'success.main' : 'warning.main',
-                    mr: 1
-                  }}
-                />
-                {isReady ? 'DeepFilter готов' : 'Инициализация...'}
-              </Typography>
-            </Box>
-          </>
-        )}
+              {isReady ? 'DeepFilter готов' : 'Инициализация...'}
+            </Typography>
+          </Box>,
+        ]}
       </Menu>
     </>
   );

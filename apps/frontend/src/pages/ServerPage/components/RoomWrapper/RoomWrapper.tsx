@@ -2,10 +2,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { LiveKitRoom, useRoomContext } from '@livekit/components-react';
-import { AudioPresets, RoomEvent } from 'livekit-client';
+import { AudioPresets, RoomEvent, createLocalAudioTrack, LocalAudioTrack } from 'livekit-client';
 import { useStreamViewStore } from '@features/streams';
 import { useAppStore } from '@stores/useAppStore';
-import { useDeepFilter } from '@features/audio';
+import { createDeepFilterProcessor } from '@features/audio/createDeepFilterProcessor';
 
 import type { Server } from '@shared/types';
 
@@ -38,31 +38,50 @@ export const RoomWrapper: React.FC<RoomWrapperProps> = ({
   const [deepFilterEnabled, setDeepFilterEnabled] = useState(false);
   const [deepFilterSettings, setDeepFilterSettings] = useState({
     attenLim: 100,        // дБ ослабления
-    postFilterBeta: 0.05  // пост-фильтр
+    postFilterBeta: 0.05,  // пост-фильтр
+    modelName: 'DeepFilterNet3'
   });
 
-  // 🎤 Инициализируем DeepFilter (AudioWorklet)
-  const { processor: deepFilterProcessor, isReady: isDeepFilterReady, error: deepFilterError, isLoading: isDeepFilterLoading } = useDeepFilter({
-    enabled: deepFilterEnabled,
-    ...deepFilterSettings
-  });
+  // 🎤 TrackProcessor descriptor (generated lazily inside LiveKit init)
+  const deepFilterProcessor = useMemo(() => {
+    if (deepFilterEnabled) {
+      return createDeepFilterProcessor(deepFilterSettings);
+    }
+    return null;
+  }, [deepFilterEnabled, deepFilterSettings]);
 
-  useEffect(() => {
-    console.log('RoomWrapper', RoomWrapper);
-    console.log('🎤 DeepFilter:', { deepFilterEnabled, isDeepFilterReady, deepFilterError });
-  }, [deepFilterEnabled, isDeepFilterReady, deepFilterError]);
+  // Один общий AudioContext для микрофона, чтобы LiveKit мог связать его с TrackProcessor
+  const audioCtxRef = React.useRef<AudioContext | null>(null);
+  if (!audioCtxRef.current) {
+    audioCtxRef.current = new AudioContext();
+  }
 
   const serverUrl: string | undefined = import.meta.env.DEV
     ? (import.meta.env.VITE_LIVEKIT_URL as string) || undefined
     : server.sfu?.url ?? (import.meta.env.VITE_LIVEKIT_URL as string);
 
   // 🎤 Настройки аудио с DeepFilter
-  const audioCaptureDefaults = useMemo(() => ({
-    echoCancellation: true,
-    noiseSuppression: !deepFilterEnabled, // Отключаем встроенное, если DeepFilter включен
-    autoGainControl: true,
-    voiceIsolation: false,                // Отключаем, используем DeepFilter
-  }), [deepFilterEnabled]);
+  const audioCaptureDefaults = useMemo(() => {
+    // Базовые системные опции
+    const base = {
+      echoCancellation: true,
+      noiseSuppression: !deepFilterEnabled, // выключаем встроенный ns при активном DeepFilter
+      autoGainControl: true,
+      voiceIsolation: false,
+    } as const;
+
+    // Если DeepFilter включён и готов – прокидываем processor
+    if (deepFilterEnabled && deepFilterProcessor) {
+      return {
+        ...base,
+        processor: deepFilterProcessor,
+      } as const;
+    }
+
+    return base;
+  }, [deepFilterEnabled, deepFilterProcessor]);
+
+  const micTrackRef = React.useRef<any>(null);
 
   const canShow = !!livekitToken;
   const showOverlay = isTokenLoading || transition || !isConnected;
@@ -114,7 +133,7 @@ export const RoomWrapper: React.FC<RoomWrapperProps> = ({
             serverUrl={serverUrl}
             connect
             video={false}
-            audio
+            audio={false}
             options={{
               adaptiveStream: true,
               dynacast: true,
@@ -126,7 +145,6 @@ export const RoomWrapper: React.FC<RoomWrapperProps> = ({
                 dtx: true,
                 red: false,
               },
-              audioCaptureDefaults,
             }}
             style={{
               display: 'flex',
@@ -156,7 +174,7 @@ export const RoomWrapper: React.FC<RoomWrapperProps> = ({
                       postFilterBeta: settings.postFilterBeta
                     });
                   }}
-                  deepFilterState={{ processor: deepFilterProcessor, isReady: isDeepFilterReady, error: deepFilterError, isLoading: isDeepFilterLoading }}
+                  deepFilterState={{ processor: deepFilterProcessor, isReady: !!deepFilterProcessor, error: null, isLoading: false }}
                 />
 
                 {/* Main content */}
@@ -173,6 +191,15 @@ export const RoomWrapper: React.FC<RoomWrapperProps> = ({
                 </Box>
               </Box>
             )}
+
+            {/* Publish mic needs room context, so render as sibling inside LiveKitRoom providers */}
+            <PublishMic
+              enabled
+              deepFilterEnabled={deepFilterEnabled}
+              deepFilterProcessor={deepFilterProcessor}
+              baseAudioConstraints={audioCaptureDefaults}
+              micTrackRef={micTrackRef}
+            />
           </LiveKitRoom>
 
           {showOverlay && (
@@ -198,4 +225,64 @@ export const RoomWrapper: React.FC<RoomWrapperProps> = ({
       </Box>
     </Box>
   );
+};
+
+/*───────────────────────────────────────────────────────────*/
+interface PublishMicProps {
+  enabled: boolean;
+  deepFilterEnabled: boolean;
+  deepFilterProcessor: ReturnType<typeof createDeepFilterProcessor> | null;
+  baseAudioConstraints: any;
+  micTrackRef: React.MutableRefObject<any>;
+}
+
+const PublishMic: React.FC<PublishMicProps> = ({ enabled, deepFilterEnabled, deepFilterProcessor, baseAudioConstraints, micTrackRef }) => {
+  const room = useRoomContext();
+
+  useEffect(() => {
+    if (!room || !enabled || micTrackRef.current) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const audioContext = new AudioContext();
+
+        // убираем неклонируемые поля
+        const { processor: _p, audioContext: _ac, ...constraints } =
+          baseAudioConstraints as any;
+
+        const track = await createLocalAudioTrack({
+          ...constraints,
+        } as any);
+
+        if (cancelled) return;
+
+        // привязываем контекст и процессор
+        (track as LocalAudioTrack).setAudioContext(audioContext);
+
+        if (deepFilterEnabled && deepFilterProcessor) {
+          await (track as LocalAudioTrack).setProcessor(deepFilterProcessor);
+        }
+
+        await room.localParticipant.publishTrack(track);
+        micTrackRef.current = track;
+      } catch (err) {
+        console.error('publish mic error', err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (micTrackRef.current) {
+        try {
+          room?.localParticipant.unpublishTrack(micTrackRef.current);
+          micTrackRef.current.stop();
+        } catch {}
+        micTrackRef.current = null;
+      }
+    };
+  }, [room, enabled, deepFilterEnabled, deepFilterProcessor, baseAudioConstraints, micTrackRef]);
+
+  return null;
 };

@@ -36,7 +36,10 @@ class DeepFilterModelLoader {
     }
 
     // Начинаем загрузку
-    const loadingPromise = this.fetchModel(modelName);
+    const loadingPromise = (async () => {
+      const bytes = await this.fetchModel(modelName);
+      return bytes;
+    })();
     this.loadingPromises.set(modelName, loadingPromise);
 
     try {
@@ -51,53 +54,45 @@ class DeepFilterModelLoader {
     }
   }
 
+  // Загружаем строго один архив; без GitHub-fallback и перебора путей.
   private async fetchModel(modelName: string): Promise<Uint8Array> {
-    const modelPaths = [
-      `/models/DeepFilterNet3_onnx.tar.gz`,   // 🎯 Файл пользователя (приоритет)
-      `/models/${modelName}_onnx.tar.gz`,     // ONNX версия
-      `/models/${modelName}.tar.gz`,           // Локальная модель
-      `/models/deepfilter3.tar.gz`,            // Альтернативное имя
-      `/models/default.tar.gz`,                // Дефолтная модель
-    ];
+    const path = `/models/${modelName}_onnx.tar.gz`;
+    console.log(`🎤 DF-DEBUG: загружаем модель по пути ${path}`);
 
-    let lastError: Error | null = null;
-
-    // Пробуем загрузить из разных путей
-    for (const path of modelPaths) {
-      try {
-        console.log(`🎤 DeepFilter: Попытка загрузки модели из ${path}`);
-        const response = await fetch(path);
-        
-        if (response.ok) {
-          const arrayBuffer = await response.arrayBuffer();
-          return new Uint8Array(arrayBuffer);
-        } else {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
-        console.warn(`🎤 DeepFilter: Не удалось загрузить из ${path}:`, lastError.message);
-      }
+    const resp = await fetch(path);
+    if (!resp.ok) {
+      throw new Error(`Cannot fetch model: HTTP ${resp.status}`);
     }
 
-    // Если все пути не сработали, пытаемся загрузить с GitHub
-    try {
-      console.log(`🎤 DeepFilter: Попытка загрузки с GitHub...`);
-      const githubUrl = `https://github.com/Rikorose/DeepFilterNet/releases/download/v0.5.6/${modelName}.tar.gz`;
-      const response = await fetch(githubUrl);
-      
-      if (response.ok) {
-        const arrayBuffer = await response.arrayBuffer();
-        console.log(`🎤 DeepFilter: Модель загружена с GitHub (${arrayBuffer.byteLength} байт)`);
-        return new Uint8Array(arrayBuffer);
-      }
-    } catch (error) {
-      console.warn(`🎤 DeepFilter: Не удалось загрузить с GitHub:`, error);
+    const ab = await resp.arrayBuffer();
+    const bytes = new Uint8Array(ab);
+    console.log('🎤 DF-DEBUG: загружено', bytes.length, 'байт');
+
+    // Если файл уже gzip – ок.
+    if (bytes[0] === 0x1f && bytes[1] === 0x8b) {
+      return bytes;
     }
 
-    // Если ничего не сработало, возвращаем пустую модель (fallback)
-    console.warn(`🎤 DeepFilter: Все попытки загрузки модели провалились, используем fallback`);
-    return new Uint8Array(0); // Пустая модель - процессор будет работать в passthrough режиме
+    // В противном случае считаем, что сервер разжал архив и теперь это plain TAR.
+    console.warn('🎤 DF-DEBUG: получен TAR вместо TAR.GZ – повторно сжимаем в браузере');
+    const { gzipSync } = await import('fflate');
+    const gzipped = gzipSync(bytes);
+    console.log('🎤 DF-DEBUG: повторное сжатие завершено, new size =', gzipped.length, 'байт');
+    return gzipped;
+  }
+
+  private async gunzip(gzBytes: Uint8Array): Promise<Uint8Array> {
+    // Используем DecompressionStream если есть
+    if (typeof DecompressionStream !== 'undefined') {
+      const ds = new DecompressionStream('gzip');
+      const resp = new Response(new Blob([gzBytes]).stream().pipeThrough(ds));
+      const ab = await resp.arrayBuffer();
+      return new Uint8Array(ab);
+    }
+
+    // Fallback: динамически импортируем fflate (есть в package.json)
+    const { gunzipSync } = await import('fflate');
+    return gunzipSync(gzBytes);
   }
 
   /**
