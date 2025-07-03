@@ -18,7 +18,7 @@ import {
 import { serverAPI } from '@shared/data';
 import { Server } from '@shared/types';
 import { useQueryClient } from '@tanstack/react-query';
-import { useSfuList } from '@hooks/useSfuList';
+import { useSfuServersQuery } from '@queries';
 
 export interface ServerSettingsDialogProps {
   open: boolean;
@@ -35,7 +35,7 @@ const ServerSettingsDialog: React.FC<ServerSettingsDialogProps> = ({ open, serve
   const [iconPreview, setIconPreview] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { data: sfuList } = useSfuList();
+  const { data: sfuList } = useSfuServersQuery();
 
   // Populate fields when server changes
   useEffect(() => {

@@ -15,7 +15,7 @@ import CallEndIcon from '@mui/icons-material/CallEnd';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { RoomEvent, RemoteParticipant } from 'livekit-client';
+import { RoomEvent, RemoteParticipant, ParticipantEvent } from 'livekit-client';
 import { ScreenShareControl } from './components/ScreenShareControl';
 
 interface VoiceControlBarProps {
@@ -117,15 +117,15 @@ const useLocalToggle = (type: 'mic' | 'cam') => {
     const lp = room?.localParticipant;
     if (!lp) return;
     const bump = () => force(v => v + 1);
-    lp.on('trackMuted', bump);
-    lp.on('trackUnmuted', bump);
-    lp.on('trackPublished', bump);
-    lp.on('trackUnpublished', bump);
+    lp.on(ParticipantEvent.TrackMuted, bump);
+    lp.on(ParticipantEvent.TrackUnmuted, bump);
+    lp.on(ParticipantEvent.TrackPublished, bump);
+    lp.on(ParticipantEvent.TrackUnpublished, bump);
     return () => {
-      lp.off('trackMuted', bump);
-      lp.off('trackUnmuted', bump);
-      lp.off('trackPublished', bump);
-      lp.off('trackUnpublished', bump);
+      lp.off(ParticipantEvent.TrackMuted, bump);
+      lp.off(ParticipantEvent.TrackUnmuted, bump);
+      lp.off(ParticipantEvent.TrackPublished, bump);
+      lp.off(ParticipantEvent.TrackUnpublished, bump);
     };
   }, [room, type]);
 

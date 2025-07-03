@@ -31,7 +31,10 @@
       "@hooks/*": ["src/hooks/*"],
       "@stores/*": ["src/stores/*"],
       "@components/*": ["src/components/*"],
+      "@entities/*": ["src/entities/*"],
+      "@queries/*": ["src/queries/*"],
       "@utils/*": ["src/utils/*"],
+      "@config/*": ["src/config/*"],
     },
     "useUnknownInCatchVariables": false
   },

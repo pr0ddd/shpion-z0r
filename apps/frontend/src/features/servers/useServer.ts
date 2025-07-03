@@ -58,7 +58,6 @@ export const useServer = () => {
   useEffect(() => {
     if (!serversQueryData) return;
     if (selectedServerRef.current) return;
-    console.log(serversQueryData);
     const saved = localStorage.getItem('lastSelectedServerId');
     if (saved) {
       const toSel = serversQueryData.find((s) => s.id === saved);

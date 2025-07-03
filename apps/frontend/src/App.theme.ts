@@ -17,6 +17,9 @@ declare module '@mui/material/styles' {
       purple: string;
       yellow: string;
     };
+    border: {
+      main: string;
+    };
     chat: {
       myMessage: string;
       theirMessage: string;
@@ -53,6 +56,9 @@ declare module '@mui/material/styles' {
     sidebar?: {
       background?: string;
       border?: string;
+    };
+    border: {
+      main: string;
     };
   }
 }
@@ -96,6 +102,9 @@ const themeOptions: ThemeOptions = {
       red: '#ED4245',
       purple: '#B589D6',
       yellow: '#FEE75C',
+    },
+    border: {
+      main: '#282c34',
     },
     chat: {
       myMessage: '#005c4b',

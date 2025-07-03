@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { serverAPI } from '@shared/data';
 import { useServer } from '@features/servers';
-import { useSfuList } from '@hooks/useSfuList';
+import { useSfuServersQuery } from '@queries';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface CreateServerDialogProps {
@@ -28,7 +28,7 @@ interface CreateServerDialogProps {
 
 const CreateServerDialog: React.FC<CreateServerDialogProps> = ({ open, onClose }) => {
   const { selectServer } = useServer();
-  const { data: sfuList } = useSfuList();
+  const { data: sfuList } = useSfuServersQuery();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [sfuId, setSfuId] = useState<string | ''>('');

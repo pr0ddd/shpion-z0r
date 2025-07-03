@@ -19,7 +19,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }: ChatMessa
             <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1, flexDirection: isMe ? 'row-reverse' : 'row' }}>
                 {!isMe && (
                     <ListItemAvatar sx={{ minWidth: 'auto', alignSelf: 'flex-end' }}>
-                        <Avatar alt={message.author?.username} src={message.author?.avatar || dicebearAvatar(message.authorId)} sx={{ width: 32, height: 32 }}/>
+                        <Avatar alt={message.author?.username} src={message.author?.avatar || dicebearAvatar(message.authorId)} sx={{ width: 32, height: 32, backgroundColor: '#2B2D31' }}/>
                     </ListItemAvatar>
                 )}
                 <Box

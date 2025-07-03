@@ -61,6 +61,11 @@ export interface Message {
   status?: 'sending' | 'failed' | 'thinking';
 }
 
+export interface MessagesPage {
+  messages: Message[];
+  hasMore: boolean;
+}
+
 // Auth responses
 export interface LoginResponseData {
   user: User;

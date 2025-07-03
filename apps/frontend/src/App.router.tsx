@@ -11,6 +11,7 @@ import StreamPage from './pages/StreamPage';
 import ServerPage from './pages/ServerPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import TestPage from './pages/TestPage';
 
 const RequireAuth = () => {
   const { user, loading } = useAuth();
@@ -33,8 +34,10 @@ const AppRouter: React.FC = () => {
 
         <Route element={<RequireAuth />}>
           <Route path="/" element={<ServerPage />} />
-          <Route path="/invite/:inviteCode" element={<InvitePage />} />
           <Route path="/stream/:serverId/:trackSid" element={<StreamPage />} />
+
+          <Route path="/invite/:inviteCode" element={<InvitePage />} />
+          <Route path="/test" element={<TestPage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Route>
       </Routes>

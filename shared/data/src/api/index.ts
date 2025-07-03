@@ -1,10 +1,4 @@
 import axios, { AxiosRequestHeaders } from 'axios';
-import { authAPI } from './authAPI';
-import { serverAPI } from './serverAPI';
-import { inviteAPI } from './inviteAPI';
-import { messageAPI } from './messageAPI';
-import { livekitAPI } from './livekitAPI';
-import { sfuAPI } from './sfuAPI';
 import { authRequest, authResponseErrorHandler } from './interceptors';
 
 // Vite env; cast to bypass TS in library build
@@ -25,5 +19,10 @@ http.interceptors.response.use(
   authResponseErrorHandler as any // TODO: fix types
 );
 
-export { authAPI, serverAPI, inviteAPI, messageAPI, livekitAPI, sfuAPI };
+export * from './authAPI';
+export * from './serverAPI';
+export * from './inviteAPI';
+export * from './messageAPI';
+export * from './livekitAPI';
+export * from './sfuAPI';
 export default http;

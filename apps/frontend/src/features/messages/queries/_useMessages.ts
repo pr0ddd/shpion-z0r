@@ -1,3 +1,7 @@
+/**
+ * @deprecated use useMessagesQuery instead
+ */
+
 import { useQuery } from '@tanstack/react-query';
 import { messageAPI } from '@shared/data';
 import { Message } from '@shared/types';
