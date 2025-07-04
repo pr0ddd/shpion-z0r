@@ -193,13 +193,13 @@ export const RoomWrapper: React.FC<RoomWrapperProps> = ({
             )}
 
             {/* Publish mic needs room context, so render as sibling inside LiveKitRoom providers */}
-            <PublishMic
+            {/* <PublishMic
               enabled
               deepFilterEnabled={deepFilterEnabled}
               deepFilterProcessor={deepFilterProcessor}
               baseAudioConstraints={audioCaptureDefaults}
               micTrackRef={micTrackRef}
-            />
+            /> */}
           </LiveKitRoom>
 
           {showOverlay && (

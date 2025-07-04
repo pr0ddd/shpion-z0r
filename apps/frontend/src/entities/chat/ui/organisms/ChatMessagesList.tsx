@@ -15,9 +15,6 @@ export const ChatMessagesList: React.FC = () => {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useMessagesQuery(serverId!);
 
-
-  console.log({isLoading})
-
   // keep socket & query in sync
   useMessagesSocketSync(serverId!);
 

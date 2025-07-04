@@ -35,6 +35,7 @@
       "@queries/*": ["src/queries/*"],
       "@utils/*": ["src/utils/*"],
       "@config/*": ["src/config/*"],
+      "@libs/*": ["src/libs/*"],
     },
     "useUnknownInCatchVariables": false
   },

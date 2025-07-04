@@ -1,5 +1,5 @@
-import { useRoomContext } from '@livekit/components-react';
-import { RoomEvent } from 'livekit-client';
+import { useRoomContext, useTracks } from '@livekit/components-react';
+import { RoomEvent, Track } from 'livekit-client';
 import { useEffect } from 'react';
 
 interface LiveKitRoomConsumerProps {

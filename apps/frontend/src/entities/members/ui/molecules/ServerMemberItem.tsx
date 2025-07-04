@@ -6,18 +6,17 @@ import HeadsetOffIcon from '@mui/icons-material/HeadsetOff';
 import { LocalParticipant, RemoteParticipant, Track } from 'livekit-client';
 import { AudioTrack, TrackReference, useIsMuted, useIsSpeaking } from '@livekit/components-react';
 import { useParticipantMetadata } from '@entities/members/model/useLocalParticipantMetadata';
+import { useEffect } from 'react';
 
 interface ServerMemberItemProps {
   member: Member | undefined;
   participant: LocalParticipant | RemoteParticipant;
-  audioTrack: TrackReference | undefined;
-  streamTrack: TrackReference | undefined; // TODO: support multiple streams
+  streamTrack: TrackReference | undefined; // TODO: use metadata to get isStreaming
 }
 
 export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
   member,
   participant,
-  audioTrack,
   streamTrack,
 }) => {
   const isSpeaking = useIsSpeaking(participant);
@@ -28,11 +27,25 @@ export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
   const participantScreenShares = [];
   const isStreaming = !!streamTrack;
 
+  // useEffect(() => {
+  //   console.log({
+  //     participant: participant.name,
+  //     isVolumeOn
+  //   })
+  // }, [isVolumeOn])
+
+  // useEffect(() => {
+  //   console.log({
+  //     participant: participant.name,
+  //     isSpeaking,
+  //   })
+  // }, [isSpeaking])
+
   return (
     <>
-      {audioTrack && !audioTrack?.participant.isLocal && (
+      {/* {audioTrack && !audioTrack?.participant.isLocal && (
         <AudioTrack trackRef={audioTrack} volume={isVolumeOn ? 1 : 0} />
-      )}
+      )} */}
 
       <Box
         sx={{

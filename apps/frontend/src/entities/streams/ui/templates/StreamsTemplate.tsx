@@ -40,7 +40,7 @@ export const StreamsTemplate: React.FC = () => {
       .map((t) => t.publication?.track?.mediaStreamTrack)
       .filter((t) => t !== undefined);
 
-    console.log(mediaStreamTracks);
+    // console.log(mediaStreamTracks);
     setMediaStreamTracks(mediaStreamTracks);
 
     return (
@@ -53,7 +53,7 @@ export const StreamsTemplate: React.FC = () => {
   useEffect(() => {
     const stream = streamTracks[0];
     if (stream) {
-      console.log(stream.publication?.track);
+      // console.log(stream.publication?.track);
     }
   }, [streamTracks]);
 

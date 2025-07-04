@@ -1,4 +1,4 @@
-import { TrackReference, useTracks } from "@livekit/components-react";
+import { TrackReference, useTracks, useTrackToggle, useTrackVolume } from "@livekit/components-react";
 import { Track } from "livekit-client";
 import { useEffect, useState } from "react";
 
@@ -8,9 +8,9 @@ export const useStream = () => {
 
   // TODO: refactor useScreenShare !!!!!
 
-  useEffect(() => {
-    console.log(streamTracks)
-  }, [streamTracks])
+  // useEffect(() => {
+  //   console.log(streamTracks)
+  // }, [streamTracks])
 
   return {
     streamTracks,

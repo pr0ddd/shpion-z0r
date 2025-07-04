@@ -20,10 +20,6 @@ export const ServerMembers: React.FC<ServerMembersProps> = ({ serverId }) => {
     return new Map(members?.map((member) => [member.id, member]));
   }, [members]);
 
-  const audioTracks = useMemo(() => {
-    return new Map(tracks.map((t) => [t.participant.identity, t]));
-  }, [tracks]);
-
   const streamTracksMap = useMemo(() => {
     return new Map(streamTracks.map((t) => [t.participant.identity, t]));
   }, [streamTracks]);
@@ -46,7 +42,6 @@ export const ServerMembers: React.FC<ServerMembersProps> = ({ serverId }) => {
           <ServerMemberItem
             key={participant.sid}
             member={membersMap.get(participant.identity)}
-            audioTrack={audioTracks.get(participant.identity)}
             streamTrack={streamTracksMap.get(participant.identity)}
             participant={participant}
           />

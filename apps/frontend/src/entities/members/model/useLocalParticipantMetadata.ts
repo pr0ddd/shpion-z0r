@@ -1,4 +1,4 @@
-import { useLocalParticipant } from '@livekit/components-react';
+
 import { LocalParticipant, Participant } from 'livekit-client';
 
 type Metadata = {

@@ -13,6 +13,10 @@ export const useLocalParticipantVolume = () => {
   );
 
   useEffect(() => {
+    // console.log({
+    //   localParticipant: localParticipant?.name,
+    //   isEnabled
+    // })
     updateMetadata({
       volumeOn: isEnabled ? true : false,
     })
