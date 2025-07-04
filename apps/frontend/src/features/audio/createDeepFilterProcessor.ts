@@ -21,6 +21,8 @@ export const createDeepFilterProcessor = (
 ): TrackProcessor<Track.Kind.Audio, AudioProcessorOptions> => {
   // keep local reference to the worklet node so that we can tear it down later
   let node: AudioWorkletNode | null = null;
+  let srcNode: MediaStreamAudioSourceNode | null = null;
+  let dstNode: MediaStreamAudioDestinationNode | null = null;
 
   // The descriptor object – LiveKit will call the lifecycle hooks.
   const processor: TrackProcessor<Track.Kind.Audio, AudioProcessorOptions> = {
@@ -67,22 +69,38 @@ export const createDeepFilterProcessor = (
       });
 
       // 5. Build the graph track -> node -> destination -> processedTrack
-      const src = audioContext.createMediaStreamSource(new MediaStream([track]));
-      const dst = audioContext.createMediaStreamDestination();
-      src.connect(node);
-      node.connect(dst);
+      srcNode = audioContext.createMediaStreamSource(new MediaStream([track]));
+      dstNode = audioContext.createMediaStreamDestination();
+      srcNode.connect(node);
+      node.connect(dstNode);
 
       // expose to LiveKit – it will replace the original track
-      processor.processedTrack = dst.stream.getAudioTracks()[0];
+      processor.processedTrack = dstNode.stream.getAudioTracks()[0];
     },
 
     // When LiveKit restarts capture (e.g., device switch), we recreate the chain
     restart: async (opts) => {
+      // попросим worklet освободить память перед перезапуском
+      try { node?.port.postMessage({ type: 'dispose' }); } catch {}
+      // небольшая задержка, чтобы сообщение успело дойти, но не блокируем UI
+      await new Promise(r => setTimeout(r, 0));
+      if (srcNode) {
+        try { srcNode.disconnect(); } catch {}
+        srcNode = null;
+      }
       if (node) {
         try {
           node.disconnect();
+          node.port.close();
         } catch {}
         node = null;
+      }
+      if (dstNode) {
+        try {
+          dstNode.disconnect();
+          dstNode.stream.getTracks().forEach(t => t.stop());
+        } catch {}
+        dstNode = null;
       }
       // re-init with the new track/audioContext
       await processor.init(opts);
@@ -90,14 +108,25 @@ export const createDeepFilterProcessor = (
 
     // Cleanup when track is unpublished or room left
     destroy: async () => {
+      try { node?.port.postMessage({ type: 'dispose' }); } catch {}
+      await new Promise(r=>setTimeout(r,0));
+      if (srcNode) {
+        try { srcNode.disconnect(); } catch {}
+        srcNode = null;
+      }
       if (node) {
         try {
           node.disconnect();
           node.port.close();
-        } catch {
-          /* noop */
-        }
+        } catch {}
         node = null;
+      }
+      if (dstNode) {
+        try {
+          dstNode.disconnect();
+          dstNode.stream.getTracks().forEach(t => t.stop());
+        } catch {}
+        dstNode = null;
       }
       processor.processedTrack = undefined;
     },

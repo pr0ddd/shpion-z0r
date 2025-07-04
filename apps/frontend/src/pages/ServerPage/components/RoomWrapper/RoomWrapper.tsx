@@ -6,6 +6,7 @@ import { AudioPresets, RoomEvent, createLocalAudioTrack, LocalAudioTrack } from 
 import { useStreamViewStore } from '@features/streams';
 import { useAppStore } from '@stores/useAppStore';
 import { createDeepFilterProcessor } from '@features/audio/createDeepFilterProcessor';
+import { modelLoader } from '@features/audio';
 
 import type { Server } from '@shared/types';
 
@@ -141,8 +142,8 @@ export const RoomWrapper: React.FC<RoomWrapperProps> = ({
                 videoCodec: 'av1',
                 videoEncoding: encoding1080p30_3m,
                 screenShareEncoding: encoding1080p30_3m,
-                audioPreset: AudioPresets.musicHighQuality,
-                dtx: true,
+                audioPreset: AudioPresets.speech,
+                dtx: false,
                 red: false,
               },
             }}
@@ -173,6 +174,10 @@ export const RoomWrapper: React.FC<RoomWrapperProps> = ({
                       attenLim: settings.attenLim,
                       postFilterBeta: settings.postFilterBeta
                     });
+                    // При выключении DeepFilter очищаем кеш модели, чтобы высвободить память
+                    if (!settings.enabled) {
+                      modelLoader.clearCache();
+                    }
                   }}
                   deepFilterState={{ processor: deepFilterProcessor, isReady: !!deepFilterProcessor, error: null, isLoading: false }}
                 />
@@ -238,6 +243,8 @@ interface PublishMicProps {
 
 const PublishMic: React.FC<PublishMicProps> = ({ enabled, deepFilterEnabled, deepFilterProcessor, baseAudioConstraints, micTrackRef }) => {
   const room = useRoomContext();
+  // Храним связанный AudioContext, чтобы иметь возможность закрыть его и высвободить память WASM.
+  const localAcRef = React.useRef<AudioContext | null>(null);
 
   useEffect(() => {
     if (!room || !enabled || micTrackRef.current) return;
@@ -247,7 +254,8 @@ const PublishMic: React.FC<PublishMicProps> = ({ enabled, deepFilterEnabled, dee
     (async () => {
       try {
         const audioContext = new AudioContext();
-
+        localAcRef.current = audioContext;
+        
         // убираем неклонируемые поля
         const { processor: _p, audioContext: _ac, ...constraints } =
           baseAudioConstraints as any;
@@ -281,8 +289,54 @@ const PublishMic: React.FC<PublishMicProps> = ({ enabled, deepFilterEnabled, dee
         } catch {}
         micTrackRef.current = null;
       }
+      if (localAcRef.current) {
+        try { localAcRef.current.close(); } catch {}
+        localAcRef.current = null;
+      }
     };
   }, [room, enabled, deepFilterEnabled, deepFilterProcessor, baseAudioConstraints, micTrackRef]);
+
+  // Когда пользователь переключает DeepFilter (enabled ↔ disabled), полностью пересоздаём трек,
+  // чтобы закрыть старый AudioContext (а значит и wasm-память AWG-потока) и открыть новый.
+  useEffect(() => {
+    if (!room || !micTrackRef.current) return;
+
+    // Текущее состояние не соответствует deepFilterEnabled -> пересоздаём
+    (async () => {
+      try {
+        // 1. Удаляем старый трек и закрываем его AudioContext
+        room.localParticipant.unpublishTrack(micTrackRef.current);
+        micTrackRef.current.stop();
+        if (localAcRef.current) {
+          try { localAcRef.current.close(); } catch {}
+          localAcRef.current = null;
+        }
+        micTrackRef.current = null;
+      } catch (e) {
+        console.warn('recreate mic track', e);
+      }
+    })();
+  }, [deepFilterEnabled]);
+
+  // Существующий эффект обновления процессора (без пересоздания трека)
+  useEffect(() => {
+    // 🔄 Обновляем процессор, когда пользователь включает/выключает DeepFilter
+    if (!micTrackRef.current) return;
+    const track = micTrackRef.current as LocalAudioTrack;
+
+    (async () => {
+      try {
+        if (deepFilterEnabled && deepFilterProcessor) {
+          await track.setProcessor(deepFilterProcessor);
+        } else {
+          // Снимаем процессор, возвращаясь к "сырому" аудио.
+          await track.setProcessor(undefined as any);
+        }
+      } catch (err) {
+        console.error('update mic processor error', err);
+      }
+    })();
+  }, [deepFilterEnabled, deepFilterProcessor, micTrackRef]);
 
   return null;
 };
