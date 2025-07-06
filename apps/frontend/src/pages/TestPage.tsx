@@ -6,17 +6,19 @@ import { useServerStore } from '@entities/server/model';
 import { useServersQuery } from '@entities/servers/api';
 import { LiveKitRoom } from '@components/LiveKitRoom/LiveKitRoom';
 import { StreamsTemplate } from '@entities/streams/ui';
-import { ChatMessages } from '@entities/chat/ui';
 import { MediaControlPanel } from '@entities/server/ui';
 import { MembersTemplate } from '@entities/members/ui';
 import { Accordion } from '@ui/molecules/Accordion';
 import { AccordionPanel } from '@ui/molecules/AccordionPanel';
 import { useMembersQuery } from '@entities/members/api/members.query';
+import { useChatWindowStore } from '@entities/chat/model/chatWindow.store';
 
 const TestPage: React.FC = () => {
   const { selectedServerId } = useServerStore();
   const { data: servers } = useServersQuery();
   const { data: members } = useMembersQuery(selectedServerId!);
+  const openChat = useChatWindowStore((s) => s.open);
+  const closeChat = useChatWindowStore((s) => s.close);
 
   const selectedServer = useMemo(() => {
     if (!servers || !selectedServerId) return null;
@@ -79,10 +81,6 @@ const TestPage: React.FC = () => {
                   subtitle={`${members?.length} members`}
                 >
                   <MembersTemplate />
-                </AccordionPanel>
-
-                <AccordionPanel title="Chat">
-                  <ChatMessages />
                 </AccordionPanel>
               </Accordion>
             </Box>

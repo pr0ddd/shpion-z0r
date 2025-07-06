@@ -2,21 +2,19 @@ import React from 'react';
 import { Box } from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
-import VideocamIcon from '@mui/icons-material/Videocam';
-import VideocamOffIcon from '@mui/icons-material/VideocamOff';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import LogoutIcon from '@mui/icons-material/Logout';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
-import MonitorIcon from '@mui/icons-material/Monitor';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { useLocalParticipantMic } from '@entities/members/model/useLocalParticipantMic';
-import { useLocalParticipantCamera } from '@entities/members/model/useLocalParticipantCamera';
 import { useLocalParticipantVolume } from '@entities/members/model/useLocalParticipantVolume';
-import { useScreenShare } from '@entities/members/model/useScreenShare';
 import { useServerStore } from '@entities/server/model';
 import { Chip } from '@ui/atoms/Chip';
 import { IconButton } from '@ui/atoms/IconButton';
 import { useAuth } from '@features/auth';
+import { useChatWindowStore } from '@entities/chat/model/chatWindow.store';
+import { ChatFloatingWindow } from '@entities/chat/ui/ChatFloatingWindow';
 
 interface MediaControlPanelProps {}
 
@@ -52,12 +50,12 @@ export const MediaControlPanel: React.FC<MediaControlPanelProps> = () => {
           gap: 1,
         }}
       >
-        <ToggleScreenShareButton />
+        <ChatButton />
         <ToggleMicButton />
         <ToggleVolumeButton />
-        <ToggleCameraButton />
         <SettingsButton />
         <LeaveButton />
+        <ChatFloatingWindow />
       </Box>
     </Box>
   );
@@ -91,34 +89,6 @@ const ToggleVolumeButton: React.FC = () => {
   );
 };
 
-const ToggleCameraButton: React.FC = () => {
-  const { isCameraEnabled, toggleCameraEnabled } = useLocalParticipantCamera();
-
-  return (
-    <IconButton
-      hasBorder={true}
-      // color={isCameraEnabled ? 'default' : 'error'}
-      icon={isCameraEnabled ? <VideocamIcon /> : <VideocamOffIcon />}
-      tooltip={isCameraEnabled ? 'Выключить камеру' : 'Включить камеру'}
-      onClick={toggleCameraEnabled}
-    />
-  );
-};
-
-export const ToggleScreenShareButton: React.FC = () => {
-  const { user } = useAuth();
-  const { startNew } = useScreenShare();
-
-  return (
-    <IconButton
-      hasBorder={true}
-      icon={<MonitorIcon />}
-      tooltip="Запустить трансляцию экрана"
-      onClick={() => startNew(user?.id ?? '')}
-    />
-  );
-};
-
 export const SettingsButton: React.FC = () => {
   return (
     <IconButton
@@ -141,6 +111,21 @@ export const LeaveButton: React.FC = () => {
       icon={<LogoutIcon />}
       tooltip="Выйти из комнаты"
       onClick={() => setSelectedServerId(null)}
+    />
+  );
+};
+
+export const ChatButton: React.FC = () => {
+  const isOpen = useChatWindowStore((s) => s.isOpen);
+  const toggle = useChatWindowStore((s) => s.toggle);
+
+  return (
+    <IconButton
+      hasBorder={true}
+      color={isOpen ? 'primary' : 'default'}
+      icon={<ChatBubbleOutlineIcon />}
+      tooltip={isOpen ? 'Скрыть чат' : 'Показать чат'}
+      onClick={toggle}
     />
   );
 };

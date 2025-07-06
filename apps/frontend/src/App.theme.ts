@@ -177,19 +177,26 @@ const themeOptions: ThemeOptions = {
     },
   },
   typography: {
-    fontFamily: '"Jura", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Open Sans", "Jura", "Helvetica", "Arial", sans-serif',
     h6: {
-      fontWeight: 600,
+      fontSize: 12,
     },
     h2: {
       fontWeight: 700,
     },
     h4: {
+      fontSize: 14,
       fontWeight: 600,
     },
     button: {
       textTransform: 'none',
       fontWeight: 600,
+    },
+    body1: {
+      fontSize: 14,
+    },
+    body2: {
+      fontSize: 12,
     },
   },
   shape: {

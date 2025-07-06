@@ -21,7 +21,9 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
   message,
 }: ChatMessageProps) => {
   const { user } = useAuth();
-  const isMe = message.authorId === user?.id;
+
+  const isMine = !!user && (user.id === message.authorId || user.id === message.author?.id);
+
   const time = new Date(message.createdAt).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
@@ -29,96 +31,117 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
 
   return (
     <ListItem
-      sx={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}
+      sx={{
+        display: 'flex',
+        justifyContent: isMine ? 'flex-end' : 'flex-start',
+        alignItems: 'flex-start',
+        gap: 1,
+        py: 1,
+        px: 2,
+      }}
     >
+      {/* Avatar – show only for others */}
+      {!isMine && (
+        <ListItemAvatar sx={{ minWidth: 'auto', mt: 0.5 }}>
+          <Avatar
+            src={message.author?.avatar || dicebearAvatar(message.authorId)}
+            sx={{ width: 32, height: 32 }}
+          />
+        </ListItemAvatar>
+      )}
+
       <Box
         sx={{
+          flex: 1,
+          minWidth: 0,
           display: 'flex',
-          alignItems: 'flex-end',
-          gap: 1,
-          flexDirection: isMe ? 'row-reverse' : 'row',
+          flexDirection: 'column',
+          alignItems: isMine ? 'flex-end' : 'flex-start',
         }}
       >
-        {!isMe && (
-          <ListItemAvatar sx={{ minWidth: 'auto', alignSelf: 'flex-end' }}>
-            <Avatar
-              src={message.author?.avatar || dicebearAvatar(message.authorId)}
-            />
-          </ListItemAvatar>
-        )}
-        <Box
-          sx={{
-            p: 1,
-            borderRadius: 1,
-            backgroundColor: (theme) => {
-              const chatPalette = (theme as any).palette.chat;
-              if ((message as any).status === 'thinking')
-                return chatPalette.theirMessage + '40'; // light grey
-              return isMe ? chatPalette.myMessage : chatPalette.theirMessage;
-            },
-            maxWidth: '60ch',
-          }}
-        >
-          {!isMe && (
-            <Box
-              sx={{ display: 'flex', alignItems: 'center', mb: 0.5, gap: 0.75 }}
-            >
-              <Typography
-                variant="body2"
-                sx={{
-                  fontWeight: 'bold',
-                  color: 'text.secondary',
-                  textAlign: isMe ? 'right' : 'left',
-                }}
-              >
-                {message.author?.username || 'Неизвестный'}
-              </Typography>
-            </Box>
-          )}
+        {/* Header (only for others) */}
+        {!isMine && (
           <Box
             sx={{
               display: 'flex',
-              alignItems: 'flex-end',
-              flexWrap: 'wrap',
-              justifyContent: 'flex-end',
+              alignItems: 'center',
+              gap: 1,
+              mb: 0.5,
             }}
           >
             <Typography
-              component="div"
-              variant="body1"
+              variant="body2"
               sx={{
-                color: 'chat.textPrimary',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                minWidth: 0,
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-                overflowWrap: 'anywhere',
-                overflowX: 'hidden',
+                color: 'new.foreground',
+                fontWeight: 600,
+                fontSize: '0.875rem',
               }}
             >
-              {message.status === 'failed' && (
-                <ErrorOutline sx={{ fontSize: 24, color: 'error.main' }} />
-              )}
-              <Interweave content={message.content} />
-              {(message as any).status === 'thinking' && (
-                <CircularProgress size={12} sx={{ ml: 0.5 }} />
-              )}
+              {message.author?.username || 'Неизвестный'}
             </Typography>
             <Typography
               variant="caption"
               sx={{
-                color: 'chat.textSecondary',
-                ml: 1,
-                alignSelf: 'flex-end',
-                whiteSpace: 'nowrap',
+                color: 'new.mutedForeground',
+                fontSize: '0.75rem',
               }}
             >
               {time}
             </Typography>
           </Box>
+        )}
+
+        {/* Message content */}
+        <Box
+          sx={{
+            p: 1.5,
+            borderRadius: 2,
+            backgroundColor: isMine ? 'new.primary' : 'new.card',
+            border: '1px solid',
+            borderColor: isMine ? 'new.primary' : 'new.border',
+            maxWidth: '100%',
+          }}
+        >
+          <Typography
+            component="div"
+            variant="body2"
+            sx={{
+              color: isMine ? 'new.primaryForeground' : 'new.foreground',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              minWidth: 0,
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              overflowWrap: 'anywhere',
+              overflowX: 'hidden',
+              fontSize: '0.875rem',
+              lineHeight: 1.5,
+            }}
+          >
+            {message.status === 'failed' && (
+              <ErrorOutline sx={{ fontSize: 16, color: 'new.red' }} />
+            )}
+            <Interweave content={message.content} />
+            {(message as any).status === 'thinking' && (
+              <CircularProgress size={12} sx={{ ml: 0.5 }} />
+            )}
+          </Typography>
         </Box>
+
+        {/* Time for my messages – align right under bubble */}
+        {isMine && (
+          <Typography
+            variant="caption"
+            sx={{
+              color: 'new.mutedForeground',
+              fontSize: '0.75rem',
+              mt: 0.5,
+            }}
+          >
+            {time}
+          </Typography>
+        )}
       </Box>
     </ListItem>
   );
