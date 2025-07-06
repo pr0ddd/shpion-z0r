@@ -6,7 +6,7 @@ export const LIVEKIT_PRESET_BALANCED: TrackPublishDefaults = {
     maxBitrate: 3_000_000,
     maxFramerate: 30,
   },
-  audioPreset: AudioPresets.musicHighQuality,
-  dtx: true,
+  audioPreset: AudioPresets.speech,
+  dtx: false,
   red: false,
 };

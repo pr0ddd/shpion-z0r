@@ -32,8 +32,6 @@ export const StreamGallery: React.FC<StreamGalleryProps> = ({
       ))}
 
       <StreamStartCard onClick={onStart} />
-      
-      <button onClick={handleStopAll}>Stop all</button>
     </Box>
   );
 };

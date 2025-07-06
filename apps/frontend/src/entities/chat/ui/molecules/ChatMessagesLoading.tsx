@@ -1,4 +1,5 @@
-import { Box, CircularProgress } from '@mui/material';
+import { Box } from '@mui/material';
+import { CircularProgress } from '@ui/atoms/CircularProgress';
 
 export const ChatMessagesLoading = () => {
   return (

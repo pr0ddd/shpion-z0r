@@ -22,11 +22,11 @@ const ServersList: React.FC = () => {
 
   return (
     <Box
-      sx={(theme) => ({
+      sx={() => ({
         display: 'flex',
         flex: 1,
         flexDirection: 'column',
-        gap: theme.spacing(1.5),
+        gap: 1,
       })}
     >
       {servers?.map((server) => (

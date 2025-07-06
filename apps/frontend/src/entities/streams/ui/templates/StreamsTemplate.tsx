@@ -6,7 +6,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useScreenShare } from '@entities/members/model/useScreenShare';
 import { useStream } from '@entities/streams/model/useStream';
 import { useAuth } from '@features/auth';
-import { Track } from 'livekit-client';
 
 export const StreamsTemplate: React.FC = () => {
   const { user } = useAuth();
@@ -63,8 +62,8 @@ export const StreamsTemplate: React.FC = () => {
         display: 'flex',
         flexDirection: 'column',
         flexGrow: 1,
-        gap: 1,
-        padding: 1,
+        gap: 2,
+        padding: 2,
       }}
     >
       <StreamActive trackRef={activeTrack} tracks={mediaStreamTracks} />

@@ -1,4 +1,4 @@
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 
 export const LiveKitRoomLoading = () => {
   return (
@@ -11,10 +11,7 @@ export const LiveKitRoomLoading = () => {
         alignItems: 'center',
       }}
     >
-      <CircularProgress size={60} sx={{ mb: 3 }} />
-      <Typography variant="h6" sx={{ textAlign: 'center' }}>
-        {'Загрузка...'}
-      </Typography>
+      <CircularProgress />
     </Box>
   );
 };

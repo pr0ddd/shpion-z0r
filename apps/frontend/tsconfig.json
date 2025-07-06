@@ -36,6 +36,7 @@
       "@utils/*": ["src/utils/*"],
       "@config/*": ["src/config/*"],
       "@libs/*": ["src/libs/*"],
+      "@ui/*": ["src/ui/*"],
     },
     "useUnknownInCatchVariables": false
   },

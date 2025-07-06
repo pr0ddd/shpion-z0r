@@ -35,6 +35,7 @@ export const ServerMembers: React.FC<ServerMembersProps> = ({ serverId }) => {
         flexDirection: 'column',
         overflowY: 'auto',
         flex: 1,
+        padding: 2,
       }}
     >
       {participants?.map((participant) => {

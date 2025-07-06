@@ -1,6 +1,9 @@
 import React from 'react';
-import { Box, TextField, IconButton } from '@mui/material';
+import { Box } from '@mui/material';
 import { Send } from '@mui/icons-material';
+
+import { TextField } from '@ui/atoms/TextField';
+import { IconButton } from '@ui/atoms/IconButton';
 
 import { useServerStore } from '@entities/server/model';
 import { useChatMessagesForm } from '@entities/chat/model/useChatMessagesForm';
@@ -18,7 +21,9 @@ export const ChatMessagesForm: React.FC = () => {
     <Box
       sx={{
         p: 1,
-        borderTop: (theme) => `1px solid ${theme.palette.border.main}`,
+        borderTop: '1px solid',
+        borderColor: 'new.border',
+        backgroundColor: 'new.card',
       }}
     >
       <Box
@@ -27,37 +32,24 @@ export const ChatMessagesForm: React.FC = () => {
         sx={{
           display: 'flex',
           alignItems: 'center',
-          bgcolor: 'chat.inputBackground',
-          borderRadius: 1.5,
+          gap: 1,
         }}
       >
         <TextField
           fullWidth
-          variant="standard"
-          placeholder={'Написать'}
+          placeholder={'Написать сообщение...'}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={!serverId}
-          multiline
-          maxRows={4}
           inputRef={inputRef}
-          sx={{
-            flexGrow: 1,
-            '& .MuiInputBase-root': { p: 1 },
-            '& .MuiInput-underline:before, & .MuiInput-underline:after, & .MuiInput-underline:hover:not(.Mui-disabled):before':
-              {
-                borderBottom: 'none',
-              },
-          }}
         />
         <IconButton
+          icon={<Send />}
+          color="primary"
           type="submit"
-          sx={{ p: '10px', color: 'chat.inputPlaceholder' }}
           disabled={!text.trim() || !serverId}
-        >
-          <Send />
-        </IconButton>
+        />
       </Box>
     </Box>
   );

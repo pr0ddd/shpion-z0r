@@ -3,7 +3,6 @@ import {
   Box,
   ListItem,
   ListItemAvatar,
-  Avatar,
   Typography,
   CircularProgress,
 } from '@mui/material';
@@ -12,6 +11,7 @@ import { Message } from '@shared/types';
 import { Interweave } from 'interweave';
 import { dicebearAvatar } from '@shared/lib';
 import { ErrorOutline } from '@mui/icons-material';
+import { Avatar } from '@ui/atoms/Avatar';
 
 interface ChatMessageProps {
   message: Message;
@@ -42,17 +42,14 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
         {!isMe && (
           <ListItemAvatar sx={{ minWidth: 'auto', alignSelf: 'flex-end' }}>
             <Avatar
-              alt={message.author?.username}
               src={message.author?.avatar || dicebearAvatar(message.authorId)}
-              sx={{ width: 32, height: 32, backgroundColor: '#2B2D31' }}
             />
           </ListItemAvatar>
         )}
         <Box
           sx={{
-            px: 1.5,
-            py: 1,
-            borderRadius: '20px',
+            p: 1,
+            borderRadius: 1,
             backgroundColor: (theme) => {
               const chatPalette = (theme as any).palette.chat;
               if ((message as any).status === 'thinking')

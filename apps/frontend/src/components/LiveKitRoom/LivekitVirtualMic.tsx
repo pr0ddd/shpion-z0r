@@ -1,6 +1,11 @@
-import { useDeepFilterProcessor } from '@libs/deepFilterNet/useDeepFilterProcessor';
 import { useRoomContext } from '@livekit/components-react';
-import { createLocalAudioTrack, LocalAudioTrack } from 'livekit-client';
+import {
+  AudioProcessorOptions,
+  createLocalAudioTrack,
+  LocalAudioTrack,
+  Track,
+  TrackProcessor,
+} from 'livekit-client';
 import { useEffect, useRef } from 'react';
 
 interface LivekitVirtualMicProps {
@@ -11,8 +16,13 @@ export const LivekitVirtualMic: React.FC<LivekitVirtualMicProps> = ({
   processorEnabled,
 }) => {
   const room = useRoomContext();
-  const { processor } = useDeepFilterProcessor();
+  // const processor = createDeepFilterProcessor();
   const micTrackRef = useRef<LocalAudioTrack | null>(null);
+  const processorRef = useRef<TrackProcessor<
+    Track.Kind.Audio,
+    AudioProcessorOptions
+  > | null>(null);
+  const processor = processorRef.current;
 
   useEffect(() => {
     if (!room) return;
@@ -23,12 +33,15 @@ export const LivekitVirtualMic: React.FC<LivekitVirtualMicProps> = ({
       if (micTrackRef.current || cancelled) return;
 
       const track = await createLocalAudioTrack({
+        channelCount: 1,
         echoCancellation: false,
         noiseSuppression: false,
         autoGainControl: true,
       });
 
       const audioContext = new AudioContext();
+      processorRef.current = processor;
+
       track.setAudioContext(audioContext);
 
       if (cancelled) {
@@ -39,6 +52,7 @@ export const LivekitVirtualMic: React.FC<LivekitVirtualMicProps> = ({
       if (processorEnabled && processor) {
         await track.setProcessor(processor);
       }
+
       await room.localParticipant.publishTrack(track);
       micTrackRef.current = track;
     };
@@ -63,7 +77,7 @@ export const LivekitVirtualMic: React.FC<LivekitVirtualMicProps> = ({
 
   useEffect(() => {
     const updateProcessor = async () => {
-      const track = micTrackRef.current;
+      const track: LocalAudioTrack | null = micTrackRef.current;
       if (!track) return;
 
       if (processorEnabled && processor) {

@@ -1,13 +1,8 @@
-import {
-  LiveKitRoom as LiveKitRoomBase,
-  RoomAudioRenderer,
-} from '@livekit/components-react';
+import { LiveKitRoom as LiveKitRoomBase } from '@livekit/components-react';
 import { useLiveKitTokenQuery } from '@entities/server/api';
 import { useEffect, useState } from 'react';
 import { LiveKitRoomLoading } from './LiveKitRoomLoading';
-// import { LiveKitRoomConsumer } from './LiveKitRoomConsumer';
 import { STREAM_PRESETS } from '@config/streaming';
-// import { useDeepFilterProcessor } from '@libs/deepFilterNet/useDeepFilterProcessor';
 import { LivekitVirtualMic } from './LivekitVirtualMic';
 import { useServerStore } from '@entities/server/model';
 import { LiveKitRoomAudioRenderer } from './LiveKitRoomAudioRenderer';
@@ -49,17 +44,19 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
   //   processor: processor ?? undefined,
   // };
 
-  if (
-    isLoadingServer ||
-    isLoadingLiveKitToken ||
-    !isReady
-  ) {
+  if (isLoadingServer || isLoadingLiveKitToken || !isReady) {
     return (
-      <button id="start-button" onClick={() => setIsReady(true)}>
-        Start
-      </button>
+      <>
+        <button
+          style={{ display: 'none' }}
+          id="start-button"
+          onClick={() => setIsReady(true)}
+        >
+          Start
+        </button>
+        <LiveKitRoomLoading />
+      </>
     );
-    return <LiveKitRoomLoading />;
   }
 
   return (
@@ -105,12 +102,13 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
           flexGrow: 1,
         }}
       >
-        <button
+        {/* <button
           style={{ fontSize: 20 }}
           onClick={() => setIsProcessorEnabled(!isProcessorEnabled)}
         >
           Toggle audio processor: {isProcessorEnabled ? 'ON' : 'OFF'}
-        </button>
+        </button> */}
+
         {isConnected ? children : <LiveKitRoomLoading />}
       </div>
     </LiveKitRoomBase>

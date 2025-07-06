@@ -1,4 +1,4 @@
-import { Box } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { StreamCard } from '../atoms/StreamCard';
 
 interface StreamStartCardProps {
@@ -21,7 +21,9 @@ export const StreamStartCard: React.FC<StreamStartCardProps> = ({
         }}
         onClick={onClick}
       >
-        + Start stream
+        <Typography variant="body1" color="new.foreground">
+          + Start stream
+        </Typography>
       </Box>
     </StreamCard>
   );

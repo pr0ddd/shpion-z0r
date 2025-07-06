@@ -1,1 +1,1 @@
-export * from './layouts/ServersLayout';
+export * from './templates/ServersTemplate';

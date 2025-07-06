@@ -3,20 +3,14 @@ import { useServersQuery } from '@entities/servers/api';
 import { Box } from '@mui/material';
 import { useMemo } from 'react';
 
-import { ServerMembers, MediaControlPanel } from '@entities/members/ui';
 import { LiveKitRoom } from '@components/LiveKitRoom/LiveKitRoom';
 import { StreamsTemplate } from '@entities/streams/ui';
 import { ChatMessages, ChatMessagesList } from '@entities/chat/ui';
+import { MediaControlPanel } from '../organisms/MediaControlPanel';
 
 export const ServerLayout: React.FC = () => {
   // const theme = useTheme();
   const { selectedServerId } = useServerStore();
-  const { data: servers } = useServersQuery();
-
-  const selectedServer = useMemo(() => {
-    if (!servers || !selectedServerId) return null;
-    return servers.find((s) => s.id === selectedServerId) || null;
-  }, [servers, selectedServerId]);
 
   return (
     <LiveKitRoom
@@ -43,8 +37,7 @@ export const ServerLayout: React.FC = () => {
             backgroundColor: '#2f3136',
           }}
         >
-          <ServerMembers serverId={selectedServerId!} />
-          <ChatMessages />
+
         </Box>
         <Box
           sx={{
@@ -54,7 +47,6 @@ export const ServerLayout: React.FC = () => {
             flexDirection: 'column',
           }}
         >
-          <StreamsTemplate />
 
           <Box
             sx={{

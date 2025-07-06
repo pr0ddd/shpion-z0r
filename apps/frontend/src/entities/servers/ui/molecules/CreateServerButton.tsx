@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { IconButton } from '../atoms/IconButton';
 import AddIcon from '@mui/icons-material/Add';
+import { IconButton } from '@ui/atoms/IconButton';
 import CreateServerDialog from '@entities/server/ui/organisms/CreateServerDialog';
 
 const CreateServerButton: React.FC = () => {
@@ -9,10 +9,9 @@ const CreateServerButton: React.FC = () => {
   return (
     <>
       <IconButton
-        tooltip="Создать сервер"
+        hasBorder={false}
         icon={<AddIcon />}
         onClick={() => setIsCreateDialogOpen(true)}
-        active={false}
       />
 
       <CreateServerDialog

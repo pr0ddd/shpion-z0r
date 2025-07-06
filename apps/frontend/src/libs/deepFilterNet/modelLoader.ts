@@ -56,7 +56,7 @@ class DeepFilterModelLoader {
 
   // Загружаем строго один архив; без GitHub-fallback и перебора путей.
   private async fetchModel(modelName: string): Promise<Uint8Array> {
-    const path = `/models/DeepFilterNet3_ll_onnx.tar.gz`;
+    const path = `/models/DeepFilterNet3_onnx.tar.gz`;
     console.log(`🎤 DF-DEBUG: загружаем модель по пути ${path}`);
 
     const resp = await fetch(path);

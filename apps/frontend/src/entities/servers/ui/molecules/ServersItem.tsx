@@ -1,5 +1,6 @@
+import { Box, Typography } from '@mui/material';
 import { Server } from '@shared/types';
-import { IconButton } from '../atoms/IconButton';
+import { IconButton } from '@ui/atoms/IconButton';
 
 interface ServersItemProps {
   /**
@@ -33,11 +34,15 @@ export const ServersItem: React.FC<ServersItemProps> = ({
 }) => {
   return (
     <IconButton
-      tooltip="Космическое пространство"
-      label={server.name.slice(0, 1)}
-      active={active}
+      hasBorder={false}
+      icon={
+        <Typography component="strong" variant="body1" sx={{ fontWeight: 600 }}>
+          {server.name.slice(0, 2)}
+        </Typography>
+      }
+      color={active ? 'primary' : 'accent'}
       onClick={() => onSelectServer(server)}
-      onContextMenu={(e: React.MouseEvent<HTMLDivElement>) => {
+      onContextMenu={(e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
         onSetMenuAnchor(e.currentTarget);
         onSetMenuServer(server);

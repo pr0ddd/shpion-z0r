@@ -74,14 +74,9 @@ export const ChatMessagesList: React.FC = () => {
     <Virtuoso<Message>
       ref={virtuosoRef}
       data={messages}
-      style={{ height: '100%' }}
       firstItemIndex={firstIndex}
       initialTopMostItemIndex={firstIndex + messages.length - 1}
-      itemContent={(_, msg) => (
-        <Box sx={{ px: 2, py: 1 }} key={msg.id}>
-          <ChatMessageItem message={msg} />
-        </Box>
-      )}
+      itemContent={(_, msg) => <ChatMessageItem key={msg.id} message={msg} />}
       startReached={loadMore}
       followOutput="auto"
       overscan={200}

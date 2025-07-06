@@ -1,8 +1,9 @@
 import { Box } from '@mui/material';
 import { StreamCard } from '../atoms/StreamCard';
 import { useEffect, useRef, useState } from 'react';
-import { TrackReference, useTracks } from '@livekit/components-react';
-import { Track } from 'livekit-client';
+import { TrackReference } from '@livekit/components-react';
+import { CircularProgress } from '@ui/atoms/CircularProgress';
+import { NoStreamPlaceholder } from '../atoms/NoStreamPlaceholder';
 
 interface StreamActiveProps {
   trackRef: TrackReference | null;
@@ -54,11 +55,17 @@ export const StreamActive: React.FC<StreamActiveProps> = ({ trackRef, tracks }) 
             />
           </Box>
         ) : (
-          <Box>
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            width: '100%',
+          }}>
             {isReady ? (
-              <Box>No stream selected</Box>
+              <NoStreamPlaceholder />
             ) : (
-              <Box>Loading...</Box>
+              <CircularProgress />
             )}
           </Box>
         )}
