@@ -9,6 +9,7 @@ type AccordionPanelProps = {
   expanded?: boolean;
   disabled?: boolean;
   showToggle?: boolean;
+  onToggle?: (isExpanded: boolean) => void;
   children: React.ReactNode;
 };
 
@@ -18,6 +19,7 @@ export const AccordionPanel: React.FC<AccordionPanelProps> = ({
   children,
   expanded = true,
   disabled = false,
+  onToggle,
 }) => {
   const [isExpanded, setIsExpanded] = useState(expanded);
 
@@ -25,7 +27,9 @@ export const AccordionPanel: React.FC<AccordionPanelProps> = ({
     e.preventDefault();
     e.stopPropagation();
 
-    setIsExpanded(!isExpanded);
+    const next = !isExpanded;
+    setIsExpanded(next);
+    onToggle?.(next);
   };
 
   return (
@@ -50,7 +54,7 @@ export const AccordionPanel: React.FC<AccordionPanelProps> = ({
           borderColor: 'new.border',
           gap: 1,
           paddingInline: 2,
-          paddingBlock: 1,
+
         }}
       >
         <Box
@@ -61,11 +65,11 @@ export const AccordionPanel: React.FC<AccordionPanelProps> = ({
             alignItems: 'flex-start',
           }}
         >
-          <Typography component="h6" variant="h6" color="new.foreground">
+          <Typography component="h4" variant="h4" color="new.foreground">
             {title}
           </Typography>
           {subtitle && (
-            <Typography component="span" color="new.mutedForeground">
+            <Typography component="h6" variant="h6" color="new.mutedForeground">
               {subtitle}
             </Typography>
           )}
@@ -76,7 +80,7 @@ export const AccordionPanel: React.FC<AccordionPanelProps> = ({
             hasBorder={false}
             component="div"
             icon={isExpanded ? <ExpandMore /> : <ExpandLess />}
-            color="transparent"
+            color="default"
             onClick={handleExpand}
           >
             {isExpanded ? <ExpandMore /> : <ExpandLess />}

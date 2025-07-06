@@ -7,11 +7,8 @@ import { useServerStore } from '@entities/server/model';
 import { MediaControlPanel } from '@entities/server';
 
 import { ServersTemplate } from '@entities/servers/ui';
-
-
 import { useServersQuery } from '@entities/servers/api';
 import { StreamsTemplate } from '@entities/streams/ui';
-import { ChatMessages } from '@entities/chat/ui';
 import { MembersTemplate } from '@entities/members/ui';
 import { Accordion } from '@ui/molecules/Accordion';
 import { AccordionPanel } from '@ui/molecules/AccordionPanel';
@@ -83,10 +80,6 @@ const ServerPage: React.FC = () => {
                   subtitle={`${members?.length} members`}
                 >
                   <MembersTemplate />
-                </AccordionPanel>
-
-                <AccordionPanel title="Chat">
-                  <ChatMessages />
                 </AccordionPanel>
               </Accordion>
             </Box>

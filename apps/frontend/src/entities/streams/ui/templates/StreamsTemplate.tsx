@@ -9,7 +9,7 @@ import { useSessionStore } from '@entities/session';
 
 export const StreamsTemplate: React.FC = () => {
   const user = useSessionStore(s => s.user);
-  const { shares, startNew, stopAll } = useScreenShare();
+  const { stopAll, startNew } = useScreenShare();
   const { streamTracks, screenShareTracks } = useStream();
 
   const [activeVideoTrackSid, setActiveVideoTrackSid] = useState<string | null>(
@@ -72,7 +72,15 @@ export const StreamsTemplate: React.FC = () => {
         onSelect={(stream) =>
           setActiveVideoTrackSid(stream.publication?.track?.sid ?? null)
         }
-        onStart={() => startNew(user?.id ?? 'unknown')}
+        onStartScreenShare={() => {
+          // TODO: Implement screen share functionality
+          console.log('Start screen share');
+          startNew(user?.id ?? 'unknown');
+        }}
+        onStartCamera={() => {
+          // TODO: Implement camera stream functionality
+          console.log('Start camera stream');
+        }}
         handleStopAll={stopAll}
       />
     </Box>
