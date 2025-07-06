@@ -10,6 +10,9 @@ router.get('/:serverId', catchAsync(MessageController.getMessages));
 // Send a message to a server
 router.post('/:serverId', catchAsync(MessageController.sendMessage));
 
+// Send a bot (LLM) message
+router.post('/:serverId/bot', catchAsync(MessageController.sendBotMessage));
+
 // Edit a message
 router.patch('/:messageId', catchAsync(MessageController.editMessage));
 

@@ -85,6 +85,11 @@ model Message {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // --- Replies ---
+  replyToId String? // ссылка на сообщение, на которое отвечаем
+  replyTo   Message? @relation("MessageReply", fields: [replyToId], references: [id])
+  replies   Message[] @relation("MessageReply")
+
   author User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
   server Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
 

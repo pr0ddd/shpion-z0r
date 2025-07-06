@@ -1,0 +1,129 @@
+import React from 'react';
+import { Box } from '@mui/material';
+import MicIcon from '@mui/icons-material/Mic';
+import MicOffIcon from '@mui/icons-material/MicOff';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import LogoutIcon from '@mui/icons-material/Logout';
+import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import VolumeOffIcon from '@mui/icons-material/VolumeOff';
+import SettingsIcon from '@mui/icons-material/Settings';
+import { useLocalParticipantMic } from '@entities/members/model/useLocalParticipantMic';
+import { useLocalParticipantVolume } from '@entities/members/model/useLocalParticipantVolume';
+import { useServerStore } from '@entities/server/model';
+import { Chip } from '@ui/atoms/Chip';
+import { IconButton } from '@ui/atoms/IconButton';
+import { ChatFloatingWindow, useChatWindowStore } from '@entities/chat';
+
+interface MediaControlPanelProps {}
+
+export const MediaControlPanel: React.FC<MediaControlPanelProps> = () => {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        backgroundColor: 'new.card',
+        borderTop: '1px solid',
+        borderColor: 'new.border',
+        padding: 1,
+        paddingLeft: 2,
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 1,
+          flex: 1,
+        }}
+      >
+        <Chip label="Connected" variant="filled" color="primary" />
+      </Box>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 1,
+        }}
+      >
+        <ChatButton />
+        <ToggleMicButton />
+        <ToggleVolumeButton />
+        <SettingsButton />
+        <LeaveButton />
+        <ChatFloatingWindow />
+      </Box>
+    </Box>
+  );
+};
+
+const ToggleMicButton: React.FC = () => {
+  const { isMicEnabled, toggleMicEnabled } = useLocalParticipantMic();
+
+  return (
+    <IconButton
+      hasBorder={true}
+      color={isMicEnabled ? 'default' : 'error'}
+      icon={isMicEnabled ? <MicIcon /> : <MicOffIcon />}
+      tooltip={isMicEnabled ? 'Выключить микрофон' : 'Включить микрофон'}
+      onClick={toggleMicEnabled}
+    />
+  );
+};
+
+const ToggleVolumeButton: React.FC = () => {
+  const { isVolumeEnabled, toggleVolumeEnabled } = useLocalParticipantVolume();
+
+  return (
+    <IconButton
+      hasBorder={true}
+      color={isVolumeEnabled ? 'default' : 'error'}
+      icon={isVolumeEnabled ? <VolumeUpIcon /> : <VolumeOffIcon />}
+      tooltip={isVolumeEnabled ? 'Выключить звук' : 'Включить звук'}
+      onClick={toggleVolumeEnabled}
+    />
+  );
+};
+
+export const SettingsButton: React.FC = () => {
+  return (
+    <IconButton
+      hasBorder={true}
+      color="default"
+      icon={<SettingsIcon />}
+      tooltip="Настройки"
+      onClick={() => {}}
+    />
+  );
+};
+
+export const LeaveButton: React.FC = () => {
+  const { setSelectedServerId } = useServerStore();
+
+  return (
+    <IconButton
+      hasBorder={true}
+      color="error"
+      icon={<LogoutIcon />}
+      tooltip="Выйти из комнаты"
+      onClick={() => setSelectedServerId(null)}
+    />
+  );
+};
+
+export const ChatButton: React.FC = () => {
+  const isOpen = useChatWindowStore((s) => s.isOpen);
+  const toggle = useChatWindowStore((s) => s.toggle);
+
+  return (
+    <IconButton
+      hasBorder={true}
+      color={isOpen ? 'primary' : 'default'}
+      icon={<ChatBubbleOutlineIcon />}
+      tooltip={isOpen ? 'Скрыть чат' : 'Показать чат'}
+      onClick={toggle}
+    />
+  );
+};

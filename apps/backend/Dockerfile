@@ -35,11 +35,12 @@ WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
-# Copy compiled code from builder
+# Application code and Prisma client
 COPY --from=builder /app/dist ./dist
-
-# Copy Prisma schema and client
 COPY --from=builder /app/prisma ./prisma
+
+# Copy production env so dotenv can load variables inside container
+COPY apps/backend/.env.production ./
 
 # Expose the application port
 EXPOSE 3001

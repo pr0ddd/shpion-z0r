@@ -44,6 +44,7 @@ export class InviteService {
           err instanceof Prisma.PrismaClientKnownRequestError &&
           err.code === 'P2002'
         ) {
+          console.log(err)
           throw new ApiError(400, 'You are already a member of this server');
         }
         throw err;
@@ -73,27 +74,5 @@ export class InviteService {
       icon: server.icon,
       memberCount: server._count.members,
     } as const;
-  }
-
-  /**
-   * Refresh the invite code for a server. Only the owner can do this.
-   */
-  static async refreshInviteCode(serverId: string, ownerId: string) {
-    // Verify ownership
-    const server = await prisma.server.findUnique({
-      where: { id: serverId, ownerId },
-      select: { id: true },
-    });
-    if (!server) {
-      throw new ApiError(403, 'You are not the owner of this server or server does not exist');
-    }
-
-    const updatedServer = await prisma.server.update({
-      where: { id: serverId },
-      data: { inviteCode: uuidv4() },
-      select: { inviteCode: true },
-    });
-
-    return updatedServer;
   }
 } 

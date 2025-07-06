@@ -148,3 +148,7 @@ web_modules/
 .github/instructions/nx.instructions.md
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
+
+# Allow DeepFilterNet model archives to be committed
+!apps/frontend/public/models/*.tar.gz
+!DeepFilterNet/models/*.tar.gz

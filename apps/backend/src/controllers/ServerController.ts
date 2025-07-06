@@ -175,7 +175,7 @@ export class ServerController {
   }
 
   // Обновить настройки сервера (owner only)
-  static async renameServer(req: AuthenticatedRequest, res: Response<ApiResponse>) {
+  static async updateServer(req: AuthenticatedRequest, res: Response<ApiResponse>) {
     const { serverId } = req.params;
     const { name, description, icon, sfuId } = req.body as {
       name?: string;
