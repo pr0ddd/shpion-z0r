@@ -1,14 +1,14 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
-import { Box } from '@mui/material';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 
 import { Message } from '@shared/types';
 import { useServerStore } from '@entities/server/model';
 
-import { useMessagesQuery } from '@entities/chat/api/messagse.query';
-import { useMessagesSocketSync } from '@entities/chat/model/useMessagesSocketSync';
-import { ChatMessageItem } from '@entities/chat/ui/molecules/ChatMessageItem';
+import { useMessagesQuery } from '../../api/messagse.query';
+import { useMessagesSocketSync } from '../../model/useMessagesSocketSync';
 import { ChatMessagesLoading } from '../molecules/ChatMessagesLoading';
+import { ChatMessageItem } from '../molecules/ChatMessageItem';
+
 
 export const ChatMessagesList: React.FC = () => {
   const serverId = useServerStore((s) => s.selectedServerId);

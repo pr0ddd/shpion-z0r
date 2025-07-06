@@ -24,7 +24,7 @@
       "@stores/*": ["src/stores/*"],
       "@entities/*": ["src/entities/*"],
       "@queries/*": ["src/queries/*"],
-      "@config/*": ["src/config/*"],
+      "@configs": ["src/config"],
       "@libs/*": ["src/libs/*"],
       "@ui/*": ["src/ui/*"]
     },

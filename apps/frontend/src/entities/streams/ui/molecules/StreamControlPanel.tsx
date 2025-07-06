@@ -1,8 +1,9 @@
-import { Box, Typography } from '@mui/material';
+import { Box, lighten, Typography, useTheme } from '@mui/material';
 import { StreamCard } from '../atoms/StreamCard';
 import MonitorIcon from '@mui/icons-material/Monitor';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import CallEndIcon from '@mui/icons-material/CallEnd';
+import DesktopAccessDisabledIcon from '@mui/icons-material/DesktopAccessDisabled';
 
 interface StreamControlPanelProps {
   onStartScreenShare: () => void;
@@ -15,12 +16,14 @@ export const StreamControlPanel: React.FC<StreamControlPanelProps> = ({
   onStartCamera,
   onStopAll,
 }) => {
+  const theme = useTheme();
+
   return (
     <StreamCard>
       <Box
         sx={{
-          height: '90px',
-          width: '160px',
+          height: '110px',
+          width: '190px',
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -29,7 +32,7 @@ export const StreamControlPanel: React.FC<StreamControlPanelProps> = ({
         <Box
           sx={{
             display: 'flex',
-            height: '60px',
+            height: '65px',
           }}
         >
           {/* Screen share button */}
@@ -55,11 +58,11 @@ export const StreamControlPanel: React.FC<StreamControlPanelProps> = ({
               },
             }}
           >
-            <MonitorIcon 
-              sx={{ 
-                fontSize: 16, 
+            <MonitorIcon
+              sx={{
+                fontSize: 16,
                 color: 'new.foreground',
-              }} 
+              }}
             />
             <Typography
               variant="caption"
@@ -96,11 +99,11 @@ export const StreamControlPanel: React.FC<StreamControlPanelProps> = ({
               },
             }}
           >
-            <VideocamIcon 
-              sx={{ 
-                fontSize: 16, 
+            <VideocamIcon
+              sx={{
+                fontSize: 16,
                 color: 'new.foreground',
-              }} 
+              }}
             />
             <Typography
               variant="caption"
@@ -122,8 +125,9 @@ export const StreamControlPanel: React.FC<StreamControlPanelProps> = ({
           component="button"
           onClick={onStopAll}
           sx={{
-            height: '30px',
-            backgroundColor: 'unset',
+            height: '45px',
+            backgroundColor: 'new.redLight',
+            color: 'new.foreground',
             border: 'none',
             cursor: 'pointer',
             display: 'flex',
@@ -131,28 +135,14 @@ export const StreamControlPanel: React.FC<StreamControlPanelProps> = ({
             justifyContent: 'center',
             gap: 0.5,
             '&:hover': {
-              backgroundColor: 'new.hover',
+              backgroundColor: lighten(theme.palette.new.redLight, 0.1),
             },
           }}
         >
-          <CallEndIcon 
-            sx={{ 
-              fontSize: 14, 
-              color: 'new.red',
-            }} 
-          />
-          <Typography
-            variant="caption"
-            sx={{
-              color: 'new.red',
-              fontSize: '0.65rem',
-              fontWeight: 500,
-            }}
-          >
-            Stop All
-          </Typography>
+          <DesktopAccessDisabledIcon sx={{ fontSize: 16 }} />
+          <Typography variant="caption">Stop All</Typography>
         </Box>
       </Box>
     </StreamCard>
   );
-}; 
+};

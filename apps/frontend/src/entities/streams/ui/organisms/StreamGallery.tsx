@@ -2,6 +2,8 @@ import { Box, Typography } from '@mui/material';
 import { StreamGalleryItem } from '../molecules/StreamGalleryItem';
 import { TrackReference } from '@livekit/components-react';
 import { StreamControlPanel } from '../molecules/StreamControlPanel';
+import { useSessionStore } from '@entities/session';
+import { useScreenShare } from '@entities/members/model/useScreenShare';
 
 interface StreamGalleryProps {
   tracks: TrackReference[];
@@ -17,6 +19,18 @@ export const StreamGallery: React.FC<StreamGalleryProps> = ({
   onStartCamera,
   handleStopAll,
 }) => {
+  const { stopShare } = useScreenShare();
+  const user = useSessionStore((s) => s.user);
+
+  const handleStop = (_: TrackReference) => {
+    // TODO: rework stopShare to stop by track sid
+    alert('TODO: stop share by track sid');
+    stopShare(0);
+  };
+  const handleOpenInWindow = () => {
+    alert('open in window');
+  };
+
   return (
     <Box
       sx={{
@@ -54,7 +68,6 @@ export const StreamGallery: React.FC<StreamGalleryProps> = ({
             sx={{
               color: 'new.mutedForeground',
               textAlign: 'center',
-              paddingRight: '160px', 
             }}
           >
             Нет активных трансляций
@@ -64,7 +77,10 @@ export const StreamGallery: React.FC<StreamGalleryProps> = ({
             <StreamGalleryItem
               key={track.publication.track?.sid}
               track={track}
+              isMe={track.participant.identity === user?.id}
               onSelect={onSelect}
+              onStopStream={handleStop}
+              onOpenInWindow={handleOpenInWindow}
             />
           ))
         )}

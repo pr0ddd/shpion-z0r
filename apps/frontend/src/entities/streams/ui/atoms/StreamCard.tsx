@@ -4,7 +4,10 @@ interface StreamCardProps {
   grow?: boolean;
   children: React.ReactNode;
 }
-export const StreamCard: React.FC<StreamCardProps> = ({ children, grow = false }) => {
+export const StreamCard: React.FC<StreamCardProps> = ({
+  children,
+  grow = false,
+}) => {
   return (
     <Box
       sx={{
@@ -13,8 +16,9 @@ export const StreamCard: React.FC<StreamCardProps> = ({ children, grow = false }
         borderColor: 'new.border',
         borderRadius: 1,
         overflow: 'hidden',
+        flexShrink: 0,
         ...(grow && {
-          width: '100%',
+          flex: 1,
         }),
       }}
     >

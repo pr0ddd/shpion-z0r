@@ -1,8 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Box, Typography, Popover, Slider } from '@mui/material';
-import { useChatWindowStore } from '@entities/chat/model/chatWindow.store';
-import { ChatMessages } from '@entities/chat/ui';
+import { ChatMessages, useChatWindowStore } from '@entities/chat';
 import { IconButton } from '@ui/atoms/IconButton';
 import { Close, Settings } from '@mui/icons-material';
 

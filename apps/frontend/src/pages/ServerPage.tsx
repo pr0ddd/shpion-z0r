@@ -48,41 +48,37 @@ const ServerPage: React.FC = () => {
           <Box
             sx={{
               display: 'flex',
+              flexDirection: 'column',
               flex: 1,
+              height: '100vh',
+              minWidth: 0,
             }}
           >
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                flex: 1,
-              }}
-            >
-              <StreamsTemplate />
-              <MediaControlPanel />
-            </Box>
+            <StreamsTemplate />
+            <MediaControlPanel />
+          </Box>
 
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                backgroundColor: 'new.card',
-                width: '384px',
-                borderLeft: '1px solid',
-                borderColor: 'new.border',
-                paddingTop: 1,
-              }}
-            >
-              <Accordion>
-                <AccordionPanel
-                  title="Users"
-                  disabled={true}
-                  subtitle={`${members?.length} members`}
-                >
-                  <MembersTemplate />
-                </AccordionPanel>
-              </Accordion>
-            </Box>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              backgroundColor: 'new.card',
+              width: '384px',
+              borderLeft: '1px solid',
+              borderColor: 'new.border',
+              paddingTop: 1,
+              flexShrink: 0,
+            }}
+          >
+            <Accordion>
+              <AccordionPanel
+                title="Users"
+                disabled={true}
+                subtitle={`${members?.length} members`}
+              >
+                <MembersTemplate />
+              </AccordionPanel>
+            </Accordion>
           </Box>
         </LiveKitRoom>
       ) : (

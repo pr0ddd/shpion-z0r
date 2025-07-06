@@ -1,19 +1,26 @@
-import { TrackReference, useTracks, useTrackToggle, useTrackVolume } from "@livekit/components-react";
-import { Track } from "livekit-client";
-import { useEffect, useState } from "react";
+import { TrackReference, useTracks } from '@livekit/components-react';
+import { Track } from 'livekit-client';
+import { useMemo } from 'react';
+
+const concatIds = (tracks: TrackReference[]) =>
+  tracks.map((t) => t.publication?.track?.sid).join('__');
 
 export const useStream = () => {
-  const streamTracks = useTracks([Track.Source.ScreenShare, Track.Source.ScreenShareAudio]);
-  const screenShareTracks = useTracks([Track.Source.ScreenShare]);
+  const tracks = useTracks([
+    Track.Source.ScreenShare,
+    Track.Source.ScreenShareAudio,
+  ]);
 
-  // TODO: refactor useScreenShare !!!!!
+  const streamTracksWithAudio = useMemo(() => {
+    return tracks;
+  }, [concatIds(tracks)]);
 
-  // useEffect(() => {
-  //   console.log(streamTracks)
-  // }, [streamTracks])
+  const streamTracks = useMemo(() => {
+    return tracks.filter((t) => t.source === Track.Source.ScreenShare);
+  }, [concatIds(tracks)]);
 
   return {
+    streamTracksWithAudio,
     streamTracks,
-    screenShareTracks,
-  }
+  };
 };

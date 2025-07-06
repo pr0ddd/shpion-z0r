@@ -13,8 +13,8 @@ export const StreamStartCard: React.FC<StreamStartCardProps> = ({
       <Box
         component="button"
         sx={{
-          height: '90px',
-          width: '160px',
+          height: '110px',
+          width: '190px',
           backgroundColor: 'unset',
           border: 'none',
           cursor: 'pointer',

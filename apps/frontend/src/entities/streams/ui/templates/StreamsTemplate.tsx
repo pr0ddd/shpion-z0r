@@ -2,15 +2,16 @@ import { Box } from '@mui/material';
 
 import { StreamActive } from '../organisms/StreamActive';
 import { StreamGallery } from '../organisms/StreamGallery';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useScreenShare } from '@entities/members/model/useScreenShare';
 import { useStream } from '@entities/streams/model/useStream';
 import { useSessionStore } from '@entities/session';
 
+
 export const StreamsTemplate: React.FC = () => {
   const user = useSessionStore(s => s.user);
   const { stopAll, startNew } = useScreenShare();
-  const { streamTracks, screenShareTracks } = useStream();
+  const { streamTracks, streamTracksWithAudio } = useStream();
 
   const [activeVideoTrackSid, setActiveVideoTrackSid] = useState<string | null>(
     null
@@ -34,12 +35,11 @@ export const StreamsTemplate: React.FC = () => {
     );
     const activeStreamName = activeVideoTrack?.publication?.trackInfo?.stream;
 
-    const mediaStreamTracks = streamTracks
+    const mediaStreamTracks = streamTracksWithAudio
       .filter((t) => t.publication?.trackInfo?.stream === activeStreamName)
       .map((t) => t.publication?.track?.mediaStreamTrack)
       .filter((t) => t !== undefined);
 
-    // console.log(mediaStreamTracks);
     setMediaStreamTracks(mediaStreamTracks);
 
     return (
@@ -49,13 +49,6 @@ export const StreamsTemplate: React.FC = () => {
     );
   }, [streamTracks, activeVideoTrackSid]);
 
-  useEffect(() => {
-    const stream = streamTracks[0];
-    if (stream) {
-      // console.log(stream.publication?.track);
-    }
-  }, [streamTracks]);
-
   return (
     <Box
       sx={{
@@ -64,19 +57,16 @@ export const StreamsTemplate: React.FC = () => {
         flexGrow: 1,
         gap: 2,
         padding: 2,
+        minHeight: 0,
       }}
     >
-      <StreamActive trackRef={activeTrack} tracks={mediaStreamTracks} />
+      <StreamActive tracks={mediaStreamTracks} />
       <StreamGallery
-        tracks={screenShareTracks}
+        tracks={streamTracks}
         onSelect={(stream) =>
           setActiveVideoTrackSid(stream.publication?.track?.sid ?? null)
         }
-        onStartScreenShare={() => {
-          // TODO: Implement screen share functionality
-          console.log('Start screen share');
-          startNew(user?.id ?? 'unknown');
-        }}
+        onStartScreenShare={() => startNew(user?.id ?? 'unknown')}
         onStartCamera={() => {
           // TODO: Implement camera stream functionality
           console.log('Start camera stream');

@@ -1,6 +1,6 @@
 import { LiveKitRoom as LiveKitRoomBase } from '@livekit/components-react';
 import { useEffect, useState } from 'react';
-import { STREAM_PRESETS } from '@config/streaming';
+import { STREAM_PRESETS, AUDIO_CAPTURE_DEFAULTS } from '@configs';
 
 import { useServerStore } from '@entities/server/model';
 
@@ -59,7 +59,9 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
     <LiveKitRoomBase
       style={{
         display: 'flex',
-        flexGrow: 1,
+        flex: 1,
+        minWidth: 0,
+        overflow: 'hidden',
       }}
       key={`shpion-${serverId}-${sfuId}`}
       token={livekitToken!}
@@ -70,13 +72,10 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
         adaptiveStream: true,
         dynacast: true,
         publishDefaults: STREAM_PRESETS['balanced'],
+        audioCaptureDefaults: AUDIO_CAPTURE_DEFAULTS,
       }}
-      onConnected={() => {
-        setIsConnected(true);
-      }}
-      onDisconnected={() => {
-        setIsConnected(false);
-      }}
+      onConnected={() => setIsConnected(true)}
+      onDisconnected={() => setIsConnected(false)}
       onError={(error) => {
         console.log('error', error);
       }}
@@ -86,16 +85,8 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
       <LiveKitRoomAudioRenderer />
       <LivekitVirtualMic processorEnabled={isProcessorEnabled} />
 
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 10,
-          flexGrow: 1,
-        }}
-      >
-        {isConnected ? children : <LiveKitRoomLoading />}
-      </div>
+      {isConnected ? children : <LiveKitRoomLoading />}
+
     </LiveKitRoomBase>
   );
 };

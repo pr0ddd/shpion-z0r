@@ -1,6 +1,3 @@
-/**
- * @deprecated use useMessagesSocketSync from @entities/chat/model/useMessagesSocketSync
- */
 import { useEffect } from 'react';
 import { useQueryClient, InfiniteData } from '@tanstack/react-query';
 import { Message } from '@shared/types';

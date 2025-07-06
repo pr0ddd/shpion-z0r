@@ -5,93 +5,33 @@ import {
   darken,
 } from '@mui/material/styles';
 
+type ShpionPalette = {
+  background: string;
+  sidebar: string;
+  sidebarAccent: string;
+  card: string;
+  border: string;
+  borderLight: string;
+  hover: string;
+  formField: string;
+  primary: string;
+  primaryForeground: string;
+  green: string;
+  red: string;
+  redLight: string;
+  muted: string;
+  mutedForeground: string;
+  foreground: string;
+  foregroundLight: string;
+};
+
 // Расширяем интерфейс PaletteOptions для TypeScript
 declare module '@mui/material/styles' {
   interface Palette {
-    new: {
-      background: string;
-      sidebar: string;
-      sidebarAccent: string;
-      card: string;
-      border: string;
-      borderLight: string;
-      hover: string;
-      formField: string;
-      primary: string;
-      primaryForeground: string;
-      green: string;
-      red: string;
-      muted: string;
-      mutedForeground: string;
-      foreground: string;
-      foregroundLight: string;
-    };
-    custom?: {
-      green?: string;
-      red?: string;
-      purple?: string;
-      yellow?: string;
-    };
-    chat?: {
-      myMessage?: string;
-      theirMessage?: string;
-      background?: string;
-      textPrimary?: string;
-      textSecondary?: string;
-      inputBackground?: string;
-      inputPlaceholder?: string;
-      border?: string;
-    };
-    sidebar?: {
-      background?: string;
-      border?: string;
-    };
-    border: {
-      main: string;
-    };
+    new: ShpionPalette;
   }
   interface PaletteOptions {
-    new: {
-      background: string;
-      sidebar: string;
-      sidebarAccent: string;
-      card: string;
-      border: string;
-      borderLight: string;
-      hover: string;
-      formField: string;
-      primary: string;
-      primaryForeground: string;
-      green: string;
-      red: string;
-      muted: string;
-      mutedForeground: string;
-      foreground: string;
-      foregroundLight: string;
-    };
-    custom?: {
-      green?: string;
-      red?: string;
-      purple?: string;
-      yellow?: string;
-    };
-    chat?: {
-      myMessage?: string;
-      theirMessage?: string;
-      background?: string;
-      textPrimary?: string;
-      textSecondary?: string;
-      inputBackground?: string;
-      inputPlaceholder?: string;
-      border?: string;
-    };
-    sidebar?: {
-      background?: string;
-      border?: string;
-    };
-    border: {
-      main: string;
-    };
+    new?: Partial<ShpionPalette>;
   }
 }
 
@@ -107,73 +47,15 @@ const themeOptions: ThemeOptions = {
       borderLight: 'hsl(220, 13%, 18%)',
       hover: 'hsl(220, 13%, 15%)',
       formField: '#1d2025',
-      primary: '#8852e0',
+      primary: '#8b5cd6',
       primaryForeground: 'hsl(210, 40%, 98%)',
       green: '#16a249',
       red: '#ef4343',
+      redLight: '#732626',
       muted: 'hsl(220, 13%, 13%)',
       mutedForeground: 'hsl(220, 13%, 55%)',
       foreground: 'hsl(220, 13%, 90%)',
       foregroundLight: 'hsl(215, 14%, 34%)',
-    },
-    primary: {
-      main: 'rgba(40, 81, 178, 0.84)', // Discord blurple
-      light: lighten('#5865F2', 0.2),
-      dark: '#4752c4',
-      contrastText: '#ffffff',
-    },
-    secondary: {
-      main: '#B9BBBE', // light grey for secondary text/icons
-    },
-    background: {
-      default: 'hsl(220, 13%, 7%)', // dark background
-      paper: '#2B2D31', // slightly lighter panels
-    },
-    text: {
-      primary: '#F2F3F5',
-      secondary: '#B8B9BF',
-    },
-    success: {
-      main: '#2DC770', // Яркий зеленый
-    },
-    error: {
-      main: '#ED4245', // Яркий красный
-    },
-    discord: {
-      sidebar: '#202225',
-      blurple: '#537A5A', // new primary
-      green: '#43b581',
-      grey: '#36393f',
-      members_bg: '#2f3136',
-      chat_bg: '#36393f',
-    },
-    custom: {
-      green: '#2DC770',
-      red: '#ED4245',
-      purple: '#B589D6',
-      yellow: '#FEE75C',
-    },
-    border: {
-      main: '#282c34',
-    },
-    chat: {
-      myMessage: '#005c4b',
-      theirMessage: '#2f3136',
-      background: '#36393f',
-      textPrimary: '#ffffff',
-      textSecondary: '#8e9297',
-      inputBackground: '#40444b',
-      inputPlaceholder: '#b9bbbe',
-      border: '#202225',
-    },
-    sidebar: {
-      background: '#2F3136',
-      border: 'rgba(255, 255, 255, 0.12)',
-    },
-    action: {
-      hover: '#40444B',
-      selected: '#5865F2',
-      selectedOpacity: 0.24,
     },
   },
   typography: {
@@ -247,9 +129,9 @@ const themeOptions: ThemeOptions = {
 
           '&.MuiIconButton-colorError': {
             color: theme.palette.new.primaryForeground,
-            backgroundColor: theme.palette.new.red,
+            backgroundColor: theme.palette.new.redLight,
             '&:hover': {
-              backgroundColor: lighten(theme.palette.new.red, 0.1),
+              backgroundColor: lighten(theme.palette.new.redLight, 0.1),
             },
           },
           '&.MuiIconButton-colorPrimary': {
@@ -361,43 +243,25 @@ const themeOptions: ThemeOptions = {
     },
     MuiChip: {
       styleOverrides: {
-        root: ({ ownerState, theme }) => {
-          let colors = {};
-          switch (ownerState.color) {
-            case 'primary':
-              colors = {
-                backgroundColor: theme.palette.new.primary,
-                color: theme.palette.new.primaryForeground,
-              };
-              break;
-
-            case 'default':
-              colors = {
-                backgroundColor: 'new.background',
-                color: 'new.foreground',
-              };
-              break;
-          }
-
+        root: ({ theme }) => {
           return {
-            ...colors,
-            height: 22,
+            height: 28,
             paddingLeft: 1,
             paddingRight: 1,
+            fontWeight: 600,
+            '&.MuiChip-colorPrimary': {
+              backgroundColor: theme.palette.new.primary,
+              color: theme.palette.new.primaryForeground,
+            },
+            '&.MuiChip-colorDefault': {
+              backgroundColor: theme.palette.new.background,
+              color: theme.palette.new.foreground,
+              border: `1px solid ${theme.palette.new.border}`,
+            },
           };
         },
       },
     },
-    // MuiTooltip: {
-    //   defaultProps: {
-    //     disableFocusListener: true,
-    //     disableHoverListener: true,
-    //     disableTouchListener: true,
-    //   },
-    //   styleOverrides: {
-    //     tooltip: { display: 'none' },
-    //   },
-    // },
     MuiCircularProgress: {
       styleOverrides: {
         root: ({ theme }) => ({
@@ -452,16 +316,6 @@ const themeOptions: ThemeOptions = {
       },
     },
   },
-};
-
-// Manually add the custom palette because createTheme strips unknown properties.
-(themeOptions.palette as any).discord = {
-  sidebar: '#202225',
-  blurple: '#40444b', // старое название поля, но цвет изменён
-  green: '#43b581',
-  grey: '#36393f',
-  members_bg: '#2f3136',
-  chat_bg: '#36393f',
 };
 
 export const theme = createTheme(themeOptions);
