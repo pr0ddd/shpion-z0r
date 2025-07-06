@@ -10,14 +10,16 @@ import {
   Alert,
 } from '@mui/material';
 import GroupIcon from '@mui/icons-material/Group';
-import { useAuth } from '@features/auth';
+import { useSessionStore } from '@entities/session';
 import { inviteAPI } from '@shared/data';
 import { PublicInviteInfo } from '@shared/types';
 
 const InvitePage: React.FC = () => {
+  const user = useSessionStore(s => s.user);
+  const authLoading = false // TODO;
+
   const { inviteCode } = useParams<{ inviteCode: string }>();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
 
   const [inviteInfo, setInviteInfo] = useState<PublicInviteInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -74,9 +76,7 @@ const InvitePage: React.FC = () => {
     try {
       const response = await inviteAPI.useInvite(inviteCode);
       if (response.success && response.data) {
-    
         // TODO: Set selected server
-
         navigate('/');
       } else {
         setError(response.error || 'Не удалось присоединиться к серверу.');

@@ -1,7 +1,8 @@
 export class ApiError extends Error {
     public statusCode: number;
 
-    constructor(statusCode: number, message: string) {
+    // TODO: fix any
+    constructor(statusCode: number, message: any) {
         super(message);
         this.statusCode = statusCode;
 

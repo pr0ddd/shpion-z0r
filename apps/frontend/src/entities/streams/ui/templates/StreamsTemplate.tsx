@@ -5,9 +5,11 @@ import { StreamGallery } from '../organisms/StreamGallery';
 import { useEffect, useMemo, useState } from 'react';
 import { useScreenShare } from '@entities/members/model/useScreenShare';
 import { useStream } from '@entities/streams/model/useStream';
+import { useSessionStore } from '@entities/session';
 
 export const StreamsTemplate: React.FC = () => {
-  const { stopAll } = useScreenShare();
+  const user = useSessionStore(s => s.user);
+  const { stopAll, startNew } = useScreenShare();
   const { streamTracks, screenShareTracks } = useStream();
 
   const [activeVideoTrackSid, setActiveVideoTrackSid] = useState<string | null>(
@@ -73,6 +75,7 @@ export const StreamsTemplate: React.FC = () => {
         onStartScreenShare={() => {
           // TODO: Implement screen share functionality
           console.log('Start screen share');
+          startNew(user?.id ?? 'unknown');
         }}
         onStartCamera={() => {
           // TODO: Implement camera stream functionality

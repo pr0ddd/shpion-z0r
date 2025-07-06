@@ -3,12 +3,16 @@
 // ----------------------------------------------
 
 // Generic API response structure
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-}
+export type ApiResponse<T = unknown, E = unknown> =
+  | {
+      success: true;
+      data: T;
+    }
+  | {
+      success: false;
+      error?: E;
+      errors?: E[];
+    };
 
 // User entity
 export interface User {
@@ -16,7 +20,7 @@ export interface User {
   email: string;
   username: string;
   avatar: string | null;
-  createdAt: string;
+  createdAt: Date;
 }
 
 // Member entity
@@ -73,6 +77,13 @@ export interface LoginResponseData {
   user: User;
   token: string;
 }
+export type LoginResponseError = string | {
+  type: 'field';
+  location: string;
+  msg: string;
+  path: string;
+  value: string;
+};
 
 // Invite responses
 export interface PublicInviteInfo {
@@ -109,7 +120,7 @@ export interface ClientToServerEvents {
   'server:leave': (serverId: string) => void;
   'message:send': (
     data: { serverId: string; content: string },
-    callback: (ack: { success: boolean }) => void,
+    callback: (ack: { success: boolean }) => void
   ) => void;
   'user:listening': (listening: boolean) => void;
   'preview:update': (sid: string, dataUrl: string) => void;
@@ -120,4 +131,4 @@ export interface SfuServer {
   id: string;
   name: string;
   url: string;
-} 
+}

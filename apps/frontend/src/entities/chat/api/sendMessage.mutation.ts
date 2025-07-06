@@ -1,11 +1,11 @@
-import { useSocket } from '@features/socket';
+import { useSocket } from '@libs/socket';
 import { Message } from '@shared/types';
 import {
   QueryClient,
   useQueryClient,
 } from '@tanstack/react-query';
 import { useRef } from 'react';
-import { useAuth } from '@features/auth';
+import { useSessionStore } from '@entities/session';
 import { createOptimisticMessage } from '../utils/createOptimisticMessage';
 import { updateMessagesCache } from './updateMessagesCache';
 
@@ -29,7 +29,7 @@ const patchMessageInCache = (
 };
 
 export const useSendMessageMutation = (serverId: string) => {
-  const { user } = useAuth();
+  const user = useSessionStore(s => s.user);
   const { socket } = useSocket();
   const queryClient = useQueryClient();
   const pendingTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(

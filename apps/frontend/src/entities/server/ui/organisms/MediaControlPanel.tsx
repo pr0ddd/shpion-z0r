@@ -12,7 +12,6 @@ import { useLocalParticipantVolume } from '@entities/members/model/useLocalParti
 import { useServerStore } from '@entities/server/model';
 import { Chip } from '@ui/atoms/Chip';
 import { IconButton } from '@ui/atoms/IconButton';
-import { useAuth } from '@features/auth';
 import { useChatWindowStore } from '@entities/chat/model/chatWindow.store';
 import { ChatFloatingWindow } from '@entities/chat/ui/ChatFloatingWindow';
 

@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useSyncExternalStore, useRef } from 'react';
-import { Room, LocalVideoTrack, LocalAudioTrack, Track, RoomEvent } from 'livekit-client';
+import {
+  Room,
+  LocalVideoTrack,
+  LocalAudioTrack,
+  Track,
+  RoomEvent,
+} from 'livekit-client';
 import { useRoomContext } from '@livekit/components-react';
-import { useServer } from '@features/servers';
 import { MAX_SHARES } from '@config/streaming';
+import { useServerStore } from '@entities/server/model';
 
 type ShareEntry = {
   room: Room;
@@ -50,14 +56,28 @@ class ScreenShareManager {
     // capture display media – request audio only if allowed, otherwise request silent capture
     let stream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: allowAudio });
+      stream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: allowAudio,
+      });
     } catch (err: any) {
-      if (allowAudio && (err?.name === 'NotAllowedError' || err?.name === 'NotFoundError' || err?.name === 'OverconstrainedError')) {
+      if (
+        allowAudio &&
+        (err?.name === 'NotAllowedError' ||
+          err?.name === 'NotFoundError' ||
+          err?.name === 'OverconstrainedError')
+      ) {
         // retry without audio so at least screen is shared
         try {
-          stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+          stream = await navigator.mediaDevices.getDisplayMedia({
+            video: true,
+            audio: false,
+          });
           // eslint-disable-next-line no-console
-          console.warn('[ScreenShare] Audio capture unavailable, sharing screen without sound:', err);
+          console.warn(
+            '[ScreenShare] Audio capture unavailable, sharing screen without sound:',
+            err
+          );
         } catch (err2) {
           console.error('[ScreenShare] User denied screen capture:', err2);
           throw err2;
@@ -70,7 +90,7 @@ class ScreenShareManager {
     const videoTrack = new LocalVideoTrack(stream.getVideoTracks()[0]);
     let audioTrack: LocalAudioTrack | undefined;
 
-    console.log({allowAudio})
+    console.log({ allowAudio });
     if (allowAudio && stream.getAudioTracks().length) {
       audioTrack = new LocalAudioTrack(stream.getAudioTracks()[0]);
     }
@@ -183,12 +203,18 @@ const manager = new ScreenShareManager();
 // --- React hook --------------------------------------------------------------------
 
 export const useScreenShare = () => {
-  const { selectedServer } = useServer();
+  const selectedServer = useServerStore((s) => s.selectedServerId);
   const room = useRoomContext();
 
-  const enabled = useSyncExternalStore(manager.subscribe.bind(manager), () => manager.isEnabled());
-  const sharesStr = useSyncExternalStore(manager.subscribe.bind(manager), () => manager.list().join('|'));
-  const shares = sharesStr ? sharesStr.split('|').filter(Boolean).map(Number) : [];
+  const enabled = useSyncExternalStore(manager.subscribe.bind(manager), () =>
+    manager.isEnabled()
+  );
+  const sharesStr = useSyncExternalStore(manager.subscribe.bind(manager), () =>
+    manager.list().join('|')
+  );
+  const shares = sharesStr
+    ? sharesStr.split('|').filter(Boolean).map(Number)
+    : [];
 
   const toggle = useCallback(() => {
     if (!selectedServer || !room) return;
@@ -199,10 +225,13 @@ export const useScreenShare = () => {
     }
   }, [selectedServer, room]);
 
-  const startNew = useCallback((userId: string) => {
-    if (!selectedServer || !room) return;
-    void manager.start(room, userId);
-  }, [selectedServer, room]);
+  const startNew = useCallback(
+    (userId: string) => {
+      if (!selectedServer || !room) return;
+      void manager.start(room, userId);
+    },
+    [selectedServer, room]
+  );
 
   const stopShare = useCallback((idx: number) => {
     manager.stop(idx);
@@ -239,5 +268,13 @@ export const useScreenShare = () => {
     };
   }, []);
 
-  return { toggle, enabled, shares, count: manager.count, startNew, stopShare, stopAll } as const;
-}; 
+  return {
+    toggle,
+    enabled,
+    shares,
+    count: manager.count,
+    startNew,
+    stopShare,
+    stopAll,
+  } as const;
+};

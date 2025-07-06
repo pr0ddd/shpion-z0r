@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { useQueryClient, InfiniteData } from '@tanstack/react-query';
 import { Message } from '@shared/types';
 
-import { useSocket } from '@features/socket';
+import { useSocket } from '@libs/socket';
 
 interface MessagesPage {
   messages: Message[];
