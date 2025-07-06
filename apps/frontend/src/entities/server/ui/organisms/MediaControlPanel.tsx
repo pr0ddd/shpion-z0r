@@ -16,7 +16,7 @@ import { useScreenShare } from '@entities/members/model/useScreenShare';
 import { useServerStore } from '@entities/server/model';
 import { Chip } from '@ui/atoms/Chip';
 import { IconButton } from '@ui/atoms/IconButton';
-import { useAuth } from '@features/auth';
+import { useSessionStore } from '@entities/session';
 
 interface MediaControlPanelProps {}
 
@@ -106,7 +106,7 @@ const ToggleCameraButton: React.FC = () => {
 };
 
 export const ToggleScreenShareButton: React.FC = () => {
-  const { user } = useAuth();
+  const user = useSessionStore(s => s.user);
   const { startNew } = useScreenShare();
 
   return (

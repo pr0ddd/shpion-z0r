@@ -5,10 +5,10 @@ import { StreamGallery } from '../organisms/StreamGallery';
 import { useEffect, useMemo, useState } from 'react';
 import { useScreenShare } from '@entities/members/model/useScreenShare';
 import { useStream } from '@entities/streams/model/useStream';
-import { useAuth } from '@features/auth';
+import { useSessionStore } from '@entities/session';
 
 export const StreamsTemplate: React.FC = () => {
-  const { user } = useAuth();
+  const user = useSessionStore(s => s.user);
   const { shares, startNew, stopAll } = useScreenShare();
   const { streamTracks, screenShareTracks } = useStream();
 

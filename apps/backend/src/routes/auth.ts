@@ -10,7 +10,8 @@ const router = Router();
 router.post('/register', authValidator.register, catchAsync(AuthController.register));
 
 // Вход
-router.post('/login', authValidator.login, catchAsync(AuthController.login));
+// TODO: fix any
+router.post('/login', authValidator.login, catchAsync(AuthController.login as any));
 
 // Получить информацию о пользователе (защищено)
 router.get('/me', authMiddleware, catchAsync(AuthController.me));

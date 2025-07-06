@@ -6,10 +6,10 @@ import {
   Typography,
   CircularProgress,
 } from '@mui/material';
-import { useAuth } from '@features/auth';
+import { useSessionStore } from '@entities/session';
 import { Message } from '@shared/types';
 import { Interweave } from 'interweave';
-import { dicebearAvatar } from '@shared/lib';
+import { dicebearAvatar } from '@libs/dicebearAvatar';
 import { ErrorOutline } from '@mui/icons-material';
 import { Avatar } from '@ui/atoms/Avatar';
 
@@ -20,7 +20,7 @@ interface ChatMessageProps {
 export const ChatMessageItem: React.FC<ChatMessageProps> = ({
   message,
 }: ChatMessageProps) => {
-  const { user } = useAuth();
+  const user = useSessionStore(s => s.user);
   const isMe = message.authorId === user?.id;
   const time = new Date(message.createdAt).toLocaleTimeString([], {
     hour: '2-digit',

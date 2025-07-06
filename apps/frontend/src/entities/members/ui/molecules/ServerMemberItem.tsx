@@ -1,5 +1,5 @@
 import { Box, Chip, Typography } from '@mui/material';
-import { dicebearAvatar } from '@shared/lib';
+import { dicebearAvatar } from '@libs/dicebearAvatar';
 import { Member } from '@shared/types';
 import MicOffIcon from '@mui/icons-material/MicOff';
 import HeadsetOffIcon from '@mui/icons-material/HeadsetOff';

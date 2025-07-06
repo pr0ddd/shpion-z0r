@@ -30,6 +30,9 @@
     "node_modules",
     "dist",
     "**/*.test.ts",
-    "../../shared/ui/**/*"
-  ]
+    "../../shared/ui/**/*",
+  ],
+  "paths": {
+    "@shared/*": ["../../shared/*"]
+  }
 } 
