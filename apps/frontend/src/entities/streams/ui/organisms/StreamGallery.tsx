@@ -4,6 +4,8 @@ import { TrackReference } from '@livekit/components-react';
 import { StreamControlPanel } from '../molecules/StreamControlPanel';
 import { useSessionStore } from '@entities/session';
 import { useScreenShare } from '@entities/members/model/useScreenShare';
+import { useRoomContext, useLocalParticipant } from '@livekit/components-react';
+import { Track } from 'livekit-client';
 
 interface StreamGalleryProps {
   tracks: TrackReference[];
@@ -19,13 +21,29 @@ export const StreamGallery: React.FC<StreamGalleryProps> = ({
   onStartCamera,
   handleStopAll,
 }) => {
-  const { stopShare } = useScreenShare();
+  const { stopShare, stopShareByTrackSid } = useScreenShare();
   const user = useSessionStore((s) => s.user);
+  const room = useRoomContext();
+  const { localParticipant } = useLocalParticipant();
 
-  const handleStop = (_: TrackReference) => {
-    // TODO: rework stopShare to stop by track sid
-    alert('TODO: stop share by track sid');
-    stopShare(0);
+  const handleStop = (trackRef: TrackReference) => {
+    const sid = trackRef.publication?.track?.sid;
+    if (!sid) return;
+
+    if (trackRef.source === Track.Source.ScreenShare) {
+      stopShareByTrackSid(sid);
+      return;
+    }
+
+    if (
+      trackRef.source === Track.Source.Camera &&
+      trackRef.participant.identity === localParticipant?.identity &&
+      trackRef.publication?.track
+    ) {
+      const track = trackRef.publication.track as any;
+      room?.localParticipant.unpublishTrack(track);
+      track.stop();
+    }
   };
   const handleOpenInWindow = () => {
     alert('open in window');

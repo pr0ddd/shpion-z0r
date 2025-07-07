@@ -46,7 +46,8 @@ export const StreamGalleryItem: React.FC<StreamGalleryItemProps> = ({
   const capturePreview = useCallback(async () => {
     const mediaTrack = track.publication?.track?.mediaStreamTrack;
     if (!mediaTrack || !canvasRef.current) return;
-
+    if (mediaTrack.readyState !== 'live') return;
+    // @ts-ignore - ImageCapture may be missing in TypeScript libs
     const ic = new ImageCapture(mediaTrack);
     const bitmap = await ic.grabFrame();
 

@@ -9,6 +9,8 @@ export const useStream = () => {
   const tracks = useTracks([
     Track.Source.ScreenShare,
     Track.Source.ScreenShareAudio,
+    Track.Source.Camera,
+    Track.Source.Microphone,
   ]);
 
   const streamTracksWithAudio = useMemo(() => {
@@ -16,7 +18,9 @@ export const useStream = () => {
   }, [concatIds(tracks)]);
 
   const streamTracks = useMemo(() => {
-    return tracks.filter((t) => t.source === Track.Source.ScreenShare);
+    return tracks.filter(
+      (t) => t.source === Track.Source.ScreenShare || t.source === Track.Source.Camera
+    );
   }, [concatIds(tracks)]);
 
   return {

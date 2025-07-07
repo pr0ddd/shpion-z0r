@@ -36,5 +36,5 @@ export const useChatMessagesForm = (serverId: string) => {
     setText('');
   };
 
-  return { text, setText, inputRef, handleSubmit, handleKeyDown };
+  return { text, setText, inputRef, handleSubmit, handleKeyDown, doSend };
 };

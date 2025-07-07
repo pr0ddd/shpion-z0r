@@ -1,4 +1,5 @@
 import { Box } from '@mui/material';
+import { Track } from 'livekit-client';
 
 import { StreamActive } from '../organisms/StreamActive';
 import { StreamGallery } from '../organisms/StreamGallery';
@@ -6,11 +7,16 @@ import { useMemo, useState } from 'react';
 import { useScreenShare } from '@entities/members/model/useScreenShare';
 import { useStream } from '@entities/streams/model/useStream';
 import { useSessionStore } from '@entities/session';
+import { useLocalParticipantCamera } from '@entities/members/model/useLocalParticipantCamera';
+import { useLocalParticipant, useRoomContext } from '@livekit/components-react';
 
 
 export const StreamsTemplate: React.FC = () => {
   const user = useSessionStore(s => s.user);
-  const { stopAll, startNew } = useScreenShare();
+  const { stopAll: stopAllScreenShare, startNew } = useScreenShare();
+  const { toggleCameraEnabled, isCameraEnabled } = useLocalParticipantCamera();
+  const { localParticipant } = useLocalParticipant();
+  const room = useRoomContext();
   const { streamTracks, streamTracksWithAudio } = useStream();
 
   const [activeVideoTrackSid, setActiveVideoTrackSid] = useState<string | null>(
@@ -49,6 +55,25 @@ export const StreamsTemplate: React.FC = () => {
     );
   }, [streamTracks, activeVideoTrackSid]);
 
+  const handleStopAll = () => {
+    stopAllScreenShare();
+
+    // Unpublish all local camera video tracks to remove them from gallery immediately
+    if (localParticipant) {
+      localParticipant.trackPublications.forEach((pub) => {
+        if (pub.source === Track.Source.Camera && pub.track) {
+          room?.localParticipant.unpublishTrack(pub.track);
+          pub.track.stop();
+        }
+      });
+    }
+
+    // Ensure camera flag off
+    if (isCameraEnabled) {
+      toggleCameraEnabled();
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -68,10 +93,11 @@ export const StreamsTemplate: React.FC = () => {
         }
         onStartScreenShare={() => startNew(user?.id ?? 'unknown')}
         onStartCamera={() => {
-          // TODO: Implement camera stream functionality
-          console.log('Start camera stream');
+          if (!isCameraEnabled) {
+            toggleCameraEnabled();
+          }
         }}
-        handleStopAll={stopAll}
+        handleStopAll={handleStopAll}
       />
     </Box>
   );
