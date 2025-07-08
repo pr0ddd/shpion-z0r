@@ -12,13 +12,21 @@ import { Message } from '@shared/types';
 import { createPortal } from 'react-dom';
 import Avatar from '@mui/material/Avatar';
 import { dicebearAvatar } from '@libs/dicebearAvatar';
+import { useChatWindowStore } from '@entities/chat/model/chatWindow.store';
+import ReactDOM from 'react-dom/client';
+import ArticleIcon from '@mui/icons-material/Article';
+import { Button } from '@mui/material';
 
 interface StreamActiveProps {
   tracks: MediaStreamTrack[];
+  /** Callback invoked when user wants to exit stream watching */
+  onExit?: () => void;
 }
 
 export const StreamActive = memo(
-  ({ tracks }: StreamActiveProps) => <StreamActiveInner tracks={tracks} />,
+  ({ tracks, onExit }: StreamActiveProps) => (
+    <StreamActiveInner tracks={tracks} onExit={onExit} />
+  ),
   (prevProps, nextProps) => {
     const concatIds = (tracks: MediaStreamTrack[]) =>
       tracks.map((t) => t.id).join('__');
@@ -50,9 +58,10 @@ const linkify = (text: string): React.ReactNode[] => {
 };
 
 export const StreamActiveInner: React.FC<StreamActiveProps> = memo(
-  ({ tracks }) => {
-    const [isReady, setIsReady] = useState(true);
+  ({ tracks, onExit }) => {
+    const [isReady, setIsReady] = useState(false);
     const [overlayMessages, setOverlayMessages] = useState<Message[]>([]);
+    const [controlsVisible, setControlsVisible] = useState(true);
     const playerRef = useRef<ReturnType<typeof videojs> | null>(null);
     const videoContainerRef = useRef<HTMLDivElement | null>(null);
     const [isFs, setIsFs] = useState(false);
@@ -102,14 +111,12 @@ export const StreamActiveInner: React.FC<StreamActiveProps> = memo(
       videoElement.style.height = '100%';
       videoContainerRef.current.appendChild(videoElement);
 
+      // Standard videojs options - remove custom overrides
       const videoJsOptions = {
-        autoplay: true,
         controls: true,
-        fill: true,
-        fluid: false,
-        bigPlayButton: false,
         controlBar: {
           playToggle: false,
+          liveDisplay: false,
         },
         userActions: {
           click: false,
@@ -248,9 +255,91 @@ export const StreamActiveInner: React.FC<StreamActiveProps> = memo(
       );
     }, [overlayMessages, isFs]);
 
+    // Register custom chat button component once
+    useEffect(() => {
+      if (!playerRef.current) return;
+
+      const Component = videojs.getComponent('ChatToggleButton');
+      if (!Component) {
+        // Define new component extending Button
+        const Button = videojs.getComponent('Button');
+        const ChatToggleButton = class extends Button {
+          constructor(player: any, options: any) {
+            super(player, options);
+            (this as any).controlText && (this as any).controlText('Chat');
+            this.addClass('vjs-chat-toggle-control');
+
+            // Render MUI icon into button element using ReactDOM
+            const iconContainer = document.createElement('span');
+            iconContainer.className = 'vjs-chat-icon';
+            this.el().appendChild(iconContainer);
+
+            const root = ReactDOM.createRoot(iconContainer);
+            root.render(<ArticleIcon />);
+          }
+
+          handleClick() {
+            // Toggle chat window via store
+            useChatWindowStore.getState().toggle();
+          }
+        };
+
+        videojs.registerComponent('ChatToggleButton', ChatToggleButton as any);
+      }
+
+      // Add to control bar if not yet
+      const controlBar = playerRef.current.getChild('controlBar');
+      if (controlBar && !controlBar.getChild('ChatToggleButton')) {
+        // Insert before fullscreen toggle (if present), else at end
+        const fsToggle = controlBar.getChild('fullscreenToggle');
+        const insertIndex = fsToggle ? controlBar.children().indexOf(fsToggle) : controlBar.children().length;
+        controlBar.addChild('ChatToggleButton', {}, insertIndex);
+      }
+    }, [playerRef.current]);
+
+    // Sync custom overlay visibility with Video.js control bar visibility
+    useEffect(() => {
+      if (!playerRef.current) return;
+      const player = playerRef.current;
+
+      const show = () => setControlsVisible(true);
+      const hide = () => setControlsVisible(false);
+
+      player.on('useractive', show);
+      player.on('userinactive', hide);
+
+      return () => {
+        player.off('useractive', show);
+        player.off('userinactive', hide);
+      };
+    }, []);
+
     return (
       <StreamCard grow>
         <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+          {/* Exit / Close button overlay */}
+          {tracks.length > 0 && controlsVisible && (
+            <Button
+              variant="contained"
+              color="error"
+              onClick={onExit}
+              sx={{
+                position: 'absolute',
+                top: 8,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 2147483648,
+                textTransform: 'none',
+                fontSize: '0.75rem',
+                padding: '6px 12px',
+                backgroundColor: 'rgba(212, 35, 35, 0.6)',
+                '&:hover': { backgroundColor: 'rgba(248, 12, 12, 0.8)' },
+              }}
+            >
+              Прекратить просмотр
+            </Button>
+          )}
+
           {/* Video.js player container */}
           <Box
             ref={videoContainerRef}

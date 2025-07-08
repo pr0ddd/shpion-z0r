@@ -10,6 +10,8 @@ import { PREVIEW_CAPTURE_INTERVAL } from '@configs';
 interface StreamGalleryItemProps {
   track: TrackReference;
   isMe: boolean;
+  /** Whether this stream item is currently selected */
+  isActive: boolean;
   onSelect: (track: TrackReference) => void;
   onStopStream: (track: TrackReference) => void;
   onOpenInWindow: (track: TrackReference) => void;
@@ -18,6 +20,7 @@ interface StreamGalleryItemProps {
 export const StreamGalleryItem: React.FC<StreamGalleryItemProps> = ({
   track,
   isMe,
+  isActive,
   onSelect,
   onStopStream,
   onOpenInWindow,
@@ -26,6 +29,16 @@ export const StreamGalleryItem: React.FC<StreamGalleryItemProps> = ({
   const capturePreviewIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    // If this stream is active, skip capturing preview
+    if (isActive) {
+      // Clear any existing interval if became active
+      if (capturePreviewIntervalRef.current) {
+        clearInterval(capturePreviewIntervalRef.current);
+        capturePreviewIntervalRef.current = null;
+      }
+      return;
+    }
+
     if (!canvasRef.current) {
       return;
     }
@@ -41,7 +54,7 @@ export const StreamGalleryItem: React.FC<StreamGalleryItemProps> = ({
         clearInterval(capturePreviewIntervalRef.current);
       }
     };
-  }, [canvasRef]);
+  }, [canvasRef, isActive]);
 
   const capturePreview = useCallback(async () => {
     const mediaTrack = track.publication?.track?.mediaStreamTrack;
@@ -72,17 +85,35 @@ export const StreamGalleryItem: React.FC<StreamGalleryItemProps> = ({
         }}
         onClick={() => onSelect(track)}
       >
-        {/* Preview canvas */}
-        <Box
-          component="canvas"
-          ref={canvasRef}
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-          }}
-        />
+        {/* Preview canvas or active placeholder */}
+        {isActive ? (
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'new.mutedForeground',
+              fontWeight: 'bold',
+              fontSize: '0.9rem',
+              textTransform: 'uppercase',
+            }}
+          >
+            watching now
+          </Box>
+        ) : (
+          <Box
+            component="canvas"
+            ref={canvasRef}
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+            }}
+          />
+        )}
 
         {/* Select button */}
         <Box

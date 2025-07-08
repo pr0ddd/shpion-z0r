@@ -13,6 +13,8 @@ interface StreamGalleryProps {
   onStartScreenShare: () => void;
   onStartCamera: () => void;
   handleStopAll: () => void;
+  /** SID of currently active (selected) video track */
+  activeSid: string | null;
 }
 export const StreamGallery: React.FC<StreamGalleryProps> = ({
   tracks,
@@ -20,6 +22,7 @@ export const StreamGallery: React.FC<StreamGalleryProps> = ({
   onStartScreenShare,
   onStartCamera,
   handleStopAll,
+  activeSid,
 }) => {
   const { stopShare, stopShareByTrackSid } = useScreenShare();
   const user = useSessionStore((s) => s.user);
@@ -96,6 +99,7 @@ export const StreamGallery: React.FC<StreamGalleryProps> = ({
               key={track.publication.track?.sid}
               track={track}
               isMe={track.participant.identity === user?.id}
+              isActive={track.publication.track?.sid === activeSid}
               onSelect={onSelect}
               onStopStream={handleStop}
               onOpenInWindow={handleOpenInWindow}
