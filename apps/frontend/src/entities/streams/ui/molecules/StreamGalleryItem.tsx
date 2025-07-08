@@ -4,6 +4,7 @@ import { StreamCard } from '../atoms/StreamCard';
 import { TrackReference } from '@livekit/components-react';
 import { IconButton } from '@ui/atoms/IconButton';
 import { Chip } from '@ui/atoms/Chip';
+import CastIcon from '@mui/icons-material/Cast';
 import { useEffect, useRef, useCallback } from 'react';
 import { PREVIEW_CAPTURE_INTERVAL } from '@configs';
 
@@ -82,6 +83,16 @@ export const StreamGalleryItem: React.FC<StreamGalleryItemProps> = ({
           height: '110px',
           width: '190px',
           position: 'relative',
+          // Hide action buttons until hover
+          '& .stream-action-btn': {
+            opacity: 0,
+            pointerEvents: 'none',
+            transition: 'opacity .2s',
+          },
+          '&:hover .stream-action-btn': {
+            opacity: 1,
+            pointerEvents: 'auto',
+          },
         }}
         onClick={() => onSelect(track)}
       >
@@ -151,11 +162,12 @@ export const StreamGalleryItem: React.FC<StreamGalleryItemProps> = ({
             }}
           >
             {isMe ? (
-              <Chip label="you" color="primary" />
+              <CastIcon fontSize="small" color="primary" />
             ) : (
               <Chip label={track.participant.name ?? 'unknown'} />
             )}
             <IconButton
+              className="stream-action-btn"
               icon={<DesktopAccessDisabled />}
               size="small"
               color="error"
@@ -173,6 +185,7 @@ export const StreamGalleryItem: React.FC<StreamGalleryItemProps> = ({
             }}
           >
             <IconButton
+              className="stream-action-btn"
               icon={<OpenInNew />}
               size="small"
               color="default"
