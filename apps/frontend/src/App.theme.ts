@@ -78,7 +78,7 @@ const themeOptions: ThemeOptions = {
       fontSize: 14,
     },
     body2: {
-      fontSize: 12,
+      fontSize: '0.875rem',
     },
   },
   shape: {

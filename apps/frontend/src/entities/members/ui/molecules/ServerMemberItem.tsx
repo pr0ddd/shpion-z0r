@@ -55,11 +55,12 @@ export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
       }}
     >
       {/* Avatar with streaming indicator */}
-      <Box sx={{ position: 'relative' }}>
+      <Box sx={{ position: 'relative'}}>
         <Avatar
           src={member?.user.avatar || dicebearAvatar(participant?.identity || '')}
           borderColor={isSpeaking ? 'new.green' : 'new.border'}
           borderWidth={isSpeaking ? 3 : 1}
+          sx={{ width: 32, height: 32 }}
         />
         {isStreaming && (
           <Box
