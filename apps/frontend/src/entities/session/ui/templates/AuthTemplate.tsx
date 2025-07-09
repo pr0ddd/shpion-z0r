@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Typography, Button, Paper } from '@mui/material';
 import { Link, Outlet } from 'react-router-dom';
+import Logo3D from '@ui/atoms/Logo3D';
 
 interface AuthTemplateProps {
   isLoginMode: boolean;
@@ -24,16 +25,16 @@ export const AuthTemplate: React.FC<AuthTemplateProps> = ({ isLoginMode }) => {
         elevation={0}
         sx={{
           textAlign: 'center',
-          mb: 4,
+          mb: 0,
           bgcolor: 'transparent',
         }}
       >
-        <Typography variant="h2" component="h1" gutterBottom>
-          🎮 Shpion
-        </Typography>
-        <Typography variant="h6" color="text.secondary">
-          Голосовой чат для геймеров
-        </Typography>
+        <Box display="flex" alignItems="center" justifyContent="center" gap={2}>
+        <Logo3D />
+          <Typography variant="h2" component="h1" gutterBottom display="inline" mb={0}>
+            Shpion
+          </Typography>
+        </Box>
       </Paper>
 
       <Outlet />

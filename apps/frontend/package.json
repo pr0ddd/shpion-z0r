@@ -21,6 +21,9 @@
     "socket.io-client": "^4.8.1",
     "react-virtuoso": "^4.5.0",
     "typescript": "^5.8.3",
+    "three": "^0.160.0",
+    "@react-three/fiber": "^8.15.18",
+    "@react-three/drei": "^9.86.14",
     "web-vitals": "^5.0.2"
   },
   "scripts": {
