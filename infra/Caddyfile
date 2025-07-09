@@ -1,0 +1,48 @@
+# Global Caddy options (optional)
+{
+    # E-mail for ACME registration / certificate renewal alerts
+    email admin@pr0d.ru
+    # Uncomment for verbose logs during debugging
+    # debug
+}
+
+# Snippet with directives shared across sites
+(common) {
+    encode zstd gzip
+    log {
+        output stdout
+        format console
+    }
+}
+
+# ────────────────────────────────────────────────
+#  Main site – SPA frontend + API + LiveKit
+#  Domain comes from frontend `.env.production`:
+#    VITE_API_URL=https://shpion.pr0d.ru
+#    VITE_LIVEKIT_URL=wss://shpion.pr0d.ru/livekit
+#  ────────────────────────────────────────────────
+shpion.pr0d.ru, www.pr0d.ru {
+    import common
+
+    # --- Backend API (Express + Socket.io) ---
+    # All paths that start with /api/ → backend container (port 3001).
+    @api path /api/*
+    handle_path @api {
+        reverse_proxy backend:3001
+    }
+
+    # --- LiveKit signalling ---
+    # Client connects to wss://<host>/livekit (set in Vite env)
+    # Strip the /livekit prefix and proxy to the LiveKit server.
+    # If LiveKit runs in a container, replace 10.10.3.1 with `livekit:7880`.
+    @livekit path /livekit/*
+    handle_path @livekit {
+        reverse_proxy localhost:7880
+    }
+
+    # --- Frontend SPA ---
+    # Everything else goes to the Vite-built React app served by Nginx (port 8080).
+    handle {
+        reverse_proxy frontend:8080
+    }
+} 
