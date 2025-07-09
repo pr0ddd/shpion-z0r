@@ -49,7 +49,7 @@ shpion.pr0d.ru, www.pr0d.ru {
 eu-shpion.pr0d.ru {
     import common
 
-    reverse_proxy localhost:7880
+    reverse_proxy host.docker.internal:7880
 
     # CORS header for JS SDK validate fetches
     header Access-Control-Allow-Origin "https://shpion.pr0d.ru"

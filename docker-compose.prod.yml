@@ -46,6 +46,8 @@ services:
       - "443:443"
     networks:
       - shpion-net
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   db:
     image: postgres:15-alpine
