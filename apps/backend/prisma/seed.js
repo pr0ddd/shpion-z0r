@@ -4,9 +4,8 @@ const prisma = new PrismaClient();
 
 async function main() {
   const presets = [
-    { id: 'def', name: 'Frankfurt (fast)', url: 'wss://de-shpion.pr0d.ru/' },
-    { id: 'local', name: 'Belarus (slow)', url: 'wss://by-shpion.pr0d.ru/' },
-    { id: 'eu', name: 'Central Europe (fast)', url: 'wss://eu-shpion.pr0d.ru/' },
+    { id: 'de', name: 'Germany (Frankfurt)', url: 'wss://de-shpion.pr0d.ru/' },
+    { id: 'eu', name: 'Local (EU)', url: 'wss://eu-shpion.pr0d.ru/' },
   ];
 
   await Promise.all(
