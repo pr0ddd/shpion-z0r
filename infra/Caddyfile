@@ -25,18 +25,12 @@ shpion.pr0d.ru, www.pr0d.ru {
     import common
 
     # --- Backend API (Express + Socket.io) ---
-    # All paths that start with /api/ → backend container (port 3001).
     @api path /api/*
-    handle_path @api {
-        reverse_proxy backend:3001
-    }
+    reverse_proxy @api backend:3001
 
     # --- LiveKit signalling ---
-    # Client connects to wss://<host>/livekit (set in Vite env)
-    # Strip the /livekit prefix and proxy to the LiveKit server.
-    # If LiveKit runs in a container, replace 10.10.3.1 with `livekit:7880`.
-    @livekit path /livekit/*
-    handle_path @livekit {
+    # Strip /livekit prefix automatically to match LK root path
+    handle_path /livekit/* {
         reverse_proxy localhost:7880
     }
 
