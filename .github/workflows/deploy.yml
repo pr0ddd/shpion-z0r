@@ -3,7 +3,7 @@ name: CI/CD Deploy
 on:
   push:
     branches:
-      - staging
+      - videojs
 
 # Shared environment variables
 env:
