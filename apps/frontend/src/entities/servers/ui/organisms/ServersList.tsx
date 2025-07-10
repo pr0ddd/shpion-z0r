@@ -43,7 +43,10 @@ const ServersList: React.FC = () => {
       <ServerItemContextMenu
         open={Boolean(menuTarget)}
         anchorEl={menuTarget}
-        onClose={() => setMenuTarget(null)}
+        onClose={() => {
+          setMenuTarget(null);
+          setMenuServer(null);
+        }}
         onInvite={() => {
           setMenuTarget(null);
           setShowInviteDialog(true);

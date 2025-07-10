@@ -1,8 +1,7 @@
 import { authAPI } from '@shared/data';
 import { LoginResponseData, LoginResponseError } from '@shared/types';
 import { useMutation } from '@tanstack/react-query';
-import { useSessionStore } from '../model/auth.store';
-import { useNavigate } from 'react-router-dom';
+import { useAuthHandlers } from '../model/useAuthHandlers';
 
 interface LoginDto {
   email: string;
@@ -23,9 +22,7 @@ const login = async ({
 };
 
 export const useLoginMutation = () => {
-  const navigate = useNavigate();
-  const setUser = useSessionStore((s) => s.setUser);
-  const setToken = useSessionStore((s) => s.setToken);
+  const { handleLoginSuccess } = useAuthHandlers();
 
   const { mutate, isPending, error } = useMutation<
     LoginResponseData,
@@ -34,12 +31,7 @@ export const useLoginMutation = () => {
     unknown
   >({
     mutationFn: login,
-    onSuccess: (data) => {
-      // TODO: clear local storage
-      setUser(data.user);
-      setToken(data.token);
-      navigate('/');
-    },
+    onSuccess: (data) => handleLoginSuccess(data),
     onError: (error: any) => {
       console.error(error);
     },

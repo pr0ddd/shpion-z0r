@@ -1,9 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { authAPI } from '@shared/data';
-import type { QueryFunctionContext } from '@tanstack/react-query';
+import { QueryFunctionContext } from '@tanstack/react-query';
 import { useSessionStore } from '../model/auth.store';
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 const fetchUser = async (_: QueryFunctionContext) => {
   const res = await authAPI.me();
@@ -12,31 +11,32 @@ const fetchUser = async (_: QueryFunctionContext) => {
 };
 
 export const useUserQuery = () => {
-  const navigate = useNavigate();
+  const token = useSessionStore((s) => s.token);
   const currentUser = useSessionStore((s) => s.user);
   const setUser = useSessionStore((s) => s.setUser);
+  const clearSession = useSessionStore((s) => s.clearSession);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isError, isFetching, status } = useQuery({
     queryKey: ['user'],
     queryFn: fetchUser,
+    retry: false,
+    enabled: !!token && !currentUser,
   });
 
   useEffect(() => {
-    if (data && data.id !== currentUser?.id) {
+    if (status === 'success' && data) {
       setUser(data);
-      navigate('/');
     }
-  }, [currentUser, data, setUser]);
+  }, [status, data]);
 
   useEffect(() => {
-    if (error) {
-      navigate('/login');
+    if (isError) {
+      clearSession();
     }
-  }, [error]);
+  }, [isError]);
 
   return {
     data,
-    isLoading,
-    error,
+    isFetching,
   };
 };

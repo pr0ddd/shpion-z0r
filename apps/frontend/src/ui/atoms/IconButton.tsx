@@ -22,7 +22,6 @@ export const IconButton: React.FC<IconButtonProps> = ({
   ...props
 }) => {
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
     e.stopPropagation();
     onClick?.(e);
   };

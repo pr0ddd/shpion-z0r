@@ -1,13 +1,17 @@
-import { Box, Chip, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { dicebearAvatar } from '@libs/dicebearAvatar';
 import { Member } from '@shared/types';
+import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
-import HeadsetOffIcon from '@mui/icons-material/HeadsetOff';
+import VideocamIcon from '@mui/icons-material/Videocam';
+import VideocamOffIcon from '@mui/icons-material/VideocamOff';
+import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import VolumeOffIcon from '@mui/icons-material/VolumeOff';
+import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { Avatar } from '@ui/atoms/Avatar';
 
 import { LocalParticipant, RemoteParticipant, Track } from 'livekit-client';
 import {
-  TrackReference,
   useIsMuted,
   useIsSpeaking,
 } from '@livekit/components-react';
@@ -16,70 +20,118 @@ import { useParticipantMetadata } from '@entities/members/model/useLocalParticip
 interface ServerMemberItemProps {
   member: Member | undefined;
   participant: LocalParticipant | RemoteParticipant;
-  streamTrack: TrackReference | undefined; // TODO: use metadata to get isStreaming
+  cameraCount: number; // number of active camera video tracks
+  totalStreamCount: number; // camera + screen shares
+  isStreaming: boolean; // any video stream
 }
 
 export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
   member,
   participant,
-  streamTrack,
+  cameraCount,
+  totalStreamCount,
+  isStreaming,
 }) => {
   const isSpeaking = useIsSpeaking(participant);
   const isMuted = useIsMuted({ source: Track.Source.Microphone, participant });
   const { getMetadata } = useParticipantMetadata(participant);
   const isVolumeOn = getMetadata('volumeOn') ?? true;
-
-  const participantScreenShares = [];
-  const isStreaming = !!streamTrack;
+  const displayStreamCount = totalStreamCount;
+  const isOwner = member?.role === 'ADMIN';
 
   return (
     <Box
       sx={{
         display: 'flex',
         alignItems: 'center',
+        gap: 1,
+        p: 1,
+        borderRadius: 1,
         overflow: 'hidden',
+        cursor: 'pointer',
+        '&:hover': {
+          backgroundColor: 'action.hover',
+        },
       }}
     >
-      <Avatar
-        src={member?.user.avatar || dicebearAvatar(participant?.identity || '')}
-        borderColor={isSpeaking ? 'new.green' : 'new.border'}
-        borderWidth={isSpeaking ? 3 : 1}
-      />
-      <Box sx={{ ml: 1, flexGrow: 1, overflow: 'hidden' }}>
-        <Typography
-          variant="body2"
-          noWrap
-          sx={{ color: 'text.primary', fontWeight: 500 }}
-        >
-          {participant.name}
-        </Typography>
-      </Box>
-
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 0.5,
-          ml: 'auto',
-          mr: 1,
-        }}
-      >
+      {/* Avatar with streaming indicator */}
+      <Box sx={{ position: 'relative'}}>
+        <Avatar
+          src={member?.user.avatar || dicebearAvatar(participant?.identity || '')}
+          borderColor={isSpeaking ? 'new.green' : 'new.border'}
+          borderWidth={isSpeaking ? 3 : 1}
+          sx={{ width: 32, height: 32 }}
+        />
         {isStreaming && (
-          <Chip
-            label={`В эфире${
-              participantScreenShares.length > 1
-                ? ` (${participantScreenShares.length})`
-                : ''
-            }`}
-            size="small"
-            color="error"
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: 0,
+              right: 0,
+              width: 10,
+              height: 10,
+              borderRadius: '50%',
+              bgcolor: 'error.main',
+              border: '2px solid',
+              borderColor: 'background.paper',
+              '@keyframes pulse': {
+                '0%, 100%': {
+                  transform: 'scale(1)',
+                  opacity: 1,
+                },
+                '50%': {
+                  transform: 'scale(1.25)',
+                  opacity: 0.6,
+                },
+              },
+              animation: 'pulse 1.5s ease-in-out infinite',
+            }}
           />
         )}
-        {isMuted && (
-          <MicOffIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+      </Box>
+
+      {/* Name & stream info */}
+      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
+          <Typography
+            variant="body2"
+            noWrap
+            sx={{ color: 'text.primary', fontWeight: 500, flexShrink: 1 }}
+          >
+            {participant.name}
+          </Typography>
+          {isOwner && (
+            <WorkspacePremiumIcon sx={{ fontSize: 14, color: 'warning.main', flexShrink: 0 }} />
+          )}
+        </Box>
+        {displayStreamCount > 0 && (
+          <Typography
+            variant="caption"
+            sx={{ color: 'text.secondary' }}
+          >
+            {displayStreamCount} стрим{displayStreamCount > 1 ? 'а' : ''}
+          </Typography>
         )}
-        {!isVolumeOn && (
-          <HeadsetOffIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+      </Box>
+
+      {/* Status icons */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        {cameraCount > 0 ? (
+          <VideocamIcon fontSize="small" sx={{ color: 'success.main' }} />
+        ) : (
+          <VideocamOffIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+        )}
+
+        {isMuted ? (
+          <MicOffIcon fontSize="small" sx={{ color: 'error.main' }} />
+        ) : (
+          <MicIcon fontSize="small" sx={{ color: 'success.main' }} />
+        )}
+
+        {isVolumeOn ? (
+          <VolumeUpIcon fontSize="small" sx={{ color: 'success.main' }} />
+        ) : (
+          <VolumeOffIcon fontSize="small" sx={{ color: 'error.main' }} />
         )}
       </Box>
     </Box>

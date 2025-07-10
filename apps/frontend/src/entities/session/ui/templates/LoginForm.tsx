@@ -7,8 +7,10 @@ import {
   Typography,
 } from '@mui/material';
 import { useLoginMutation } from '@entities/session';
+import { useAppStore } from '@stores/useAppStore';
 
 export const LoginForm: React.FC = () => {
+  const setIsRedEyes = useAppStore((s) => s.setIsRedEyes);
   const { mutate: login, isPending: loading, error } = useLoginMutation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -49,6 +51,8 @@ export const LoginForm: React.FC = () => {
         id="password"
         autoComplete="current-password"
         value={password}
+        onFocus={() => setIsRedEyes(true)}
+        onBlur={() => setIsRedEyes(false)}
         onChange={(e) => setPassword(e.target.value)}
         disabled={loading}
       />

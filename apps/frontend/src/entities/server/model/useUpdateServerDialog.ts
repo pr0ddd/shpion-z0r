@@ -1,5 +1,5 @@
 import { ServerUpdateDto } from '@shared/data';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useUpdateServerMutation } from '../api';
 import { Server } from '@shared/types';
 
@@ -15,16 +15,29 @@ type UpdateServerFormErrors = Partial<
 >;
 
 export function useUpdateServerDialog(server: Server) {
-  const { mutate: updateServer, error: serverError, isPending } = useUpdateServerMutation();
+  const {
+    mutate: updateServer,
+    error: serverError,
+    isPending,
+  } = useUpdateServerMutation();
 
   const [values, setValues] = useState<UpdateServerFormValues>({
-    name: server.name || undefined,
-    description: server.description || undefined,
-    icon: server.icon || undefined,
-    sfuId: server.sfuId || undefined,
+    name: undefined,
+    description: undefined,
+    icon: undefined,
+    sfuId: '',
   });
 
   const [errors, setErrors] = useState<UpdateServerFormErrors>({});
+
+  useEffect(() => {
+    setValues({
+      name: server.name || undefined,
+      description: server.description || undefined,
+      icon: server.icon || undefined,
+      sfuId: server.sfuId || '',
+    });
+  }, [server]);
 
   // Простая валидация
   const validate = (): boolean => {

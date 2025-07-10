@@ -226,6 +226,6 @@ export const ChatFloatingWindow: React.FC = () => {
         </Box>
       </Popover>
     </Box>,
-    document.body,
+    (document.fullscreenElement as HTMLElement | null) ?? document.body,
   );
 }; 

@@ -93,6 +93,17 @@ export class ScreenShareManager {
     return this.shares.map((s) => s.instance);
   }
 
+  /**
+   * Stop share by published video track SID.
+   * Returns true if share was found and stopped.
+   */
+  stopByTrackSid(videoSid: string): boolean {
+    const share = this.shares.find((s) => s.videoTrack.sid === videoSid);
+    if (!share) return false;
+    this.stop(share.instance);
+    return true;
+  }
+
   stop(instance?: number) {
     const stopShare = (s: ShareEntry) => {
       if (s.videoTrack) {

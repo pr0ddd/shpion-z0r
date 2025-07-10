@@ -1,8 +1,7 @@
 import { authAPI } from '@shared/data';
 import { LoginResponseData, LoginResponseError } from '@shared/types';
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import { useSessionStore } from '../model/auth.store';
+import { useAuthHandlers } from '../model/useAuthHandlers';
 
 interface RegisterDto {
   email: string;
@@ -25,9 +24,7 @@ const register = async ({
 };
 
 export const useRegisterMutation = () => {
-  const navigate = useNavigate();
-  const setUser = useSessionStore((s) => s.setUser);
-  const setToken = useSessionStore((s) => s.setToken);
+  const { handleLoginSuccess } = useAuthHandlers();
 
   const { mutate, isPending, error } = useMutation<
     LoginResponseData,
@@ -36,12 +33,7 @@ export const useRegisterMutation = () => {
     unknown
   >({
     mutationFn: register,
-    onSuccess: (data) => {
-      // TODO: clear local storage
-      setUser(data.user);
-      setToken(data.token);
-      navigate('/');
-    },
+    onSuccess: (data) => handleLoginSuccess(data),
     onError: (error: unknown) => {
       console.error(error);
     },

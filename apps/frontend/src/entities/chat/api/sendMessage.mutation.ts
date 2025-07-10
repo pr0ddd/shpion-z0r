@@ -37,8 +37,11 @@ export const useSendMessageMutation = (serverId: string) => {
   );
 
   const mutate = (text: string) => {
-    console.log(1)
-    const message = createOptimisticMessage(text, user!, serverId);
+    if (!user) {
+      console.error('User not set in store');
+      return
+    };
+    const message = createOptimisticMessage(text, user, serverId);
 
     addMessageToCache(queryClient, serverId, message);
 

@@ -20,6 +20,9 @@ export const useMessagesSocketSync = (serverId: string) => {
   useEffect(() => {
     if (!socket || !serverId) return;
 
+    // join server room to receive real-time events
+    socket.emit('server:join', serverId);
+
     const add = (msg: Message) => {
       if (msg.serverId !== serverId) return;
       qc.setQueryData<InfiniteData<MessagesPage>>(['messages', serverId], (old) => {
@@ -56,6 +59,11 @@ export const useMessagesSocketSync = (serverId: string) => {
     socket.on('message:new', add as any);
     return () => {
       socket.off('message:new', add as any);
+      // Do not emit 'server:leave' here to avoid leaving the room when the
+      // chat panel is closed. `StreamActive` (video player) maintains its own
+      // join/leave lifecycle tied to the page, guaranteeing we stay in the
+      // room while the server page is open and leave automatically when the
+      // user navigates away.
     };
   }, [socket, qc, serverId]);
 }; 
