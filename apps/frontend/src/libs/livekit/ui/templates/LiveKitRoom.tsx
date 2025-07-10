@@ -25,7 +25,8 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
   sfuUrl,
   children,
 }) => {
-  const { isConnected, setIsConnected } = useServerStore();
+  const isConnected = useServerStore((s) => s.isConnected);
+  const setIsConnected = useServerStore((s) => s.setIsConnected);
   const { data: livekitToken, isLoading: isLoadingLiveKitToken } =
     useLiveKitTokenQuery(serverId);
   const [isReady, setIsReady] = useState(false);
@@ -86,7 +87,6 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
       <LivekitVirtualMic processorEnabled={isProcessorEnabled} />
 
       {isConnected ? children : <LiveKitRoomLoading />}
-
     </LiveKitRoomBase>
   );
 };

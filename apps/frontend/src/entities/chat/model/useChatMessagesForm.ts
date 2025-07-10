@@ -19,7 +19,6 @@ export const useChatMessagesForm = (serverId: string) => {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
       doSend();
     }
   };
@@ -36,5 +35,5 @@ export const useChatMessagesForm = (serverId: string) => {
     setText('');
   };
 
-  return { text, setText, inputRef, handleSubmit, handleKeyDown, doSend };
+  return { text, setText, inputRef, handleSubmit, handleKeyDown };
 };

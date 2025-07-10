@@ -1,13 +1,15 @@
 import React from 'react';
 import { Box, Typography, Button, Paper } from '@mui/material';
-import { Link, Outlet } from 'react-router-dom';
-import Logo3D from '@ui/atoms/Logo3D';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 
 interface AuthTemplateProps {
-  isLoginMode: boolean;
+
 }
 
-export const AuthTemplate: React.FC<AuthTemplateProps> = ({ isLoginMode }) => {
+export const AuthTemplate: React.FC<AuthTemplateProps> = () => {
+  const location = useLocation();
+  const isLoginMode = location.pathname === '/login';
+
   return (
     <Box
       sx={{
@@ -29,9 +31,20 @@ export const AuthTemplate: React.FC<AuthTemplateProps> = ({ isLoginMode }) => {
           bgcolor: 'transparent',
         }}
       >
-        <Box display="flex" alignItems="center" justifyContent="center" gap={2}>
-        <Logo3D />
-          <Typography variant="h2" component="h1" gutterBottom display="inline" mb={0}>
+        <Box
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          justifyContent="center"
+          gap={2}
+        >
+          <Typography
+            variant="h2"
+            component="h1"
+            gutterBottom
+            display="inline"
+            mb={0}
+          >
             Shpion
           </Typography>
         </Box>

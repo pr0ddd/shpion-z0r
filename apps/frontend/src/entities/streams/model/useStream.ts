@@ -10,7 +10,6 @@ export const useStream = () => {
     Track.Source.ScreenShare,
     Track.Source.ScreenShareAudio,
     Track.Source.Camera,
-    Track.Source.Microphone,
   ]);
 
   const streamTracksWithAudio = useMemo(() => {

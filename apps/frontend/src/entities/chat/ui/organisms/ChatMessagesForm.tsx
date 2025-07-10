@@ -14,7 +14,7 @@ import { useChatMessagesForm } from '@entities/chat/model/useChatMessagesForm';
  */
 export const ChatMessagesForm: React.FC = () => {
   const serverId = useServerStore((s) => s.selectedServerId)!;
-  const { text, setText, inputRef, handleSubmit, handleKeyDown, doSend } =
+  const { text, setText, inputRef, handleSubmit, handleKeyDown } =
     useChatMessagesForm(serverId);
 
   return (
@@ -47,11 +47,8 @@ export const ChatMessagesForm: React.FC = () => {
         <IconButton
           icon={<Send />}
           color="primary"
-          type="button"
+          type="submit"
           disabled={!text.trim() || !serverId}
-          onClick={() => {
-            doSend();
-          }}
         />
       </Box>
     </Box>
