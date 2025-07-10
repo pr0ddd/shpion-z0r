@@ -20,8 +20,8 @@ const SpyIconModel: React.FC = () => {
 
   useFrame(() => {
     if (!modelRef.current) return;
-    const maxYaw = Math.PI / 2;
-    const maxPitch = Math.PI / 2;
+    const maxYaw = Math.PI / 4;
+    const maxPitch = Math.PI / 4;
     const yaw = mouse.current.x * maxYaw;
     const pitch = -mouse.current.y * maxPitch;
     modelRef.current.rotation.set(pitch, yawOffset + yaw, 0);
