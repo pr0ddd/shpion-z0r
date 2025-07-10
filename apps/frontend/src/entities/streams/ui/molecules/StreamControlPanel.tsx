@@ -126,7 +126,7 @@ export const StreamControlPanel: React.FC<StreamControlPanelProps> = ({
           onClick={onStopAll}
           sx={{
             height: '45px',
-            backgroundColor: 'new.redLight',
+            backgroundColor: 'unset',
             color: 'new.foreground',
             border: 'none',
             cursor: 'pointer',
@@ -135,7 +135,7 @@ export const StreamControlPanel: React.FC<StreamControlPanelProps> = ({
             justifyContent: 'center',
             gap: 0.5,
             '&:hover': {
-              backgroundColor: lighten(theme.palette.new.redLight, 0.1),
+              backgroundColor: 'new.redLight',
             },
           }}
         >

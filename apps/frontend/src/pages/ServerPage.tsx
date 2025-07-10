@@ -4,7 +4,7 @@ import { Box } from '@mui/material';
 import { LiveKitRoom } from '@libs/livekit/ui/templates/LiveKitRoom';
 
 import { useServerStore } from '@entities/server/model';
-import { MediaControlPanel } from '@entities/server';
+import { LobbyTemplate, MediaControlPanel } from '@entities/server';
 
 import { ServersTemplate } from '@entities/servers/ui';
 import { useServersQuery } from '@entities/servers/api';
@@ -82,7 +82,7 @@ const ServerPage: React.FC = () => {
           </Box>
         </LiveKitRoom>
       ) : (
-        <div>No server selected</div>
+        <LobbyTemplate />
       )}
     </Box>
   );

@@ -5,9 +5,8 @@ const prisma = new PrismaClient();
 async function main() {
   // любые «справочники» можно сидировать здесь
   const presets = [
-    { id: 'def', name: 'Frankfurt (fast)', url: 'wss://de-shpion.pr0d.ru/rtc' },
-    { id: 'local', name: 'Belarus (slow)', url: 'wss://by-shpion.pr0d.ru/rtc' },
-    { id: 'eu', name: 'Central Europe (fast)', url: 'wss://eu-shpion.pr0d.ru/rtc' },
+    { id: 'de', name: 'Germany (Frankfurt)', url: 'wss://de-shpion.pr0d.ru/rtc' },
+    { id: 'eu', name: 'Local (EU)', url: 'wss://eu-shpion.pr0d.ru/rtc' },
   ];
 
   // upsert гарантирует, что существующие записи будут обновлены, а новые созданы

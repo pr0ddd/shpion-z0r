@@ -1,12 +1,15 @@
 import React from 'react';
 import { Box, Typography, Button, Paper } from '@mui/material';
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 
 interface AuthTemplateProps {
-  isLoginMode: boolean;
+
 }
 
-export const AuthTemplate: React.FC<AuthTemplateProps> = ({ isLoginMode }) => {
+export const AuthTemplate: React.FC<AuthTemplateProps> = () => {
+  const location = useLocation();
+  const isLoginMode = location.pathname === '/login';
+
   return (
     <Box
       sx={{
@@ -24,16 +27,27 @@ export const AuthTemplate: React.FC<AuthTemplateProps> = ({ isLoginMode }) => {
         elevation={0}
         sx={{
           textAlign: 'center',
-          mb: 4,
+          mb: 0,
           bgcolor: 'transparent',
         }}
       >
-        <Typography variant="h2" component="h1" gutterBottom>
-          🎮 Shpion
-        </Typography>
-        <Typography variant="h6" color="text.secondary">
-          Голосовой чат для геймеров
-        </Typography>
+        <Box
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          justifyContent="center"
+          gap={2}
+        >
+          <Typography
+            variant="h2"
+            component="h1"
+            gutterBottom
+            display="inline"
+            mb={0}
+          >
+            Shpion
+          </Typography>
+        </Box>
       </Paper>
 
       <Outlet />

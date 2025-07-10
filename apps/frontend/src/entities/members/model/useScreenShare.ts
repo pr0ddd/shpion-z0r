@@ -33,6 +33,10 @@ export const useScreenShare = () => {
     manager.stop(idx);
   }, []);
 
+  const stopShareByTrackSid = useCallback((sid: string) => {
+    manager.stopByTrackSid(sid);
+  }, []);
+
   const stopAll = useCallback(() => {
     manager.stop();
   }, []);
@@ -70,6 +74,7 @@ export const useScreenShare = () => {
     count: manager.count,
     startNew,
     stopShare,
+    stopShareByTrackSid,
     stopAll,
   } as const;
 };

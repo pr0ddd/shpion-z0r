@@ -7,6 +7,7 @@ interface SessionStore {
   error: string | null;
   setUser: (user: User) => void;
   setToken: (token: string) => void;
+  clearSession: () => void
 }
 
 export const useSessionStore = create<SessionStore>((set) => ({
@@ -18,4 +19,8 @@ export const useSessionStore = create<SessionStore>((set) => ({
     localStorage.setItem('authToken', token);
     set({ token });
   },
+  clearSession: () => {
+    localStorage.removeItem('authToken');
+    set({ user: null, token: null, error: null });
+  }
 }));

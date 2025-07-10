@@ -1,0 +1,97 @@
+/* 🎬 Modern VideoJS Theme - Dark & Sleek */
+
+/* Main player container */
+.video-js {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Control bar styling */
+.video-js .vjs-control-bar {
+    background: linear-gradient(135deg, #6a61727a 0%, #3e6285a4 100%);
+    border: 1px solid #6a6a6d7c;
+    backdrop-filter: blur(10px);
+    height: 3.5em;
+    display: flex;
+    align-items: center;
+    width: 500px;
+    border-radius: 20px;
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0 1em;
+}
+
+
+/* Live display */
+.video-js .vjs-live-display {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 0.7em;
+    margin-bottom: 1em;
+    background-color: rgb(134, 30, 30);
+    display: flex;
+    color: #ffffff;
+    font-size: 1em;
+    border-radius:15px;
+    padding: 0 15px;
+    height: 20px;
+    line-height: 2em;
+    letter-spacing: 0.1em;
+}
+
+
+/* Buttons */
+.video-js .vjs-button {
+    color: #ffffff;
+    background: linear-gradient(135deg, #111827c5 0%, #1f2937c4 100%);
+    border-radius: 6px;
+    height: 2.5em;
+    margin: 0 5px;
+}
+
+
+
+
+
+.video-js .vjs-button:hover {
+    background: linear-gradient(135deg, #253f77e3 0%, #3e6aa8ea 100%);
+}
+
+
+.vjs-button>.vjs-icon-placeholder:before {
+    font-size: 1.7em;
+    line-height: 1.5
+}
+
+
+/* Volume control */
+.video-js .vjs-volume-panel {
+    display: flex;
+    align-items: center;
+    margin-right: auto;
+    height: 100%;
+}
+
+/* Custom chat button */
+.video-js .vjs-chat-toggle-control .vjs-chat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    line-height: 1.5;
+}
+
+.video-js .vjs-chat-toggle-control .vjs-chat-icon svg{
+    width: 15px;
+    height: 15px;
+}
+
+/* Hide chat toggle button when player is not in fullscreen */
+.video-js:not(.vjs-fullscreen) .vjs-chat-toggle-control {
+    display: none;
+}   

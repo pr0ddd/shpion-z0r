@@ -3,8 +3,8 @@ import { useMembersQuery } from '../../api/members.query';
 import { ServerMemberItem } from '../molecules/ServerMemberItem';
 import { useParticipants, useTracks } from '@livekit/components-react';
 import { useMemo } from 'react';
-import { Track } from 'livekit-client';
 import { useStream } from '@entities/streams/model/useStream';
+import { Track } from 'livekit-client';
 
 interface ServerMembersProps {
   serverId: string;
@@ -12,16 +12,31 @@ interface ServerMembersProps {
 
 export const ServerMembers: React.FC<ServerMembersProps> = ({ serverId }) => {
   const { data: members, isLoading } = useMembersQuery(serverId);
-  const tracks = useTracks([Track.Source.Microphone]);
   const { streamTracks } = useStream();
+  const cameraTracks = useTracks([Track.Source.Camera]);
 
   const participants = useParticipants();
   const membersMap = useMemo(() => {
     return new Map(members?.map((member) => [member.id, member]));
   }, [members]);
 
-  const streamTracksMap = useMemo(() => {
-    return new Map(streamTracks.map((t) => [t.participant.identity, t]));
+  const cameraCountMap = useMemo(() => {
+    const map = new Map<string, number>();
+    cameraTracks.forEach((t) => {
+      const id = t.participant.identity;
+      map.set(id, (map.get(id) || 0) + 1);
+    });
+    return map;
+  }, [cameraTracks]);
+
+  const screenShareCountMap = useMemo(() => {
+    const map = new Map<string, number>();
+    streamTracks.forEach((t) => {
+      if (t.source !== Track.Source.ScreenShare) return;
+      const id = t.participant.identity;
+      map.set(id, (map.get(id) || 0) + 1);
+    });
+    return map;
   }, [streamTracks]);
 
   if (isLoading) {
@@ -43,7 +58,15 @@ export const ServerMembers: React.FC<ServerMembersProps> = ({ serverId }) => {
           <ServerMemberItem
             key={participant.sid}
             member={membersMap.get(participant.identity)}
-            streamTrack={streamTracksMap.get(participant.identity)}
+            cameraCount={cameraCountMap.get(participant.identity) ?? 0}
+            totalStreamCount={
+              (cameraCountMap.get(participant.identity) ?? 0) +
+              (screenShareCountMap.get(participant.identity) ?? 0)
+            }
+            isStreaming={
+              (cameraCountMap.get(participant.identity) ?? 0) > 0 ||
+              (screenShareCountMap.get(participant.identity) ?? 0) > 0
+            }
             participant={participant}
           />
         );
