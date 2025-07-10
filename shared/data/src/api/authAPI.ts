@@ -19,5 +19,5 @@ export const authAPI = {
 
   me: () => http.get<ApiResponse<User>>('/auth/me').then((res) => res.data),
 
-  logout: () => http.post<ApiResponse>('/auth/logout').then((res) => res.data),
+  logout: () => http.post<ApiResponse<void>>('/auth/logout').then((res) => res.data),
 };

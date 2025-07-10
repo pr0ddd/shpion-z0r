@@ -18,6 +18,7 @@ export class LiveKitService {
     const at = new AccessToken(this.apiKey, this.apiSecret, {
       identity: participantIdentity,
       name: participantName,
+      
     });
 
     at.addGrant({
@@ -26,6 +27,7 @@ export class LiveKitService {
       canPublish: true,
       canSubscribe: true,
       canPublishData: true,
+      canUpdateOwnMetadata: true,
     });
     
     return await at.toJwt();

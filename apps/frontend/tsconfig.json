@@ -2,11 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "target": "es5",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -22,20 +18,17 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@shared/ui": ["../../shared/ui/src/index.ts"],
-      "@shared/hooks": ["../../shared/hooks/src/index.ts"],
       "@shared/data": ["../../shared/data/src/index.ts"],
       "@shared/types": ["../../shared/types/src/index.ts"],
-      "@shared/lib": ["../../shared/lib/index.ts"], // TODO: remove from frontend config !!!!!
-      "@features/*": ["src/features/*"],
       "@hooks/*": ["src/hooks/*"],
       "@stores/*": ["src/stores/*"],
-      "@components/*": ["src/components/*"],
-      "@utils/*": ["src/utils/*"],
+      "@entities/*": ["src/entities/*"],
+      "@queries": ["src/queries"],
+      "@configs": ["src/config"],
+      "@libs/*": ["src/libs/*"],
+      "@ui/*": ["src/ui/*"]
     },
     "useUnknownInCatchVariables": false
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }

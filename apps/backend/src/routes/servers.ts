@@ -23,7 +23,7 @@ router.post('/:serverId/leave', catchAsync(ServerController.leaveServer));
 // Удалить сервер
 router.delete('/:serverId', catchAsync(ServerController.deleteServer));
 
-// Переименовать сервер
-router.patch('/:serverId', catchAsync(ServerController.renameServer));
+// Обновить сервер
+router.patch('/:serverId', catchAsync(ServerController.updateServer));
 
 export default router; 

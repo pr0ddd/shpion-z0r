@@ -162,3 +162,4 @@ cd shpion-z0r
 git push origin master
 ```
 GitHub Actions автоматически соберет Docker-образы, запушит их в GitHub Container Registry и развернет на вашем сервере. 
+

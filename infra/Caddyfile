@@ -1,0 +1,56 @@
+# Global Caddy options (optional)
+{
+    # E-mail for ACME registration / certificate renewal alerts
+    email admin@pr0d.ru
+    # Uncomment for verbose logs during debugging
+    # debug
+}
+
+# Snippet with directives shared across sites
+(common) {
+    encode zstd gzip
+    log {
+        output stdout
+        format console
+    }
+}
+
+# ────────────────────────────────────────────────
+#  Main site – SPA frontend + API + LiveKit
+#  Domain comes from frontend `.env.production`:
+#    VITE_API_URL=https://shpion.pr0d.ru
+#    VITE_LIVEKIT_URL=wss://shpion.pr0d.ru/livekit
+#  ────────────────────────────────────────────────
+shpion.pr0d.ru, www.pr0d.ru {
+    import common
+
+    # --- Backend API (Express + Socket.io) ---
+    handle /api/* {
+        reverse_proxy backend:3001
+    }
+
+    # --- LiveKit signalling ---
+    # Strip /livekit prefix automatically to match LK root path
+    handle_path /livekit/* {
+        reverse_proxy localhost:7880
+    }
+
+    # --- Frontend SPA ---
+    # Everything else goes to the Vite-built React app served by Nginx (port 8080).
+    handle {
+        reverse_proxy frontend:8080
+    }
+}
+
+# ────────────────────────────────────────────────
+#  Local LiveKit SFU – eu-shpion.pr0d.ru
+#  All routes proxied directly to LiveKit (port 7880)
+# ────────────────────────────────────────────────
+eu-shpion.pr0d.ru {
+    import common
+
+    reverse_proxy host.docker.internal:7880
+
+    # CORS header for JS SDK validate fetches
+    header Access-Control-Allow-Origin "https://shpion.pr0d.ru"
+} 
