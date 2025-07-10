@@ -221,6 +221,8 @@ export const StreamActiveInner: React.FC<StreamActiveProps> = memo(
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
+
+          {/* Move to separate component */}
           {overlayMessages.map((msg) => (
             <Box
               key={msg.id}

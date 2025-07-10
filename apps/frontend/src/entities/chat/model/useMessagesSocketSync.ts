@@ -21,7 +21,7 @@ export const useMessagesSocketSync = (serverId: string) => {
     if (!socket || !serverId) return;
 
     // join server room to receive real-time events
-    socket.emit('server:join', serverId);
+    // socket.emit('server:join', serverId);
 
     const add = (msg: Message) => {
       if (msg.serverId !== serverId) return;

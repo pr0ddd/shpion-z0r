@@ -64,16 +64,20 @@ export const StreamGalleryItem: React.FC<StreamGalleryItemProps> = ({
     // @ts-ignore - ImageCapture may be missing in TypeScript libs
     const ic = new ImageCapture(mediaTrack);
     const bitmap = await ic.grabFrame();
-
-    const canvas = canvasRef.current;
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-
-    const ctx = canvas.getContext('2d')!;
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'low';
-    ctx.drawImage(bitmap, 0, 0);
-    bitmap.close();
+    try {
+      const canvas = canvasRef.current;
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+  
+      const ctx = canvas.getContext('2d')!;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'low';
+      ctx.drawImage(bitmap, 0, 0);
+    } catch (error) {
+      console.warn('Error capturing preview', error);
+    } finally {
+      bitmap.close();
+    }
   }, [track]);
 
   return (
