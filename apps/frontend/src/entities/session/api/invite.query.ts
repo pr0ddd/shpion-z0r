@@ -14,6 +14,7 @@ export const useInviteInfoQuery = (inviteCode: string) => {
     queryKey: ['inviteInfo', inviteCode],
     queryFn: fetchInviteInfo,
     retry: false,
+    refetchOnWindowFocus: false,
     enabled: !!inviteCode,
   });
   return {
