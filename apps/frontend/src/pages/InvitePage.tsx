@@ -9,6 +9,7 @@ import {
   CircularProgress,
   Alert,
 } from '@mui/material';
+import { AnimatedContainer } from '@ui/motion';
 import { useAcceptInviteMutation, useInviteInfoQuery } from '@entities/session';
 
 const InvitePage: React.FC = () => {
@@ -26,44 +27,15 @@ const InvitePage: React.FC = () => {
     acceptInvite({ inviteCode });
   };
 
-  if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  // no external overlay; loader will be shown in-place below
 
   return (
-    <Box
-      component={motion.div}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 1, ease: 'easeInOut' }}
-      sx={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'new.foreground',
-        gap: 4,
-        position: 'relative',
-        overflow: 'hidden',
-        px: 2,
-        minHeight: '100vh',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'linear-gradient(135deg, #111827 0%, #1f2937 100%)',
-          zIndex: 0,
-        },
-      }}
-    >
+    <AnimatedContainer sx={{ gap: 4 }}>
+      {isLoading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>
+          <CircularProgress />
+        </Box>
+      )}
       <Box sx={{ zIndex: 1, textAlign: 'center' }} component={motion.div} initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}>
         {error ? (
           <>
@@ -160,7 +132,7 @@ const InvitePage: React.FC = () => {
           <></>
         )}
       </Box>
-    </Box>
+    </AnimatedContainer>
   );
 };
 
