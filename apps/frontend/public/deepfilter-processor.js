@@ -222,6 +222,23 @@ class DeepFilterProcessor extends AudioWorkletProcessor {
           }
         }
         break;
+
+      /* Освобождаем память WASM, когда основной поток просит dispose */
+      case 'dispose':
+        if (this.isInitialized && this.dfState) {
+          try {
+            if (this.wasm.__wbg_dfstate_free) {
+              this.wasm.__wbg_dfstate_free(this.dfState);
+            } else if (this.wasm.df_destroy) {
+              this.wasm.df_destroy(this.dfState);
+            }
+          } catch (e) {
+            console.warn('DF dispose error', e);
+          }
+          this.dfState = null;
+          this.isInitialized = false;
+        }
+        break;
     }
   }
 }

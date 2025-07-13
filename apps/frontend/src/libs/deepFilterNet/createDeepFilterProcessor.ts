@@ -3,6 +3,7 @@ import type {
   AudioProcessorOptions,
   Track,
 } from 'livekit-client';
+import { loadDeepFilterModel } from './modelLoader';
 
 export interface DeepFilterNetSettings {
   attenLim?: number;
@@ -10,33 +11,43 @@ export interface DeepFilterNetSettings {
   modelName?: string;
 }
 
+const getStaticFiles = async (): Promise<[string, Uint8Array, Uint8Array]> => {
+  return Promise.all([
+    fetch('/wasm/df.js').then((r) => r.text()),
+    fetch('/wasm/df_bg.wasm')
+      .then((r) => r.arrayBuffer())
+      .then((buf) => new Uint8Array(buf)),
+    loadDeepFilterModel('DeepFilterNet3'),
+    // fetch('/models/DeepFilterNet3_onnx.tar.gz')
+    //   .then((r) => r.arrayBuffer())
+    //   .then((buf) => new Uint8Array(buf)),
+  ]);
+}
+
 export const createDeepFilterProcessor = (): TrackProcessor<
   Track.Kind.Audio,
   AudioProcessorOptions
 > => {
   let node: AudioWorkletNode | null = null;
-  let dst: MediaStreamAudioDestinationNode | null = null;
+  let srcNode: MediaStreamAudioSourceNode | null = null;
+  let dstNode: MediaStreamAudioDestinationNode | null = null;
 
   const processor: TrackProcessor<Track.Kind.Audio, AudioProcessorOptions> = {
     name: 'deepfilter-net',
     init: async ({ track, audioContext }) => {
-      await audioContext.audioWorklet.addModule('/my-processor.js');
-      const src = audioContext.createMediaStreamSource(
-        new MediaStream([track])
-      );
-      dst = audioContext.createMediaStreamDestination();
+      // 1. Make sure AudioContext is running (autoplay policies)
+      if (audioContext.state === 'suspended') {
+        try {
+          await audioContext.resume();
+        } catch (_) {
+          /* swallow */
+        }
+      }
 
-      const [dfJsCode, wasmBytes, modelBytes] = await Promise.all([
-        fetch('/wasm/df.js').then((r) => r.text()),
-        fetch('/wasm/df_bg.wasm')
-          .then((r) => r.arrayBuffer())
-          .then((buf) => new Uint8Array(buf)),
-        fetch('/models/DeepFilterNet3_onnx.tar.gz')
-          .then((r) => r.arrayBuffer())
-          .then((buf) => new Uint8Array(buf)),
-      ]);
-
-      node = new AudioWorkletNode(audioContext, 'my-processor', {
+      // TODO: review processor !!!
+      await audioContext.audioWorklet.addModule('/deepfilter-processor.js');
+      const [dfJsCode, wasmBytes, modelBytes] = await getStaticFiles();
+      node = new AudioWorkletNode(audioContext, 'deepfilter-processor', {
         numberOfInputs: 1,
         numberOfOutputs: 1,
         channelCount: 1,
@@ -52,113 +63,74 @@ export const createDeepFilterProcessor = (): TrackProcessor<
         },
       });
 
-      src.connect(node);
-      node.connect(dst);
+      // 5. Build the graph track -> node -> destination -> processedTrack
+      srcNode = audioContext.createMediaStreamSource(new MediaStream([track]));
+      dstNode = audioContext.createMediaStreamDestination();
+      srcNode.connect(node);
+      node.connect(dstNode);
 
-      processor.processedTrack = dst.stream.getAudioTracks()[0];
+      // expose to LiveKit – it will replace the original track
+      processor.processedTrack = dstNode.stream.getAudioTracks()[0];
     },
     restart: async (opts) => {
-      console.log('restart', opts);
-      processor.destroy();
+      // попросим worklet освободить память перед перезапуском
+      try {
+        node?.port.postMessage({ type: 'dispose' });
+      } catch {}
+      // небольшая задержка, чтобы сообщение успело дойти, но не блокируем UI
+      // TODO: handle confirm from the worklet !!!
+      await new Promise((r) => setTimeout(r, 0));
+      if (srcNode) {
+        try {
+          srcNode.disconnect();
+        } catch {}
+        srcNode = null;
+      }
+      if (node) {
+        try {
+          node.disconnect();
+          node.port.close();
+        } catch {}
+        node = null;
+      }
+      if (dstNode) {
+        try {
+          dstNode.disconnect();
+          dstNode.stream.getTracks().forEach((t) => t.stop());
+        } catch {}
+        dstNode = null;
+      }
+      // re-init with the new track/audioContext
       await processor.init(opts);
     },
     destroy: async () => {
-      console.log('destroy');
-      node?.disconnect();
-      node?.port.close();
-
-      node = null;
-      dst = null;
+      try {
+        node?.port.postMessage({ type: 'dispose' });
+      } catch {}
+      await new Promise((r) => setTimeout(r, 0));
+      if (srcNode) {
+        try {
+          srcNode.disconnect();
+        } catch {}
+        srcNode = null;
+      }
+      if (node) {
+        try {
+          node.disconnect();
+          node.port.close();
+        } catch {}
+        node = null;
+      }
+      if (dstNode) {
+        try {
+          dstNode.disconnect();
+          dstNode.stream.getTracks().forEach((t) => t.stop());
+        } catch {}
+        dstNode = null;
+      }
       processor.processedTrack = undefined;
     },
   };
 
   return processor;
-
-  // // The descriptor object – LiveKit will call the lifecycle hooks.
-  // const processor: TrackProcessor<Track.Kind.Audio, AudioProcessorOptions> = {
-  //   name: 'deepfilter-net',
-
-  //   /**
-  //    * LiveKit calls init() once right after creating the local track.
-  //    * We get the raw MediaStreamTrack and an (already running) AudioContext.
-  //    */
-  //   init: async ({ track, audioContext }) => {
-  //     // 1. Make sure AudioContext is running (autoplay policies)
-  //     if (audioContext.state === 'suspended') {
-  //       try {
-  //         await audioContext.resume();
-  //       } catch (_) {
-  //         /* swallow */
-  //       }
-  //     }
-
-  //     // 2. Load the DeepFilter worklet script
-  //     const start = performance.now();
-  //     await audioContext.audioWorklet.addModule('/deepfilter-processor.js')
-
-  //     // 3. Fetch helper glue + wasm + model bytes (in parallel)
-  //     const [dfJsCode, wasmBytes, modelBytes] = await Promise.all([
-  //       fetch('/wasm/df.js').then((r) => r.text()),
-  //       fetch('/wasm/df_bg.wasm').then((r) => r.arrayBuffer()).then((buf) => new Uint8Array(buf)),
-  //       loadDeepFilterModel(modelName),
-  //     ]);
-
-  //     // 4. Create the AudioWorkletNode with processorOptions
-  //     node = new AudioWorkletNode(audioContext, 'deepfilter-processor', {
-  //       numberOfInputs: 1,
-  //       numberOfOutputs: 1,
-  //       channelCount: 1,
-  //       channelCountMode: 'explicit',
-  //       channelInterpretation: 'speakers',
-  //       processorOptions: {
-  //         attenLim,
-  //         postFilterBeta,
-  //         modelBytes,
-  //         dfJsCode,
-  //         wasmBytes,
-  //       },
-  //     });
-
-  //     // 5. Build the graph track -> node -> destination -> processedTrack
-  //     const src = audioContext.createMediaStreamSource(new MediaStream([track]));
-  //     const dst = audioContext.createMediaStreamDestination();
-  //     src.connect(node);
-  //     node.connect(dst);
-
-  //     // expose to LiveKit – it will replace the original track
-  //     processor.processedTrack = dst.stream.getAudioTracks()[0];
-
-  //     const end = performance.now();
-  //     console.log('🎤 DeepFilterProcessor: Загрузка worklet', end - start);
-  //   },
-
-  //   // When LiveKit restarts capture (e.g., device switch), we recreate the chain
-  //   restart: async (opts) => {
-  //     if (node) {
-  //       try {
-  //         node.disconnect();
-  //       } catch {}
-  //       node = null;
-  //     }
-  //     // re-init with the new track/audioContext
-  //     await processor.init(opts);
-  //   },
-
-  //   // Cleanup when track is unpublished or room left
-  //   destroy: async () => {
-  //     if (node) {
-  //       try {
-  //         node.disconnect();
-  //         node.port.close();
-  //       } catch {
-  //         /* noop */
-  //       }
-  //       node = null;
-  //     }
-  //     processor.processedTrack = undefined;
-  //   },
-  // };
-
-  // return processor;
-};
+}

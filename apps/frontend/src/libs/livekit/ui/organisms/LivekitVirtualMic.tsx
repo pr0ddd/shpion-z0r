@@ -7,6 +7,7 @@ import {
   TrackProcessor,
 } from 'livekit-client';
 import { useRoomContext } from '@livekit/components-react';
+import { createDeepFilterProcessor } from '@libs/deepFilterNet/createDeepFilterProcessor';
 
 interface LivekitVirtualMicProps {
   processorEnabled: boolean;
@@ -16,13 +17,12 @@ export const LivekitVirtualMic: React.FC<LivekitVirtualMicProps> = ({
   processorEnabled,
 }) => {
   const room = useRoomContext();
-  // const processor = createDeepFilterProcessor();
+  const processor = createDeepFilterProcessor();
   const micTrackRef = useRef<LocalAudioTrack | null>(null);
   const processorRef = useRef<TrackProcessor<
     Track.Kind.Audio,
     AudioProcessorOptions
   > | null>(null);
-  const processor = processorRef.current;
 
   useEffect(() => {
     if (!room) return;
@@ -33,10 +33,10 @@ export const LivekitVirtualMic: React.FC<LivekitVirtualMicProps> = ({
       if (micTrackRef.current || cancelled) return;
 
       const track = await createLocalAudioTrack({
-        channelCount: 1,
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: true,
+        echoCancellation: !processorEnabled,
+        noiseSuppression: !processorEnabled,
+        autoGainControl: !processorEnabled,
+        voiceIsolation: !processorEnabled,
       });
 
       const audioContext = new AudioContext();
@@ -45,7 +45,7 @@ export const LivekitVirtualMic: React.FC<LivekitVirtualMicProps> = ({
       track.setAudioContext(audioContext);
 
       if (cancelled) {
-        track.stop();
+        // track.stop();
         return;
       }
 
@@ -60,18 +60,14 @@ export const LivekitVirtualMic: React.FC<LivekitVirtualMicProps> = ({
     init();
 
     return () => {
-      const cleanup = async () => {
-        cancelled = true;
-        if (micTrackRef.current) {
-          try {
-            await room.localParticipant.unpublishTrack(micTrackRef.current);
-          } catch {}
-          micTrackRef.current.stop();
-          micTrackRef.current = null;
-        }
-      };
-
-      cleanup();
+      cancelled = true;
+      if (micTrackRef.current) {
+        try {
+          room.localParticipant.unpublishTrack(micTrackRef.current);
+        } catch {}
+        micTrackRef.current.stop();
+        micTrackRef.current = null;
+      }
     };
   }, [room]);
 
