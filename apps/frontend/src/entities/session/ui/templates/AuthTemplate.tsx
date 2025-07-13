@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Typography, Button, Paper } from '@mui/material';
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import { useAppStore } from '@stores/useAppStore';
 
 interface AuthTemplateProps {
 
