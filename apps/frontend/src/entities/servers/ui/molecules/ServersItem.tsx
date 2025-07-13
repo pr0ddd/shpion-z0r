@@ -35,12 +35,28 @@ export const ServersItem: React.FC<ServersItemProps> = ({
   return (
     <IconButton
       hasBorder={false}
+      sx={{ p: 0, borderRadius: 1 }}
       icon={
-        <Typography component="strong" variant="body1" sx={{ fontWeight: 600 }}>
-          {server.name.slice(0, 2)}
-        </Typography>
+        server.icon ? (
+          <Box
+            component="img"
+            src={server.icon}
+            alt={server.name}
+            sx={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              borderRadius: 1,
+              pointerEvents: 'none',
+            }}
+          />
+        ) : (
+          <Typography component="strong" variant="body1" sx={{ fontWeight: 600 }}>
+            {server.name.slice(0, 2)}
+          </Typography>
+        )
       }
-      color={active ? 'primary' : 'accent'}
+      color={active ? ('primary' as any) : ('accent' as any)}
       onClick={() => onSelectServer(server)}
       onContextMenu={(e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();

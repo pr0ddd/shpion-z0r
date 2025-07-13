@@ -66,7 +66,8 @@ export function useUpdateServerDialog(server: Server) {
       name: values.name,
       description: values.description,
       icon: values.icon,
-      sfuId: values.sfuId,
+      // Отправляем sfuId только если он выбран; пустую строку игнорируем
+      sfuId: values.sfuId ? values.sfuId : undefined,
     };
 
     updateServer(payload);
