@@ -3,6 +3,7 @@ import type {
   AudioProcessorOptions,
   Track,
 } from 'livekit-client';
+import { loadDeepFilterModel } from './modelLoader';
 
 export interface DeepFilterNetSettings {
   attenLim?: number;
@@ -16,9 +17,10 @@ const getStaticFiles = async (): Promise<[string, Uint8Array, Uint8Array]> => {
     fetch('/wasm/df_bg.wasm')
       .then((r) => r.arrayBuffer())
       .then((buf) => new Uint8Array(buf)),
-    fetch('/models/DeepFilterNet3_onnx.tar.gz')
-      .then((r) => r.arrayBuffer())
-      .then((buf) => new Uint8Array(buf)),
+    loadDeepFilterModel('DeepFilterNet3'),
+    // fetch('/models/DeepFilterNet3_onnx.tar.gz')
+    //   .then((r) => r.arrayBuffer())
+    //   .then((buf) => new Uint8Array(buf)),
   ]);
 }
 
@@ -43,10 +45,9 @@ export const createDeepFilterProcessor = (): TrackProcessor<
       }
 
       // TODO: review processor !!!
-      await audioContext.audioWorklet.addModule('/my-processor.js');
+      await audioContext.audioWorklet.addModule('/deepfilter-processor.js');
       const [dfJsCode, wasmBytes, modelBytes] = await getStaticFiles();
-
-      node = new AudioWorkletNode(audioContext, 'my-processor', {
+      node = new AudioWorkletNode(audioContext, 'deepfilter-processor', {
         numberOfInputs: 1,
         numberOfOutputs: 1,
         channelCount: 1,
@@ -132,3 +133,4 @@ export const createDeepFilterProcessor = (): TrackProcessor<
   };
 
   return processor;
+}
