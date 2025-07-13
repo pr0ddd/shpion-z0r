@@ -30,7 +30,7 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
   const { data: livekitToken, isLoading: isLoadingLiveKitToken } =
     useLiveKitTokenQuery(serverId);
   const [isReady, setIsReady] = useState(false);
-  const isProcessorEnabled = false;
+  const isProcessorEnabled = true;
 
   useEffect(() => {
     const startButton = document.getElementById('start-button');
