@@ -52,6 +52,11 @@ export class ScreenShareManager {
       }
 
       const videoTrack = new LocalVideoTrack(stream.getVideoTracks()[0]);
+      // Improve encoding for screen content with fast motion (e.g., video)
+      // See https://w3c.github.io/mediacapture-main/#dom-mediastreamtrack-contenthint
+      if (videoTrack.mediaStreamTrack) {
+        videoTrack.mediaStreamTrack.contentHint = 'motion';
+      }
       // const rawLabel = videoTrack.mediaStreamTrack?.label ?? '';
       let audioTrack: LocalAudioTrack | undefined;
 

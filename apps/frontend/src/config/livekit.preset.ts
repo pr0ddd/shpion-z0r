@@ -5,7 +5,16 @@ export const LIVEKIT_PRESET_BALANCED: TrackPublishDefaults = {
   videoEncoding: {
     maxBitrate: 3_000_000,
     maxFramerate: 30,
+    // @ts-ignore – experimental WebRTC field
+    degradationPreference: 'maintain-framerate',
   },
+  // Use the same limits for screen-share tracks
+  screenShareEncoding: {
+    maxBitrate: 3_000_000,
+    maxFramerate: 30,
+    // @ts-ignore – experimental WebRTC field
+    degradationPreference: 'maintain-framerate',
+  }, 
   audioPreset: AudioPresets.speech,
   dtx: false,
   red: false,

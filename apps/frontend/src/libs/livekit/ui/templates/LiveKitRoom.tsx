@@ -70,8 +70,8 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
       connect={isReady}
       audio={false}
       options={{
-        adaptiveStream: true,
-        dynacast: true,
+        adaptiveStream: false,
+        dynacast: false,
         publishDefaults: STREAM_PRESETS['balanced'],
         audioCaptureDefaults: AUDIO_CAPTURE_DEFAULTS,
       }}
