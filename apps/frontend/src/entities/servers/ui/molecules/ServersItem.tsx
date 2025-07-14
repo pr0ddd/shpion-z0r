@@ -33,36 +33,58 @@ export const ServersItem: React.FC<ServersItemProps> = ({
   onSetMenuServer,
 }) => {
   return (
-    <IconButton
-      hasBorder={false}
-      sx={{ p: 0, borderRadius: 1 }}
-      icon={
-        server.icon ? (
-          <Box
-            component="img"
-            src={server.icon}
-            alt={server.name}
-            sx={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              borderRadius: 1,
-              pointerEvents: 'none',
-            }}
-          />
-        ) : (
-          <Typography component="strong" variant="body1" sx={{ fontWeight: 600 }}>
-            {server.name.slice(0, 2)}
-          </Typography>
-        )
-      }
-      color={active ? ('primary' as any) : ('accent' as any)}
-      onClick={() => onSelectServer(server)}
-      onContextMenu={(e: React.MouseEvent<HTMLButtonElement>) => {
-        e.preventDefault();
-        onSetMenuAnchor(e.currentTarget);
-        onSetMenuServer(server);
+    <Box
+      sx={{
+        position: 'relative',
+        // Полоска для активного сервера
+        ...(active && {
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            left: -8,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: 4,
+            height: '60%',
+            borderRadius: '0 2px 2px 0',
+            backgroundColor: 'new.primary',
+            zIndex: 1,
+          },
+        }),
       }}
-    />
+    >
+      <IconButton
+        hasBorder={false}
+        disabled={active}
+        sx={{ p: 0, borderRadius: 1 }}
+        icon={
+          server.icon ? (
+            <Box
+              component="img"
+              src={server.icon}
+              alt={server.name}
+              sx={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                borderRadius: 1,
+                pointerEvents: 'none',
+              }}
+            />
+          ) : (
+            <Typography component="strong" variant="body1" sx={{ fontWeight: 600 }}>
+              {server.name.slice(0, 2)}
+            </Typography>
+          )
+        }
+        color={active ? ('primary' as any) : ('accent' as any)}
+        onClick={() => onSelectServer(server)}
+        onContextMenu={(e: React.MouseEvent<HTMLButtonElement>) => {
+          e.preventDefault();
+          onSetMenuAnchor(e.currentTarget);
+          onSetMenuServer(server);
+        }}
+      />
+    </Box>
   );
 };
