@@ -52,6 +52,11 @@ export const ServersItem: React.FC<ServersItemProps> = ({
           },
         }),
       }}
+      onContextMenu={(e: React.MouseEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        onSetMenuAnchor(e.currentTarget);
+        onSetMenuServer(server);
+      }}
     >
       <IconButton
         hasBorder={false}
@@ -79,11 +84,6 @@ export const ServersItem: React.FC<ServersItemProps> = ({
         }
         color={active ? ('primary' as any) : ('accent' as any)}
         onClick={() => onSelectServer(server)}
-        onContextMenu={(e: React.MouseEvent<HTMLButtonElement>) => {
-          e.preventDefault();
-          onSetMenuAnchor(e.currentTarget);
-          onSetMenuServer(server);
-        }}
       />
     </Box>
   );
