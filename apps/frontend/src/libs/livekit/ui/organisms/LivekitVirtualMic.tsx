@@ -7,6 +7,7 @@ import {
   TrackProcessor,
 } from 'livekit-client';
 import { useRoomContext } from '@livekit/components-react';
+import { AUDIO_CAPTURE_DEFAULTS } from '@configs';
 interface LivekitVirtualMicProps {
   processor: TrackProcessor<Track.Kind.Audio, AudioProcessorOptions>;
   processorEnabled: boolean;
@@ -31,12 +32,7 @@ export const LivekitVirtualMic: React.FC<LivekitVirtualMicProps> = ({
     const init = async () => {
       if (micTrackRef.current || cancelled) return;
 
-      const track = await createLocalAudioTrack({
-        echoCancellation: !processorEnabled,
-        noiseSuppression: !processorEnabled,
-        autoGainControl: !processorEnabled,
-        voiceIsolation: !processorEnabled,
-      });
+      const track = await createLocalAudioTrack(AUDIO_CAPTURE_DEFAULTS);
 
       const audioContext = new AudioContext();
       processorRef.current = processor;
