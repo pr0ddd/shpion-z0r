@@ -19,7 +19,7 @@ export const getDeepFilterNetFiles = async (): Promise<
     fetch('/wasm/df_bg.wasm')
       .then((r) => r.arrayBuffer())
       .then((buf) => new Uint8Array(buf)),
-    loadDeepFilterModel('DeepFilterNet3'),
+    loadDeepFilterModel('DeepFilterNet3_ll'),
   ]);
 };
 
@@ -58,7 +58,7 @@ export const createDeepFilterProcessor = ({
         channelInterpretation: 'speakers',
         processorOptions: {
           test: 'test',
-          attenLim: 90,
+          attenLim: 50,
           postFilterBeta: 0.05,
           modelBytes: modelBytes,
           dfJsCode: dfJsCode,
