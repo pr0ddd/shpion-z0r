@@ -16,6 +16,6 @@ export const LIVEKIT_PRESET_BALANCED: TrackPublishDefaults = {
     degradationPreference: 'maintain-framerate',
   }, 
   audioPreset: AudioPresets.speech,
-  dtx: false,
+  dtx: true,
   red: false,
 };

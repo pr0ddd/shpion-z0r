@@ -33,6 +33,7 @@ export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
   isStreaming,
 }) => {
   const isSpeaking = useIsSpeaking(participant);
+  console.log('isSpeaking:', isSpeaking, 'participant:', participant?.identity);
   const isMuted = useIsMuted({ source: Track.Source.Microphone, participant });
   const { getMetadata } = useParticipantMetadata(participant);
   const isVolumeOn = getMetadata('volumeOn') ?? true;
@@ -59,9 +60,12 @@ export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
       <Box sx={{ position: 'relative'}}>
         <Avatar
           src={member?.user.avatar || dicebearAvatar(participant?.identity || '')}
-          borderColor={isSpeaking ? 'new.green' : 'new.border'}
-          borderWidth={isSpeaking ? 3 : 1}
-          sx={{ width: 32, height: 32 }}
+          sx={{ 
+            width: 32, 
+            height: 32,
+            border: isSpeaking ? '2px solid' : '1px solid',
+            borderColor: isSpeaking ? 'success.main' : 'new.border',
+          }}
         />
         {isStreaming && (
           <Box
