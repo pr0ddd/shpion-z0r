@@ -12,6 +12,16 @@ export const useLocalParticipantVolume = () => {
     localStorage.getItem('isVolumeEnabled') === 'true'
   );
 
+  // Синхронизация между разными экземплярами хука через CustomEvent
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<boolean>).detail;
+      setIsEnabled(detail);
+    };
+    window.addEventListener('volume-changed', handler as EventListener);
+    return () => window.removeEventListener('volume-changed', handler as EventListener);
+  }, []);
+
   useEffect(() => {
     // console.log({
     //   localParticipant: localParticipant?.name,
@@ -23,8 +33,11 @@ export const useLocalParticipantVolume = () => {
   }, [isEnabled])
 
   const toggleVolumeEnabled = () => {
-    setIsEnabled(!isEnabled);
-    localStorage.setItem('isVolumeEnabled', String(!isEnabled));
+    const newVal = !isEnabled;
+    setIsEnabled(newVal);
+    localStorage.setItem('isVolumeEnabled', String(newVal));
+    // распространяем событие, чтобы другие компоненты обновились
+    window.dispatchEvent(new CustomEvent('volume-changed', { detail: newVal }));
     play();
   };
 

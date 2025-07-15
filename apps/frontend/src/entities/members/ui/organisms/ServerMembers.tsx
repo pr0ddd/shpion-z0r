@@ -16,8 +16,9 @@ export const ServerMembers: React.FC<ServerMembersProps> = ({ serverId }) => {
   const cameraTracks = useTracks([Track.Source.Camera]);
 
   const participants = useParticipants();
+  // Сопоставляем по user.id (identity LiveKit == user.id). Иначе member не находится.
   const membersMap = useMemo(() => {
-    return new Map(members?.map((member) => [member.id, member]));
+    return new Map(members?.map((member) => [member.user.id, member]));
   }, [members]);
 
   const cameraCountMap = useMemo(() => {

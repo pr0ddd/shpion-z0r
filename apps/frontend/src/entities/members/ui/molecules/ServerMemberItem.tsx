@@ -33,11 +33,13 @@ export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
   isStreaming,
 }) => {
   const isSpeaking = useIsSpeaking(participant);
+  console.log('isSpeaking:', isSpeaking, 'participant:', participant?.identity);
   const isMuted = useIsMuted({ source: Track.Source.Microphone, participant });
   const { getMetadata } = useParticipantMetadata(participant);
   const isVolumeOn = getMetadata('volumeOn') ?? true;
   const displayStreamCount = totalStreamCount;
   const isOwner = member?.role === 'ADMIN';
+  const displayName = member?.user.username || participant.name;
 
   return (
     <Box
@@ -58,9 +60,12 @@ export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
       <Box sx={{ position: 'relative'}}>
         <Avatar
           src={member?.user.avatar || dicebearAvatar(participant?.identity || '')}
-          borderColor={isSpeaking ? 'new.green' : 'new.border'}
-          borderWidth={isSpeaking ? 3 : 1}
-          sx={{ width: 32, height: 32 }}
+          sx={{ 
+            width: 32, 
+            height: 32,
+            border: isSpeaking ? '2px solid' : '1px solid',
+            borderColor: isSpeaking ? 'success.main' : 'new.border',
+          }}
         />
         {isStreaming && (
           <Box
@@ -98,7 +103,7 @@ export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
             noWrap
             sx={{ color: 'text.primary', fontWeight: 500, flexShrink: 1 }}
           >
-            {participant.name}
+            {displayName}
           </Typography>
           {isOwner && (
             <WorkspacePremiumIcon sx={{ fontSize: 14, color: 'warning.main', flexShrink: 0 }} />

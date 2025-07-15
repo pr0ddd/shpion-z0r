@@ -1,4 +1,4 @@
-import { Message } from '@prisma/client';
+import { Message, Member } from '@prisma/client';
 
 // A simplified user object for socket events on the client
 export interface SocketUser {
@@ -12,6 +12,7 @@ export interface ServerToClientEvents {
     'server:state': (data: { serverId: string, users: SocketUser[] }) => void;
     'user:joined': (member: any, serverId: string) => void; // Using 'any' for member for now
     'user:left': (userId: string, serverId: string) => void;
+    'user:updated': (member: Member & { user: { id: string; username: string; avatar: string | null } }, serverId: string) => void;
     'user:listening': (userId: string, listening: boolean) => void;
     'message:new': (message: Message & { author: { id: string, username: string, avatar: string | null }}) => void;
     'message:updated': (message: Message) => void;
