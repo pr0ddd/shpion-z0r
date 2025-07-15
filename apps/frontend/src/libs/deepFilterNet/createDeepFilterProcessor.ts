@@ -11,23 +11,27 @@ export interface DeepFilterNetSettings {
   modelName?: string;
 }
 
-const getStaticFiles = async (): Promise<[string, Uint8Array, Uint8Array]> => {
+export const getDeepFilterNetFiles = async (): Promise<
+  [string, Uint8Array, Uint8Array]
+> => {
   return Promise.all([
     fetch('/wasm/df.js').then((r) => r.text()),
     fetch('/wasm/df_bg.wasm')
       .then((r) => r.arrayBuffer())
       .then((buf) => new Uint8Array(buf)),
     loadDeepFilterModel('DeepFilterNet3'),
-    // fetch('/models/DeepFilterNet3_onnx.tar.gz')
-    //   .then((r) => r.arrayBuffer())
-    //   .then((buf) => new Uint8Array(buf)),
   ]);
-}
+};
 
-export const createDeepFilterProcessor = (): TrackProcessor<
-  Track.Kind.Audio,
-  AudioProcessorOptions
-> => {
+export const createDeepFilterProcessor = ({
+  dfJsCode,
+  wasmBytes,
+  modelBytes,
+}: {
+  dfJsCode: string;
+  wasmBytes: Uint8Array;
+  modelBytes: Uint8Array;
+}): TrackProcessor<Track.Kind.Audio, AudioProcessorOptions> => {
   let node: AudioWorkletNode | null = null;
   let srcNode: MediaStreamAudioSourceNode | null = null;
   let dstNode: MediaStreamAudioDestinationNode | null = null;
@@ -46,7 +50,6 @@ export const createDeepFilterProcessor = (): TrackProcessor<
 
       // TODO: review processor !!!
       await audioContext.audioWorklet.addModule('/deepfilter-processor.js');
-      const [dfJsCode, wasmBytes, modelBytes] = await getStaticFiles();
       node = new AudioWorkletNode(audioContext, 'deepfilter-processor', {
         numberOfInputs: 1,
         numberOfOutputs: 1,
@@ -55,7 +58,7 @@ export const createDeepFilterProcessor = (): TrackProcessor<
         channelInterpretation: 'speakers',
         processorOptions: {
           test: 'test',
-          attenLim: 100,
+          attenLim: 90,
           postFilterBeta: 0.05,
           modelBytes: modelBytes,
           dfJsCode: dfJsCode,
@@ -133,4 +136,4 @@ export const createDeepFilterProcessor = (): TrackProcessor<
   };
 
   return processor;
-}
+};

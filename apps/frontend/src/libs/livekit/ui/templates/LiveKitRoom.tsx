@@ -9,6 +9,8 @@ import { useLiveKitTokenQuery } from '../../model/liveKitToken.query';
 import { LiveKitRoomLoading } from '../atoms/LiveKitRoomLoading';
 import { LivekitVirtualMic } from '../organisms/LivekitVirtualMic';
 import { LiveKitRoomAudioRenderer } from '../organisms/LiveKitRoomAudioRenderer';
+import { AudioProcessorOptions, Track, TrackProcessor } from 'livekit-client';
+import { createDeepFilterProcessor, getDeepFilterNetFiles } from '@libs/deepFilterNet/createDeepFilterProcessor';
 
 interface LiveKitRoomProps {
   serverId: string;
@@ -30,6 +32,11 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
   const { data: livekitToken, isLoading: isLoadingLiveKitToken } =
     useLiveKitTokenQuery(serverId);
   const [isReady, setIsReady] = useState(false);
+  const [processor, setProcessor] = useState<TrackProcessor<
+    Track.Kind.Audio,
+    AudioProcessorOptions
+  > | null>(null);
+  const [isProcessorReady, setIsProcessorReady] = useState(false);
   const isProcessorEnabled = true;
 
   useEffect(() => {
@@ -37,9 +44,21 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
     if (startButton) {
       setTimeout(() => {
         startButton.click();
+        initDeppFilterProcessor();
       }, 1000);
     }
   }, []);
+
+  const initDeppFilterProcessor = async () => {
+    const [dfJsCode, wasmBytes, modelBytes] = await getDeepFilterNetFiles();
+    const processor = createDeepFilterProcessor({
+      dfJsCode,
+      wasmBytes,
+      modelBytes,
+    });
+    setProcessor(processor);
+    setIsProcessorReady(true);
+  };
 
   if (isLoadingServer || isLoadingLiveKitToken || !isReady) {
     return (
@@ -84,7 +103,12 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
       {/* NOTE: RoomAudioRenderer is LiveKit pre-built component for audio rendering */}
       {/* <RoomAudioRenderer /> */}
       <LiveKitRoomAudioRenderer />
-      <LivekitVirtualMic processorEnabled={isProcessorEnabled} />
+      {isProcessorReady && !!processor && (
+        <LivekitVirtualMic
+          processor={processor}
+          processorEnabled={isProcessorEnabled}
+        />
+      )}
 
       {isConnected ? children : <LiveKitRoomLoading />}
     </LiveKitRoomBase>

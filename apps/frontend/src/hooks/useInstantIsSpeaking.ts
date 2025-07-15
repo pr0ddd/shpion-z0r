@@ -1,3 +1,9 @@
+/**
+ * @deprecated
+ * Doesn't work !!! 
+ * @returns 
+ */
+
 import { useMemo } from 'react';
 import { Track, Participant } from 'livekit-client';
 import { TrackReference } from '@livekit/components-core';
