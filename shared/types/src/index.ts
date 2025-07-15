@@ -104,6 +104,7 @@ export interface ServerToClientEvents {
   'server:state': (data: { serverId: string; users: SocketUser[] }) => void;
   'user:joined': (member: Member, serverId: string) => void;
   'user:left': (userId: string, serverId: string) => void;
+  'user:updated': (member: Member, serverId: string) => void;
   'user:listening': (userId: string, listening: boolean) => void;
   'message:new': (message: Message) => void;
   'message:updated': (message: Message) => void;

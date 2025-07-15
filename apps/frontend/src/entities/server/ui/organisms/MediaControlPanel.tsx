@@ -13,6 +13,7 @@ import { useServerStore } from '@entities/server/model';
 import { Chip } from '@ui/atoms/Chip';
 import { IconButton } from '@ui/atoms/IconButton';
 import { ChatFloatingWindow, useChatWindowStore } from '@entities/chat';
+import { SettingsDialog, useSettingsDialogStore, GlobalHotkeys } from '@entities/settings';
 
 interface MediaControlPanelProps {}
 
@@ -54,6 +55,8 @@ export const MediaControlPanel: React.FC<MediaControlPanelProps> = () => {
         <SettingsButton />
         <LeaveButton />
         <ChatFloatingWindow />
+        <SettingsDialog />
+        <GlobalHotkeys />
       </Box>
     </Box>
   );
@@ -88,13 +91,16 @@ const ToggleVolumeButton: React.FC = () => {
 };
 
 export const SettingsButton: React.FC = () => {
+  const isOpen = useSettingsDialogStore((s) => s.isOpen);
+  const toggle = useSettingsDialogStore((s) => s.toggle);
+
   return (
     <IconButton
       hasBorder={true}
-      color="default"
+      color={isOpen ? 'primary' : 'default'}
       icon={<SettingsIcon />}
-      tooltip="Настройки"
-      onClick={() => {}}
+      tooltip={isOpen ? 'Скрыть настройки' : 'Настройки'}
+      onClick={toggle}
     />
   );
 };

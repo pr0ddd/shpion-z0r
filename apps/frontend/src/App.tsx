@@ -7,12 +7,17 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SocketProvider } from '@libs/socket';
 
 import './App.css';
-import { theme } from './App.theme';
+import { createAppTheme } from './App.theme';
+import { useThemeModeStore } from '@entities/settings/model/themeMode.store';
+import { useMemo } from 'react';
 import AppRouter from './App.router';
 
 const queryClient = new QueryClient();
 
 const App: React.FC = () => {
+  const mode = useThemeModeStore((s) => s.mode);
+  const theme = useMemo(() => createAppTheme(mode), [mode]);
+
   return (
     <React.StrictMode>
       <ThemeProvider theme={theme}>

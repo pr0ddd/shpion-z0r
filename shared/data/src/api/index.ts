@@ -25,4 +25,5 @@ export * from './inviteAPI';
 export * from './messageAPI';
 export * from './livekitAPI';
 export * from './sfuAPI';
+export * from './userAPI';
 export default http;

@@ -38,6 +38,7 @@ export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
   const isVolumeOn = getMetadata('volumeOn') ?? true;
   const displayStreamCount = totalStreamCount;
   const isOwner = member?.role === 'ADMIN';
+  const displayName = member?.user.username || participant.name;
 
   return (
     <Box
@@ -98,7 +99,7 @@ export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
             noWrap
             sx={{ color: 'text.primary', fontWeight: 500, flexShrink: 1 }}
           >
-            {participant.name}
+            {displayName}
           </Typography>
           {isOwner && (
             <WorkspacePremiumIcon sx={{ fontSize: 14, color: 'warning.main', flexShrink: 0 }} />

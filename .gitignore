@@ -12,6 +12,7 @@ out/
 .vuepress/dist/
 .docusaurus/
 .svelte-kit/
+NEWDESIGN/
 
 # Logs
 logs/

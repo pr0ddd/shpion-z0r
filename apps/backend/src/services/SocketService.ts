@@ -184,6 +184,18 @@ export class SocketService {
     }
   }
 
+  // ---- User profile updated ----
+  public async broadcastUserUpdated(userId: string) {
+    const memberships = await this.prisma.member.findMany({
+      where: { userId },
+      include: { user: true },
+    });
+
+    for (const member of memberships) {
+      this.io.to(`server:${member.serverId}`).emit('user:updated', member, member.serverId);
+    }
+  }
+
   private notifyUserLeft(userId: string, serverId: string) {
     this.io.to(`server:${serverId}`).emit('user:left', userId, serverId);
   }
