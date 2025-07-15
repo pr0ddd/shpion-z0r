@@ -33,7 +33,6 @@ export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
   isStreaming,
 }) => {
   const isSpeaking = useIsSpeaking(participant);
-  console.log('isSpeaking:', isSpeaking, 'participant:', participant?.identity);
   const isMuted = useIsMuted({ source: Track.Source.Microphone, participant });
   const { getMetadata } = useParticipantMetadata(participant);
   const isVolumeOn = getMetadata('volumeOn') ?? true;

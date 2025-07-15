@@ -1,13 +1,8 @@
 // DeepFilterNet Model Loader
-// Загружает и кеширует модель для использования в WASM
-
-interface ModelCache {
-  [modelName: string]: Uint8Array;
-}
+// Загружает модель для использования в WASM без постоянного кеша
 
 class DeepFilterModelLoader {
   private static instance: DeepFilterModelLoader;
-  private modelCache: ModelCache = {};
   private loadingPromises: Map<string, Promise<Uint8Array>> = new Map();
 
   static getInstance(): DeepFilterModelLoader {
@@ -23,35 +18,19 @@ class DeepFilterModelLoader {
    * @returns Promise с байтами модели
    */
   async loadModel(modelName: string = 'DeepFilterNet3'): Promise<Uint8Array> {
-    // Проверяем кеш
-    if (this.modelCache[modelName]) {
-      console.log(`🎤 DeepFilter: Модель ${modelName} загружена из кеша`);
-      return this.modelCache[modelName];
-    }
-
-    // Проверяем, не загружается ли уже
+    // Если уже есть активная загрузка этой модели — дождёмся её, чтобы не
+    // создавать несколько параллельных запросов.
     if (this.loadingPromises.has(modelName)) {
-      console.log(`🎤 DeepFilter: Ожидание загрузки модели ${modelName}...`);
+      console.log(`🎤 DeepFilter: Ожидание завершения загрузки модели ${modelName}...`);
       return this.loadingPromises.get(modelName)!;
     }
 
-    // Начинаем загрузку
-    const loadingPromise = (async () => {
-      const bytes = await this.fetchModel(modelName);
-      return bytes;
-    })();
-    this.loadingPromises.set(modelName, loadingPromise);
+    // Запускаем загрузку
+    const loadingPromise = this.fetchModel(modelName)
+      .finally(() => this.loadingPromises.delete(modelName));
 
-    try {
-      const modelBytes = await loadingPromise;
-      this.modelCache[modelName] = modelBytes;
-      this.loadingPromises.delete(modelName);
-      console.log(`🎤 DeepFilter: Модель ${modelName} успешно загружена (${modelBytes.length} байт)`);
-      return modelBytes;
-    } catch (error) {
-      this.loadingPromises.delete(modelName);
-      throw error;
-    }
+    this.loadingPromises.set(modelName, loadingPromise);
+    return loadingPromise;
   }
 
   // Загружаем строго один архив; без GitHub-fallback и перебора путей.
@@ -81,41 +60,10 @@ class DeepFilterModelLoader {
     return gzipped;
   }
 
-  private async gunzip(gzBytes: Uint8Array): Promise<Uint8Array> {
-    // Используем DecompressionStream если есть
-    if (typeof DecompressionStream !== 'undefined') {
-      const ds = new DecompressionStream('gzip');
-      const resp = new Response(new Blob([gzBytes]).stream().pipeThrough(ds));
-      const ab = await resp.arrayBuffer();
-      return new Uint8Array(ab);
-    }
-
-    // Fallback: динамически импортируем fflate (есть в package.json)
-    const { gunzipSync } = await import('fflate');
-    return gunzipSync(gzBytes);
-  }
-
   /**
-   * Очищает кеш моделей (полезно для освобождения памяти)
-   */
-  clearCache(): void {
-    this.modelCache = {};
-    console.log('🎤 DeepFilter: Кеш моделей очищен');
-  }
-
-  /**
-   * Получает информацию о загруженных моделях
-   */
-  getCacheInfo(): { [modelName: string]: number } {
-    const info: { [modelName: string]: number } = {};
-    for (const [name, bytes] of Object.entries(this.modelCache)) {
-      info[name] = bytes.length;
-    }
-    return info;
-  }
-
-  /**
-   * Предзагрузка модели (для улучшения UX)
+   * Предзагрузка модели (для улучшения UX). Сейчас это просто «тёплый»
+   * вызов loadModel(), который отработает мгновенно, если модель уже
+   * загружается.
    */
   async preloadModel(modelName: string = 'DeepFilterNet3'): Promise<void> {
     try {

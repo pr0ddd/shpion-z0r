@@ -7,17 +7,16 @@ import {
   TrackProcessor,
 } from 'livekit-client';
 import { useRoomContext } from '@livekit/components-react';
-import { createDeepFilterProcessor } from '@libs/deepFilterNet/createDeepFilterProcessor';
-
 interface LivekitVirtualMicProps {
+  processor: TrackProcessor<Track.Kind.Audio, AudioProcessorOptions>;
   processorEnabled: boolean;
 }
 
 export const LivekitVirtualMic: React.FC<LivekitVirtualMicProps> = ({
+  processor,
   processorEnabled,
 }) => {
   const room = useRoomContext();
-  const processor = createDeepFilterProcessor();
   const micTrackRef = useRef<LocalAudioTrack | null>(null);
   const processorRef = useRef<TrackProcessor<
     Track.Kind.Audio,
