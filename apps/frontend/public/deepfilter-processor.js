@@ -9,13 +9,21 @@ class DeepFilterProcessor extends AudioWorkletProcessor {
     this.dfState = null;
     this.frameLength = 0;
 
-    /**
-     * Буферы для аккумулирования входящих сэмплов и выдачи обработанных.
-     * Используем обычные JS-массивы, т.к. они просты в использовании и достаточно быстры
-     * при небольших размерах (audio frame ≤ 512).
-     */
-    this.inputBuffer = [];
-    this.outputBuffer = [];
+    // --- буферы будут инициализированы после получения frameLength ---
+    this.inBuffer = null;   // Float32Array
+    this.inLen = 0;         // сколько сэмплов накоплено
+
+    this.outBuffer = null;  // Float32Array FIFO для обработанных кадров
+    this.outLen = 0;        // сколько сэмплов готово к выдаче
+
+    // --- debug stats ---
+    this._dbgFrames = 0;
+    this._dbgUnderruns = 0;
+    this._dbgLongProc = 0;
+
+    // --- smoothing state ---
+    this.prevTail = 0; // последний сэмпл предыдущего кадра
+    this.clicks = 0;   // счётчик резких стыков
 
     // Параметры, переданные из основного потока
     this.initOptions = options.processorOptions || {};
@@ -95,6 +103,15 @@ class DeepFilterProcessor extends AudioWorkletProcessor {
       // 3. Создаём состояние DeepFilterNet.
       this.dfState = this.wasm.df_create(this.modelBytes, this.attenLim);
       this.frameLength = this.wasm.df_get_frame_length(this.dfState);
+
+      // Инициализируем кольцевые буферы (достаточно запаса на 8 кадров)
+      const CAP_FRAMES = 8;
+      this.inBuffer = new Float32Array(this.frameLength * CAP_FRAMES);
+      this.inLen = 0;
+
+      this.outBuffer = new Float32Array(this.frameLength * CAP_FRAMES);
+      this.outLen = 0;
+
       this.wasm.df_set_post_filter_beta(this.dfState, this.postFilterBeta);
 
       this.framesProcessed = 0;
@@ -113,6 +130,8 @@ class DeepFilterProcessor extends AudioWorkletProcessor {
   }
 
   process(inputs, outputs, parameters) {
+    const t0 = currentTime; // AudioWorklet global timeline (seconds)
+
     const input = inputs[0];
     const output = outputs[0];
 
@@ -132,21 +151,95 @@ class DeepFilterProcessor extends AudioWorkletProcessor {
     const inCh = input[0] || new Float32Array(0);
     const outCh = output[0] || new Float32Array(0);
 
-    // 1. Копируем входные сэмплы в накопительный буфер.
-    for (let i = 0; i < inCh.length; i++) this.inputBuffer.push(inCh[i]);
+    // 1. Пишем входные данные в inBuffer, расширяем при необходимости
+    if (this.inLen + inCh.length > this.inBuffer.length) {
+      const newBuf = new Float32Array((this.inBuffer.length + inCh.length) * 2);
+      newBuf.set(this.inBuffer.subarray(0, this.inLen));
+      this.inBuffer = newBuf;
+    }
+    this.inBuffer.set(inCh, this.inLen);
+    this.inLen += inCh.length;
 
-    // 2. Пока в буфере достаточно данных, обрабатываем кадр.
-    while (this.inputBuffer.length >= this.frameLength) {
-      const frame = this.inputBuffer.splice(0, this.frameLength);
-      const processed = this.wasm.df_process_frame(this.dfState, new Float32Array(frame));
-      this.outputBuffer.push(...processed);
+    // 2. Пока накоплен целый кадр – обрабатываем
+    while (this.inLen >= this.frameLength) {
+      const frameView = this.inBuffer.subarray(0, this.frameLength);
+      // Копируем кадр, чтобы WASM не держал ссылку на буфер, который мы сместим ниже
+      const frame = new Float32Array(frameView);
+      const processed = this.wasm.df_process_frame(this.dfState, frame);
+
+      // положим результат в outBuffer с нормализацией, чтобы избежать
+      // NaN / Infinity и клиппинга, вызывавшего «хрип» во всём браузере.
+      if (this.outLen + processed.length > this.outBuffer.length) {
+        const newOut = new Float32Array((this.outBuffer.length + processed.length) * 2);
+        newOut.set(this.outBuffer.subarray(0, this.outLen));
+        this.outBuffer = newOut;
+      }
+
+      // --- адаптивное усиление без клиппинга ---
+      let peakIn = 0;
+      for (let i = 0; i < processed.length; i++) {
+        const a = Math.abs(processed[i]);
+        if (a > peakIn) peakIn = a;
+      }
+
+      const USER_GAIN = 3;      // базовый уровень громкости, можно вынести в UI
+      const TARGET_PEAK = 0.7;  // запас ~3 дБ до клиппинга
+      const autoGain = peakIn ? Math.min(USER_GAIN * TARGET_PEAK / peakIn, USER_GAIN) : USER_GAIN;
+
+      let peakOut = 0;
+
+      const FADE = 32; // длина кросс-фейда
+
+      // детектируем резкий стык между кадрами
+      if (processed.length) {
+        if (Math.abs(processed[0] * autoGain - this.prevTail) > 0.1) this.clicks++;
+      }
+
+      for (let i = 0; i < processed.length; i++) {
+        let s = processed[i] * autoGain;
+        // применяем кросс-фейд в первые FADE сэмплов кадра
+        if (i < FADE) {
+          const alpha = i / FADE;
+          s = (1 - alpha) * this.prevTail + alpha * s;
+        }
+        this.outBuffer[this.outLen + i] = s;
+        const a = Math.abs(s);
+        if (a > peakOut) peakOut = a;
+      }
+
+      // сохраняем хвост кадра для следующего сглаживания
+      this.prevTail = this.outBuffer[this.outLen + processed.length - 1] || this.prevTail;
+      this.outLen += processed.length;
+
+      if (this.framesProcessed % 200 === 0) {
+        console.log('[DF-AW] gain', autoGain.toFixed(2), 'peak', peakOut.toFixed(3), 'clicks', this.clicks);
+        this.clicks = 0;
+      }
+
+      // сдвигаем остаток входного буфера в начало
+      this.inBuffer.copyWithin(0, this.frameLength, this.inLen);
+      this.inLen -= this.frameLength;
       this.framesProcessed++;
+
+      continue; // переходим к следующей итерации while
+
     }
 
-    // 3. Записываем доступные обработанные сэмплы в выходной буфер. Если их меньше –
-    //    дополняем нехватающие оригинальными данными, чтобы сохранить синхронизацию.
-    for (let i = 0; i < outCh.length; i++) {
-      outCh[i] = this.outputBuffer.length ? this.outputBuffer.shift() : inCh[i];
+    // 3. Выдаём столько, сколько нужно в текущем render quantum (outCh.length)
+    const needed = outCh.length;
+    if (this.outLen >= outCh.length) {
+      outCh.set(this.outBuffer.subarray(0, outCh.length));
+      this.outBuffer.copyWithin(0, outCh.length, this.outLen);
+      this.outLen -= outCh.length;
+    } else {
+      // не хватает обработанных — underrun
+      this._dbgUnderruns++;
+      // не хватает обработанных — выдаём что есть + оригинал для синхры
+      if (this.outLen > 0) {
+        outCh.set(this.outBuffer.subarray(0, this.outLen));
+      }
+      for (let i = this.outLen; i < outCh.length; i++) outCh[i] = inCh[i - this.outLen] || 0;
+      this.outLen = 0;
     }
 
     // 4. Проброс остальных каналов без изменений.
@@ -162,6 +255,16 @@ class DeepFilterProcessor extends AudioWorkletProcessor {
         type: 'stats',
         data: { framesProcessed: this.framesProcessed },
       });
+    }
+
+    // --- debug timings ---
+    const procTimeMs = (currentTime - t0) * 1000;
+    if (procTimeMs > 2.8) this._dbgLongProc++;
+
+    if (++this._dbgFrames % 200 === 0) {
+      console.log('[DF-AW] frames', this._dbgFrames, 'underruns', this._dbgUnderruns, 'long>2.8ms', this._dbgLongProc);
+      this._dbgUnderruns = 0;
+      this._dbgLongProc = 0;
     }
 
     return true;

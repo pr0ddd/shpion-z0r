@@ -47,16 +47,15 @@ class DeepFilterModelLoader {
     const bytes = new Uint8Array(ab);
     console.log('🎤 DF-DEBUG: загружено', bytes.length, 'байт');
 
-    // Если файл уже gzip – ок.
+    // Если файл уже gzip – отдаём. Иначе TAR → gzipped TAR (DF ожидает .tar.gz)
     if (bytes[0] === 0x1f && bytes[1] === 0x8b) {
       return bytes;
     }
 
-    // В противном случае считаем, что сервер разжал архив и теперь это plain TAR.
-    console.warn('🎤 DF-DEBUG: получен TAR вместо TAR.GZ – повторно сжимаем в браузере');
+    console.warn('🎤 DF-DEBUG: модель пришла как TAR, сжимаем в gzip');
     const { gzipSync } = await import('fflate');
     const gzipped = gzipSync(bytes);
-    console.log('🎤 DF-DEBUG: повторное сжатие завершено, new size =', gzipped.length, 'байт');
+    console.log('🎤 DF-DEBUG: после gzip size =', gzipped.length, 'байт');
     return gzipped;
   }
 

@@ -11,6 +11,7 @@ import { LivekitVirtualMic } from '../organisms/LivekitVirtualMic';
 import { LiveKitRoomAudioRenderer } from '../organisms/LiveKitRoomAudioRenderer';
 import { AudioProcessorOptions, Track, TrackProcessor } from 'livekit-client';
 import { createDeepFilterProcessor, getDeepFilterNetFiles } from '@libs/deepFilterNet/createDeepFilterProcessor';
+import { createGlobalAudioContext } from '@libs/audioContext';
 
 interface LiveKitRoomProps {
   serverId: string;
@@ -37,6 +38,7 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
     AudioProcessorOptions
   > | null>(null);
   const [isProcessorReady, setIsProcessorReady] = useState(false);
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const isProcessorEnabled = true;
 
   useEffect(() => {
@@ -58,6 +60,10 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
     });
     setProcessor(processor);
     setIsProcessorReady(true);
+
+    // Create the global AudioContext strictly after processor is ready
+    const ac = createGlobalAudioContext();
+    setAudioContext(ac);
   };
 
   if (isLoadingServer || isLoadingLiveKitToken || !isReady) {
@@ -103,10 +109,11 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
       {/* NOTE: RoomAudioRenderer is LiveKit pre-built component for audio rendering */}
       {/* <RoomAudioRenderer /> */}
       <LiveKitRoomAudioRenderer />
-      {isProcessorReady && !!processor && (
+      {isProcessorReady && !!processor && audioContext && (
         <LivekitVirtualMic
           processor={processor}
           processorEnabled={isProcessorEnabled}
+          audioContext={audioContext}
         />
       )}
 

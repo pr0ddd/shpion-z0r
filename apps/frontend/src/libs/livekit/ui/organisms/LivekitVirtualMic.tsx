@@ -11,11 +11,13 @@ import { AUDIO_CAPTURE_DEFAULTS } from '@configs';
 interface LivekitVirtualMicProps {
   processor: TrackProcessor<Track.Kind.Audio, AudioProcessorOptions>;
   processorEnabled: boolean;
+  audioContext: AudioContext;
 }
 
 export const LivekitVirtualMic: React.FC<LivekitVirtualMicProps> = ({
   processor,
   processorEnabled,
+  audioContext,
 }) => {
   const room = useRoomContext();
   const micTrackRef = useRef<LocalAudioTrack | null>(null);
@@ -34,7 +36,6 @@ export const LivekitVirtualMic: React.FC<LivekitVirtualMicProps> = ({
 
       const track = await createLocalAudioTrack(AUDIO_CAPTURE_DEFAULTS);
 
-      const audioContext = new AudioContext();
       processorRef.current = processor;
 
       track.setAudioContext(audioContext);
@@ -64,7 +65,7 @@ export const LivekitVirtualMic: React.FC<LivekitVirtualMicProps> = ({
         micTrackRef.current = null;
       }
     };
-  }, [room]);
+  }, [room, audioContext]);
 
   useEffect(() => {
     const updateProcessor = async () => {
