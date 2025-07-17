@@ -1,6 +1,5 @@
 import { LiveKitRoom as LiveKitRoomBase } from '@livekit/components-react';
 import { useEffect, useState } from 'react';
-import { STREAM_PRESETS, AUDIO_CAPTURE_DEFAULTS } from '@configs';
 
 import { useServerStore } from '@entities/server/model';
 
@@ -12,6 +11,7 @@ import { LiveKitRoomAudioRenderer } from '../organisms/LiveKitRoomAudioRenderer'
 import { AudioProcessorOptions, Track, TrackProcessor } from 'livekit-client';
 import { createDeepFilterProcessorSAB } from '@libs/deepFilterNet/createDeepFilterProcessor';
 import { createGlobalAudioContext } from '@libs/audioContext';
+import { useSystemSettingsStore } from '@entities/systemSettings';
 
 interface LiveKitRoomProps {
   serverId: string;
@@ -30,6 +30,9 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
 }) => {
   const isConnected = useServerStore((s) => s.isConnected);
   const setIsConnected = useServerStore((s) => s.setIsConnected);
+  const roomOptions = useSystemSettingsStore((s) => s.roomOptions)!;
+  const deepFilterOptions = useSystemSettingsStore((s) => s.deepFilterOptions)!;
+  const compressorOptions = useSystemSettingsStore((s) => s.compressorOptions)!;
   const { data: livekitToken, isLoading: isLoadingLiveKitToken } =
     useLiveKitTokenQuery(serverId);
   const [isReady, setIsReady] = useState(false);
@@ -52,7 +55,11 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
   }, []);
 
   const initDeppFilterProcessor = async () => {
-    const processor = await createDeepFilterProcessorSAB(createGlobalAudioContext());
+    const processor = await createDeepFilterProcessorSAB(
+      createGlobalAudioContext(),
+      deepFilterOptions,
+      compressorOptions
+    );
     setProcessor(processor);
     setIsProcessorReady(true);
 
@@ -89,12 +96,7 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
       serverUrl={sfuUrl}
       connect={isReady}
       audio={false}
-      options={{
-        adaptiveStream: false,
-        dynacast: false,
-        publishDefaults: STREAM_PRESETS['balanced'],
-        audioCaptureDefaults: AUDIO_CAPTURE_DEFAULTS,
-      }}
+      options={roomOptions}
       onConnected={() => setIsConnected(true)}
       onDisconnected={() => setIsConnected(false)}
       onError={(error) => {

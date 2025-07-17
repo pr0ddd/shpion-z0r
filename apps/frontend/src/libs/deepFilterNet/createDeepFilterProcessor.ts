@@ -4,7 +4,7 @@ import type {
   Track,
 } from 'livekit-client';
 import { loadDeepFilterModel } from './modelLoader';
-import { DEEPFILTER_ATTEN_LIM, DEEPFILTER_POSTFILTER_BETA, DEEPFILTER_OUTPUT_GAIN } from '@configs/deepFilter';
+import { CompressorOptions, DeepFilterOptions } from '@entities/systemSettings';
 
 export interface DeepFilterNetSettings {
   attenLim?: number;
@@ -24,6 +24,10 @@ export const getDeepFilterNetFiles = async (): Promise<
   ]);
 };
 
+
+/**
+ * @deprecated
+ */
 export const createDeepFilterProcessor = ({
   dfJsCode,
   wasmBytes,
@@ -139,15 +143,26 @@ export const createDeepFilterProcessor = ({
   return processor;
 };
 
-export const createDeepFilterProcessorSAB = async (audioContext: AudioContext): Promise<TrackProcessor<Track.Kind.Audio, AudioProcessorOptions>> => {
+export const createDeepFilterProcessorSAB = async (
+  audioContext: AudioContext,
+  deepFilterOptions: DeepFilterOptions,
+  compressorOptions: CompressorOptions
+): Promise<TrackProcessor<Track.Kind.Audio, AudioProcessorOptions>> => {
   const frameLen = 480; // DeepFilterNet3 expects 480-sample frames at 48 kHz
-  const capacity = 32;  // ≈320 ms буфер для стартовой стабилизации
+  const capacity = deepFilterOptions.sabRingCapacity;  // ≈320 ms буфер для стартовой стабилизации
   const { SabRing } = await import('./worker/df-sab');
   const sabIn = new SabRing(frameLen, capacity).sab;
   const sabOut = new SabRing(frameLen, capacity).sab;
   // start worker
   const worker = new Worker(new URL('./worker/df-worker.ts', import.meta.url), { type: 'module' });
-  worker.postMessage({ sabIn, sabOut, frameLen, modelName: 'DeepFilterNet3', attenLim: DEEPFILTER_ATTEN_LIM, postFilterBeta: DEEPFILTER_POSTFILTER_BETA });
+  worker.postMessage({
+    sabIn,
+    sabOut,
+    frameLen,
+    modelName: 'DeepFilterNet3',
+    attenLim: deepFilterOptions.attenLim,
+    postFilterBeta: deepFilterOptions.postFilterBeta,
+  });
   await audioContext.audioWorklet.addModule('/deepfilter-sab-processor.js');
   const node = new AudioWorkletNode(audioContext, 'deepfilter-sab', {
     numberOfInputs: 1,
@@ -167,15 +182,15 @@ export const createDeepFilterProcessorSAB = async (audioContext: AudioContext): 
 
   // Dynamics compressor to equalize input levels
   const comp = audioContext.createDynamicsCompressor();
-  comp.threshold.value = -24;
-  comp.knee.value = 30;
-  comp.ratio.value = 4;
-  comp.attack.value = 0.003;
-  comp.release.value = 0.25;
+  comp.threshold.value = compressorOptions.threshold; 
+  comp.knee.value = compressorOptions.knee;
+  comp.ratio.value = compressorOptions.ratio;
+  comp.attack.value = compressorOptions.attack;
+  comp.release.value = compressorOptions.release;
 
   // Output gain applied AFTER noise suppression
   const gainNode = audioContext.createGain();
-  gainNode.gain.value = DEEPFILTER_OUTPUT_GAIN;
+  gainNode.gain.value = deepFilterOptions.outputGain;
 
   // Upmix mono -> stereo so that downstream MediaStreamTrack has 2 channels
   const merger = audioContext.createChannelMerger(2);

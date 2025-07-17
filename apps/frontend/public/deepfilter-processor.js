@@ -1,3 +1,5 @@
+// @deprecated
+
 // DeepFilterNet AudioWorkletProcessor
 // Работает в AudioWorkletGlobalScope (отдельный поток)
 class DeepFilterProcessor extends AudioWorkletProcessor {

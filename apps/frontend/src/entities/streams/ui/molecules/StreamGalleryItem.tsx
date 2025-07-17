@@ -6,7 +6,7 @@ import { IconButton } from '@ui/atoms/IconButton';
 import { Chip } from '@ui/atoms/Chip';
 import CastIcon from '@mui/icons-material/Cast';
 import { useEffect, useRef, useCallback } from 'react';
-import { PREVIEW_CAPTURE_INTERVAL } from '@configs';
+import { useSystemSettingsStore } from '@entities/systemSettings';
 
 interface StreamGalleryItemProps {
   track: TrackReference;
@@ -26,6 +26,7 @@ export const StreamGalleryItem: React.FC<StreamGalleryItemProps> = ({
   onStopStream,
   onOpenInWindow,
 }) => {
+  const previewCaptureInterval = useSystemSettingsStore((s) => s.previewCaptureInterval)!;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const capturePreviewIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -47,7 +48,7 @@ export const StreamGalleryItem: React.FC<StreamGalleryItemProps> = ({
     capturePreview();
     capturePreviewIntervalRef.current = setInterval(
       capturePreview,
-      PREVIEW_CAPTURE_INTERVAL
+      previewCaptureInterval
     );
 
     return () => {
