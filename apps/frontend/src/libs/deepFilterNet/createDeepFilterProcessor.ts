@@ -165,6 +165,14 @@ export const createDeepFilterProcessorSAB = async (audioContext: AudioContext): 
     frameLen,
   });
 
+  // Dynamics compressor to equalize input levels
+  const comp = audioContext.createDynamicsCompressor();
+  comp.threshold.value = -24;
+  comp.knee.value = 30;
+  comp.ratio.value = 4;
+  comp.attack.value = 0.003;
+  comp.release.value = 0.25;
+
   // Upmix mono -> stereo so that downstream MediaStreamTrack has 2 channels
   const merger = audioContext.createChannelMerger(2);
   node.connect(merger, 0, 0);
@@ -177,7 +185,9 @@ export const createDeepFilterProcessorSAB = async (audioContext: AudioContext): 
     init: async ({ track, audioContext }) => {
       srcNode = audioContext.createMediaStreamSource(new MediaStream([track]));
       dstNode = audioContext.createMediaStreamDestination();
-      srcNode.connect(node);
+
+      srcNode.connect(comp);
+      comp.connect(node);
       merger.connect(dstNode);
 
       console.log('[DF] dstNode stream track settings', dstNode.stream.getAudioTracks()[0].getSettings?.());
@@ -187,6 +197,7 @@ export const createDeepFilterProcessorSAB = async (audioContext: AudioContext): 
     destroy: async () => {
       worker.postMessage({ type: 'dispose' });
       srcNode?.disconnect();
+      comp.disconnect();
       node.disconnect();
       dstNode?.disconnect();
     }

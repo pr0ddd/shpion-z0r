@@ -82,29 +82,32 @@ class DFSabProcessor extends AudioWorkletProcessor {
     }
 
     // ---------------- Output side ----------------
+    const blockLen = chOut0.length; // 128 samples @48 kHz
     let outIdx = 0;
-    const blockLen = chOut0.length;
+
     while (outIdx < blockLen) {
-      // если текущий обработанный кадр закончился – пробуем взять следующий
-      if (this.readPos >= this.frameLen) {
+      // если исчерпали текущий кадр – берём следующий
+      if (this.readPos === this.frameLen) {
         if (this.outRing.pop(this.tmpOut)) {
           this.readPos = 0;
         } else {
-          // нет готового кадра → underflow + пасс-тру остатка блока
+          // обработанных данных нет – пасс-тру остатка
           this.stats.underflow++;
           chOut0.set(chIn.subarray(outIdx), outIdx);
           break;
         }
       }
 
-      const availProc = this.frameLen - this.readPos;   // осталось в кадре
-      const need      = blockLen - outIdx;              // осталось заполнить
-      const copyLen   = availProc < need ? availProc : need;
+      const copy = Math.min(this.frameLen - this.readPos, blockLen - outIdx);
+      chOut0.set(this.tmpOut.subarray(this.readPos, this.readPos + copy), outIdx);
 
-      chOut0.set(this.tmpOut.subarray(this.readPos, this.readPos + copyLen), outIdx);
+      this.readPos += copy;
+      outIdx      += copy;
+    }
 
-      this.readPos += copyLen;
-      outIdx      += copyLen;
+    // Если осталось незаполненное место (редко) – копируем сырой сигнал
+    if (outIdx < blockLen) {
+      chOut0.set(chIn.subarray(outIdx), outIdx);
     }
 
     // if node outputs more than 1 channel, copy mono data to the rest
