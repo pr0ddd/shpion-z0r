@@ -4,7 +4,7 @@ import type {
   Track,
 } from 'livekit-client';
 import { loadDeepFilterModel } from './modelLoader';
-import { DEEPFILTER_ATTEN_LIM, DEEPFILTER_POSTFILTER_BETA } from '@configs/deepFilter';
+import { DEEPFILTER_ATTEN_LIM, DEEPFILTER_POSTFILTER_BETA, DEEPFILTER_OUTPUT_GAIN } from '@configs/deepFilter';
 
 export interface DeepFilterNetSettings {
   attenLim?: number;
@@ -173,10 +173,15 @@ export const createDeepFilterProcessorSAB = async (audioContext: AudioContext): 
   comp.attack.value = 0.003;
   comp.release.value = 0.25;
 
+  // Output gain applied AFTER noise suppression
+  const gainNode = audioContext.createGain();
+  gainNode.gain.value = DEEPFILTER_OUTPUT_GAIN;
+
   // Upmix mono -> stereo so that downstream MediaStreamTrack has 2 channels
   const merger = audioContext.createChannelMerger(2);
-  node.connect(merger, 0, 0);
-  node.connect(merger, 0, 1);
+  node.connect(gainNode);
+  gainNode.connect(merger, 0, 0);
+  gainNode.connect(merger, 0, 1);
 
   let srcNode: MediaStreamAudioSourceNode | null = null;
   let dstNode: MediaStreamAudioDestinationNode | null = null;
@@ -199,6 +204,7 @@ export const createDeepFilterProcessorSAB = async (audioContext: AudioContext): 
       srcNode?.disconnect();
       comp.disconnect();
       node.disconnect();
+      gainNode.disconnect();
       dstNode?.disconnect();
     }
   };
