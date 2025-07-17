@@ -19,7 +19,6 @@ const App: React.FC = () => {
   const theme = useMemo(() => createAppTheme(mode), [mode]);
 
   return (
-    <React.StrictMode>
       <ThemeProvider theme={theme}>
         <QueryClientProvider client={queryClient}>
           <CssBaseline />
@@ -30,7 +29,6 @@ const App: React.FC = () => {
           </BrowserRouter>
         </QueryClientProvider>
       </ThemeProvider>
-    </React.StrictMode>
   );
 };
 

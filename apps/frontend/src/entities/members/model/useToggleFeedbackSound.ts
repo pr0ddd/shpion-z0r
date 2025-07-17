@@ -1,9 +1,10 @@
+import { waitForGlobalAudioContext } from '@libs/audioContext';
+
 export const useToggleFeedbackSound = () => {
-  const play = () => {
-    const AudioCtx =
-      (window as any).AudioContext || (window as any).webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
+  const play = async () => {
+    const ctx = await waitForGlobalAudioContext();
+    if (!ctx) return;
+
     const oscillator = ctx.createOscillator();
     const gain = ctx.createGain();
     oscillator.type = 'sine';
@@ -13,6 +14,14 @@ export const useToggleFeedbackSound = () => {
     gain.connect(ctx.destination);
     oscillator.start();
     oscillator.stop(ctx.currentTime + 0.1);
+
+    // cleanup nodes after stop
+    oscillator.onended = () => {
+      try {
+        oscillator.disconnect();
+        gain.disconnect();
+      } catch {}
+    };
   };
 
   return { play };

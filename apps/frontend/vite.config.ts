@@ -10,19 +10,30 @@ export default defineConfig(() => ({
     port: 4200,
     host: 'localhost',
     compress: false,
+    headers: {
+      // для SharedArrayBuffer / AudioWorklet + Worker
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+    },
   },
   preview: {
     port: 4300,
     host: 'localhost',
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+    },
   },
   plugins: [nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
   resolve: {
     dedupe: ['react', 'react-dom', '@emotion/react']
   },
-  // Uncomment this if you are using workers.
-  // worker: {
-  //  plugins: [ nxViteTsPaths() ],
-  // },
+  // Worker config – нужен для tsconfig-paths в WebWorker
+  // @ts-ignore – Vite types mismatch for worker.plugins, but runtime is fine
+  worker: {
+    format: 'es',
+    plugins: [nxViteTsPaths()],
+  } as any,
   build: {
     outDir: '../../dist/apps/frontend',
     emptyOutDir: true,

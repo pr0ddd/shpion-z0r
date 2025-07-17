@@ -1,0 +1,6 @@
+[package.metadata.wasm-pack.profile.release]
+# Включаем расширения SIMD128 + атомики и экспорт таблицы для многопоточности
+rustflags = [
+  "-C", "target-feature=+simd128,+atomics",
+  "-C", "link-arg=--export-table",
+] 

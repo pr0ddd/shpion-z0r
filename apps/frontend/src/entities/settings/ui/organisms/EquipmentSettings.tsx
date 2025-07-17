@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { waitForGlobalAudioContext } from '@libs/audioContext';
 import {
   Box,
   Button,
@@ -45,12 +46,14 @@ export const EquipmentSettings: React.FC = () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: micSel.activeDeviceId || undefined } });
       micStreamRef.current = stream;
-      const ctx = new AudioContext();
+      const ctx = await waitForGlobalAudioContext();
       const src = ctx.createMediaStreamSource(stream);
       src.connect(ctx.destination);
       setTimeout(() => {
         stream.getTracks().forEach((t) => t.stop());
-        ctx.close();
+        try {
+          src.disconnect();
+        } catch {}
         setTestingMic(false);
       }, 4000);
     } catch {
@@ -62,7 +65,7 @@ export const EquipmentSettings: React.FC = () => {
   /* --- Speaker test --- */
   const playTestSound = async () => {
     try {
-      const ctx = new AudioContext();
+      const ctx = await waitForGlobalAudioContext();
       const osc = ctx.createOscillator();
       osc.type = 'sine';
       osc.frequency.value = 440;
@@ -80,8 +83,13 @@ export const EquipmentSettings: React.FC = () => {
       }
 
       await audio.play();
-      // завершить context после окончания
-      setTimeout(() => ctx.close(), 1200);
+      // disconnect oscillator after finish to not leak nodes
+      setTimeout(() => {
+        try {
+          osc.disconnect();
+          dest.disconnect();
+        } catch {}
+      }, 1200);
     } catch {
       showErr('Не удалось воспроизвести звук');
     }
