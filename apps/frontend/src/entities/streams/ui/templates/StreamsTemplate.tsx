@@ -80,6 +80,9 @@ export const StreamsTemplate: React.FC = () => {
     >
       <StreamActive
         tracks={mediaStreamTracks}
+        galleryTracks={streamTracks}
+        activeSid={activeVideoTrackSid}
+        onSelectStream={(stream) => setActiveVideoTrackSid(stream.publication?.track?.sid ?? null)}
         onExit={() => {
           setActiveVideoTrackSid(null);
           setMediaStreamTracks([]);

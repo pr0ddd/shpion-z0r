@@ -16,16 +16,31 @@ import { useChatWindowStore } from '@entities/chat/model/chatWindow.store';
 import ReactDOM from 'react-dom/client';
 import ArticleIcon from '@mui/icons-material/Article';
 import { Button } from '@mui/material';
+import { TrackReference } from '@livekit/components-react';
+import { StreamGalleryItem } from '../molecules/StreamGalleryItem';
+import { useSessionStore } from '@entities/session';
 
 interface StreamActiveProps {
   tracks: MediaStreamTrack[];
+  /** All available streams for preview */
+  galleryTracks?: TrackReference[];
+  /** Currently active video track sid */
+  activeSid?: string | null;
+  /** Switch active stream */
+  onSelectStream?: (track: TrackReference) => void;
   /** Callback invoked when user wants to exit stream watching */
   onExit?: () => void;
 }
 
 export const StreamActive = memo(
-  ({ tracks, onExit }: StreamActiveProps) => (
-    <StreamActiveInner tracks={tracks} onExit={onExit} />
+  ({ tracks, galleryTracks, activeSid, onSelectStream, onExit }: StreamActiveProps) => (
+    <StreamActiveInner
+      tracks={tracks}
+      galleryTracks={galleryTracks ?? []}
+      activeSid={activeSid ?? null}
+      onSelectStream={onSelectStream ?? (() => {})}
+      onExit={onExit}
+    />
   ),
   (prevProps, nextProps) => {
     const concatIds = (tracks: MediaStreamTrack[]) =>
@@ -58,7 +73,7 @@ const linkify = (text: string): React.ReactNode[] => {
 };
 
 export const StreamActiveInner: React.FC<StreamActiveProps> = memo(
-  ({ tracks, onExit }) => {
+  ({ tracks, galleryTracks = [], activeSid = null, onSelectStream = () => {}, onExit }) => {
     const [isReady, setIsReady] = useState(false);
     const [overlayMessages, setOverlayMessages] = useState<Message[]>([]);
     const [controlsVisible, setControlsVisible] = useState(true);
@@ -187,7 +202,7 @@ export const StreamActiveInner: React.FC<StreamActiveProps> = memo(
     );
 
     // Compute overlay portal
-    const overlayPortal = useMemo(() => {
+    const chatPortal = useMemo(() => {
       if (!isFs || overlayMessages.length === 0) return null;
       const fsRoot = document.fullscreenElement as HTMLElement | null;
       if (!fsRoot) return null;
@@ -256,6 +271,55 @@ export const StreamActiveInner: React.FC<StreamActiveProps> = memo(
         fsRoot,
       );
     }, [overlayMessages, isFs]);
+
+    // ---------------- Preview thumbnails overlay ----------------
+    const user = useSessionStore((s) => s.user);
+
+    const previewPortal = useMemo(() => {
+      if (!isFs || galleryTracks.length === 0) return null;
+      const fsRoot = document.fullscreenElement as HTMLElement | null;
+      if (!fsRoot) return null;
+
+      return createPortal(
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 16,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            flexDirection: 'row',
+            gap: 1,
+            padding: 1,
+            backgroundColor: 'rgba(0,0,0,0.25)',
+            borderRadius: 1,
+            transition: 'opacity .2s',
+            opacity: 0,
+            pointerEvents: 'auto',
+            '&:hover': {
+              opacity: 1,
+            },
+            '&:hover .stream-action-btn': {
+              opacity: 1,
+              pointerEvents: 'auto',
+            },
+          }}
+        >
+          {galleryTracks.map((track) => (
+            <StreamGalleryItem
+              key={track.publication.track?.sid}
+              track={track}
+              isMe={track.participant.identity === user?.id}
+              isActive={track.publication.track?.sid === activeSid}
+              onSelect={(t) => onSelectStream(t)}
+              onStopStream={() => {}}
+              onOpenInWindow={() => {}}
+            />
+          ))}
+        </Box>,
+        fsRoot,
+      );
+    }, [galleryTracks, isFs, activeSid, user]);
 
     // Register custom chat button component once
     useEffect(() => {
@@ -372,7 +436,8 @@ export const StreamActiveInner: React.FC<StreamActiveProps> = memo(
           )}
 
           {/* Chat overlay via portal when fullscreen */}
-          {overlayPortal}
+          {chatPortal}
+          {previewPortal}
         </Box>
       </StreamCard>
     );
