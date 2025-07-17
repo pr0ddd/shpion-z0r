@@ -133,3 +133,12 @@ export interface SfuServer {
   name: string;
   url: string;
 }
+
+export interface SystemSetting {
+  id: number;
+  code_name: string;
+  description: string | null;
+  value: string;
+}
+
+export type SystemSettingsPayload = Pick<SystemSetting, 'id' | 'value'>[];

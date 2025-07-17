@@ -3,7 +3,7 @@ import {
   TextFieldProps as MuiTextFieldProps,
 } from '@mui/material';
 
-type TextFieldProps = MuiTextFieldProps<'standard'> & {
+type TextFieldProps = MuiTextFieldProps<'standard' | 'outlined' | 'filled'> & {
 };
 
 export const TextField: React.FC<TextFieldProps> = ({
@@ -11,18 +11,21 @@ export const TextField: React.FC<TextFieldProps> = ({
   label,
   placeholder,
   value,
+  variant = 'filled',
   onChange,
+  ...props
 }) => {
   return (
     <MuiTextField
       fullWidth
       hiddenLabel
-      variant='filled'
+      variant={variant}
       id={id}
       label={label}
       placeholder={placeholder}
       value={value}
       onChange={onChange}
+      {...props}
     />
   );
 };

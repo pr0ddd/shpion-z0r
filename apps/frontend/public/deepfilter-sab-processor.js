@@ -1,4 +1,3 @@
-// DeepFilter SAB AudioWorkletProcessor
 class SabRing {
   constructor(sab, frameLen) {
     this.frameLen = frameLen;
