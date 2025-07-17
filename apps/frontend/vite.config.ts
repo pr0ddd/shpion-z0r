@@ -31,6 +31,7 @@ export default defineConfig(() => ({
   // Worker config – нужен для tsconfig-paths в WebWorker
   // @ts-ignore – Vite types mismatch for worker.plugins, but runtime is fine
   worker: {
+    format: 'es',
     plugins: [nxViteTsPaths()],
   } as any,
   build: {
