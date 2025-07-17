@@ -38,6 +38,14 @@ shpion.pr0d.ru, www.pr0d.ru {
     # --- Frontend SPA ---
     # Everything else goes to the Vite-built React app served by Nginx (port 8080).
     handle {
+        # Enable crossOriginIsolated so that SharedArrayBuffer works (AudioWorklet + WebWorker)
+        header {
+            Cross-Origin-Opener-Policy "same-origin"
+            Cross-Origin-Embedder-Policy "require-corp"
+            # Optional but recommended by spec
+            Origin-Agent-Cluster "?1"
+        }
+
         reverse_proxy frontend:8080
     }
 }

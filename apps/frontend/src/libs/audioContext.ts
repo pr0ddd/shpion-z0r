@@ -16,7 +16,8 @@ let ctxReadyResolver: ((ctx: AudioContext) => void) | null = null;
  */
 export const createGlobalAudioContext = (): AudioContext => {
   if (!globalAudioContext) {
-    globalAudioContext = new AudioContext({ sampleRate: 16_000 });
+    // Use 48 kHz everywhere to avoid implicit resampling and quality loss
+    globalAudioContext = new AudioContext({ sampleRate: 48_000 });
     console.log('globalAudioContext', globalAudioContext);
     if (ctxReadyResolver) {
       ctxReadyResolver(globalAudioContext);

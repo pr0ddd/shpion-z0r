@@ -10,7 +10,7 @@ import { LiveKitRoomLoading } from '../atoms/LiveKitRoomLoading';
 import { LivekitVirtualMic } from '../organisms/LivekitVirtualMic';
 import { LiveKitRoomAudioRenderer } from '../organisms/LiveKitRoomAudioRenderer';
 import { AudioProcessorOptions, Track, TrackProcessor } from 'livekit-client';
-import { createDeepFilterProcessor, getDeepFilterNetFiles } from '@libs/deepFilterNet/createDeepFilterProcessor';
+import { createDeepFilterProcessorSAB } from '@libs/deepFilterNet/createDeepFilterProcessor';
 import { createGlobalAudioContext } from '@libs/audioContext';
 
 interface LiveKitRoomProps {
@@ -52,12 +52,7 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
   }, []);
 
   const initDeppFilterProcessor = async () => {
-    const [dfJsCode, wasmBytes, modelBytes] = await getDeepFilterNetFiles();
-    const processor = createDeepFilterProcessor({
-      dfJsCode,
-      wasmBytes,
-      modelBytes,
-    });
+    const processor = await createDeepFilterProcessorSAB(createGlobalAudioContext());
     setProcessor(processor);
     setIsProcessorReady(true);
 

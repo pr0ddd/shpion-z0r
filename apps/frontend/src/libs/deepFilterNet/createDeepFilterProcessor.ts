@@ -4,6 +4,7 @@ import type {
   Track,
 } from 'livekit-client';
 import { loadDeepFilterModel } from './modelLoader';
+import { DEEPFILTER_ATTEN_LIM, DEEPFILTER_POSTFILTER_BETA } from '@configs/deepFilter';
 
 export interface DeepFilterNetSettings {
   attenLim?: number;
@@ -136,4 +137,59 @@ export const createDeepFilterProcessor = ({
   };
 
   return processor;
+};
+
+export const createDeepFilterProcessorSAB = async (audioContext: AudioContext): Promise<TrackProcessor<Track.Kind.Audio, AudioProcessorOptions>> => {
+  const frameLen = 480; // DeepFilterNet3 expects 480-sample frames at 48 kHz
+  const capacity = 32;  // ≈320 ms буфер для стартовой стабилизации
+  const { SabRing } = await import('./worker/df-sab');
+  const sabIn = new SabRing(frameLen, capacity).sab;
+  const sabOut = new SabRing(frameLen, capacity).sab;
+  // start worker
+  const worker = new Worker(new URL('./worker/df-worker.ts', import.meta.url), { type: 'module' });
+  worker.postMessage({ sabIn, sabOut, frameLen, modelName: 'DeepFilterNet3', attenLim: DEEPFILTER_ATTEN_LIM, postFilterBeta: DEEPFILTER_POSTFILTER_BETA });
+  await audioContext.audioWorklet.addModule('/deepfilter-sab-processor.js');
+  const node = new AudioWorkletNode(audioContext, 'deepfilter-sab', {
+    numberOfInputs: 1,
+    numberOfOutputs: 1,
+    channelCount: 1, // keep mono inside processor
+    channelCountMode: 'explicit',
+    channelInterpretation: 'speakers',
+    processorOptions: { sabIn, sabOut, frameLen }
+  });
+
+  console.log('[DF] Worklet node created', {
+    channelCount: node.channelCount,
+    numberOfOutputs: node.numberOfOutputs,
+    channelCountMode: node.channelCountMode,
+    frameLen,
+  });
+
+  // Upmix mono -> stereo so that downstream MediaStreamTrack has 2 channels
+  const merger = audioContext.createChannelMerger(2);
+  node.connect(merger, 0, 0);
+  node.connect(merger, 0, 1);
+
+  let srcNode: MediaStreamAudioSourceNode | null = null;
+  let dstNode: MediaStreamAudioDestinationNode | null = null;
+  const proc: TrackProcessor<Track.Kind.Audio, AudioProcessorOptions> = {
+    name: 'deepfilter-sab',
+    init: async ({ track, audioContext }) => {
+      srcNode = audioContext.createMediaStreamSource(new MediaStream([track]));
+      dstNode = audioContext.createMediaStreamDestination();
+      srcNode.connect(node);
+      merger.connect(dstNode);
+
+      console.log('[DF] dstNode stream track settings', dstNode.stream.getAudioTracks()[0].getSettings?.());
+      proc.processedTrack = dstNode.stream.getAudioTracks()[0];
+    },
+    restart: async (opts) => {},
+    destroy: async () => {
+      worker.postMessage({ type: 'dispose' });
+      srcNode?.disconnect();
+      node.disconnect();
+      dstNode?.disconnect();
+    }
+  };
+  return proc;
 };
