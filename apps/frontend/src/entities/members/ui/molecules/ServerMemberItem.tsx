@@ -11,10 +11,8 @@ import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { Avatar } from '@ui/atoms/Avatar';
 
 import { LocalParticipant, RemoteParticipant, Track } from 'livekit-client';
-import {
-  useIsMuted,
-  useIsSpeaking,
-} from '@livekit/components-react';
+import { useIsMuted } from '@livekit/components-react';
+import { useInstantIsSpeaking } from '@hooks/useInstantIsSpeaking';
 import { useParticipantMetadata } from '@entities/members/model/useLocalParticipantMetadata';
 
 interface ServerMemberItemProps {
@@ -32,7 +30,7 @@ export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
   totalStreamCount,
   isStreaming,
 }) => {
-  const isSpeaking = useIsSpeaking(participant);
+  const isSpeaking = useInstantIsSpeaking(participant);
   const isMuted = useIsMuted({ source: Track.Source.Microphone, participant });
   const { getMetadata } = useParticipantMetadata(participant);
   const isVolumeOn = getMetadata('volumeOn') ?? true;
