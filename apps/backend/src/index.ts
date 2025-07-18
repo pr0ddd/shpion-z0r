@@ -53,7 +53,8 @@ const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 
 // ---- CORS ----
 // allow main client URL and *.pr0d.ru sub-domains (including regional SFUs/frontends)
-const allowedOrigins = [CLIENT_URL];
+const CLIENT_URL_DEV = process.env.CLIENT_URL_DEV || 'http://localhost:4200';
+const allowedOrigins = [CLIENT_URL, CLIENT_URL_DEV];
 
 const dynamicCorsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
@@ -105,7 +106,7 @@ app.use('/api/system-settings', systemSettingsRoutes);
 const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents, {}, SocketData>(httpServer, {
   path: '/api/socket.io',
   cors: {
-    origin: CLIENT_URL,
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
     credentials: true
   },

@@ -19,6 +19,8 @@ let dfState: any;
 let frameCounter = 0;
 let lastLog = Date.now();
 let underflows = 0;
+let waits = 0;
+let drops = 0;
 
 self.onmessage = async (e: MessageEvent<InitMsg | { type: 'dispose' }>) => {
   const data: any = e.data;
@@ -63,22 +65,21 @@ function loop() {
   const processed = wasm.df_process_frame(dfState, buf) as Float32Array;
 
   // Если выходной буфер полон, подождём, чтобы не терять кадры
-  if (!outRing.push(processed)) {
-    // ждём, пока consumer освободит место (tail изменится)
+  while (!outRing.push(processed)) {
+    // ring full – ждём, пока consumer заберёт хотя бы один кадр
     const ctrl: Int32Array = (outRing as any).ctrl;
     if (ctrl) {
-      Atomics.wait(ctrl, 1, Atomics.load(ctrl, 1), 4); // max 4 мс ожидания
-    }
-    // второй попытки достаточно; если всё ещё full — дропаем кадр
-    if (!outRing.push(processed)) {
-      console.warn('[DF-Worker] dropping frame, ring still full');
+      waits++;
+      Atomics.wait(ctrl, 1, Atomics.load(ctrl, 1), 8); // подождём до 8 мс
     }
   }
 
   frameCounter++;
   if (frameCounter % 100 === 0) {
     const now = Date.now();
-    console.log('[DF-Worker] processed', frameCounter, 'frames in', now - lastLog, 'ms', 'inRing', inRing.size(), 'outRing', outRing.size());
+    console.log('[DF-Worker] processed', frameCounter, 'frames in', now - lastLog, 'ms',
+      'inRing', inRing.size(), 'outRing', outRing.size(),
+      'underflows', underflows, 'waits', waits, 'drops', drops);
     lastLog = now;
   }
 
