@@ -2,7 +2,7 @@
   "name": "shpion-backend",
   "version": "1.0.0",
   "description": "Shpion backend with SFU architecture",
-  "main": "dist/src/index.js",
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "start": "npx prisma migrate deploy && node dist/index.js",
