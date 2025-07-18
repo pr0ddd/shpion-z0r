@@ -28,18 +28,35 @@ export default defineConfig(() => ({
   resolve: {
     dedupe: ['react', 'react-dom', '@emotion/react']
   },
+  optimizeDeps: {
+    esbuildOptions: {
+      logLevel: 'error',
+    },
+  },
   // Worker config – нужен для tsconfig-paths в WebWorker
   // @ts-ignore – Vite types mismatch for worker.plugins, but runtime is fine
   worker: {
     format: 'es',
     plugins: [nxViteTsPaths()],
   } as any,
+  // Suppress noisy Rollup warnings like "Module level directives cause errors when bundled"
   build: {
     outDir: '../../dist/apps/frontend',
     emptyOutDir: true,
     reportCompressedSize: true,
     commonjsOptions: {
       transformMixedEsModules: true,
+    },
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Skip "use client" directive noise
+        if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
+        warn(warning);
+      },
+    },
+    // Reduce esbuild verbosity
+    esbuild: {
+      logLevel: 'error',
     },
   },
 }));

@@ -10,6 +10,7 @@ type AccordionPanelProps = {
   disabled?: boolean;
   showToggle?: boolean;
   onToggle?: (isExpanded: boolean) => void;
+  actions?: React.ReactNode;
   children: React.ReactNode;
 };
 
@@ -20,6 +21,7 @@ export const AccordionPanel: React.FC<AccordionPanelProps> = ({
   expanded = true,
   disabled = false,
   onToggle,
+  actions,
 }) => {
   const [isExpanded, setIsExpanded] = useState(expanded);
 
@@ -74,6 +76,10 @@ export const AccordionPanel: React.FC<AccordionPanelProps> = ({
             </Typography>
           )}
         </Box>
+
+        {actions && (
+          <Box onClick={(e)=>{e.stopPropagation();}}>{actions}</Box>
+        )}
 
         {!disabled && (
           <IconButton

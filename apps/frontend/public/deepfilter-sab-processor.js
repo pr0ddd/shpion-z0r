@@ -43,6 +43,7 @@ class DFSabProcessor extends AudioWorkletProcessor {
     this.writePos = 0;
     // read pointer inside tmpOut when streaming processed frame to output
     this.readPos = frameLen; // force initial pop on first process()
+    this.prevTail = 0; // last sample of previous frame
 
     // stats
     this.stats = {
@@ -52,6 +53,9 @@ class DFSabProcessor extends AudioWorkletProcessor {
       overflow: 0,
     };
     this.lastLog = currentTime;
+
+    // debug every 100 process calls
+    this._procCount = 0;
   }
 
   process(inputs, outputs) {
@@ -75,6 +79,9 @@ class DFSabProcessor extends AudioWorkletProcessor {
       if (this.writePos === this.frameLen) {
         if (!this.inRing.push(this.tmpIn)) {
           this.stats.overflow++;
+          if (this.stats.overflow % 10 === 0) {
+            console.warn('[DF-Worklet] OVERFLOW', this.stats.overflow, 'inRing size', this.inRing.size());
+          }
         }
         this.writePos = 0;
       }
@@ -88,10 +95,23 @@ class DFSabProcessor extends AudioWorkletProcessor {
       // если исчерпали текущий кадр – берём следующий
       if (this.readPos === this.frameLen) {
         if (this.outRing.pop(this.tmpOut)) {
+          // smooth boundary between frames
+          const headDiff = Math.abs(this.tmpOut[0] - this.prevTail);
+          if (headDiff > 0.1) {
+            const FADE = 32;
+            for (let i = 0; i < FADE && i < this.tmpOut.length; i++) {
+              const t = i / FADE;
+              this.tmpOut[i] = this.prevTail * (1 - t) + this.tmpOut[i] * t;
+            }
+          }
+          this.prevTail = this.tmpOut[this.tmpOut.length - 1];
           this.readPos = 0;
         } else {
           // обработанных данных нет – пасс-тру остатка
           this.stats.underflow++;
+          if (this.stats.underflow % 10 === 0) {
+            console.warn('[DF-Worklet] UNDERFLOW', this.stats.underflow, 'outRing size', this.outRing.size());
+          }
           chOut0.set(chIn.subarray(outIdx), outIdx);
           break;
         }
@@ -117,10 +137,17 @@ class DFSabProcessor extends AudioWorkletProcessor {
     // stats update
     this.stats.framesIn += chIn.length;
     this.stats.framesOut += chOut0.length;
-    if (currentTime - this.lastLog > 1000) {
-      console.log('[DF-Worklet] inRing', this.inRing.size(), 'outRing', this.outRing.size(),
-        'overflow', this.stats.overflow, 'underflow', this.stats.underflow);
-      this.lastLog = currentTime;
+
+    this._procCount = (this._procCount || 0) + 1;
+    if (this._procCount % 100 === 0) {
+      console.log('[DF-Worklet:step]', {
+        inRing: this.inRing.size(),
+        outRing: this.outRing.size(),
+        writePos: this.writePos,
+        readPos: this.readPos,
+        framesInTotal: this.stats.framesIn,
+        framesOutTotal: this.stats.framesOut,
+      });
     }
 
     return true;

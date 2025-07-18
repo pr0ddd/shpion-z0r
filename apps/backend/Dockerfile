@@ -11,17 +11,11 @@ RUN npm install
 # Copy backend source code
 COPY apps/backend/ ./
 
-# Copy shared workspace so TS path aliases like "../../shared/*" resolve
-COPY shared /shared
-
-# Copy shared tsconfig base for TypeScript compilation
-COPY tsconfig.base.json /tsconfig.base.json
-
 # Skip Prisma generate during build to avoid external binary download;
 # it will run on container startup (see CMD).
 
-# Generate Prisma types without downloading engines (Prisma <6)
-RUN npx prisma generate --no-engine
+# Generate Prisma client
+RUN npx prisma generate
 
 # Build TypeScript
 RUN npm run build
@@ -29,18 +23,20 @@ RUN npm run build
 # Prune development dependencies already omitted above if needed
 RUN npm prune --production
 
+# ---------------------------
 # Stage 2: Production
 FROM node:22-alpine
 
 WORKDIR /app
 
-# Copy production dependencies from builder
+# Copy production dependencies and built files from builder
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
-
-# Application code and Prisma client
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
+# Copy entrypoint script
+COPY --from=builder /app/entrypoint.sh ./entrypoint.sh
+RUN chmod +x entrypoint.sh
 
 # Copy production env so dotenv can load variables inside container
 COPY apps/backend/.env.production ./
@@ -48,5 +44,5 @@ COPY apps/backend/.env.production ./
 # Expose the application port
 EXPOSE 3001
 
-# Run the application
-CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && npx prisma db seed && node dist/index.js"] 
+# Run the application via entrypoint that prepares DB & seeds
+ENTRYPOINT ["sh","/app/entrypoint.sh"] 

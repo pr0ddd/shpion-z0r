@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Box } from '@mui/material';
 
 import { LiveKitRoom } from '@libs/livekit/ui/templates/LiveKitRoom';
@@ -13,11 +13,16 @@ import { MembersTemplate } from '@entities/members/ui';
 import { Accordion } from '@ui/molecules/Accordion';
 import { AccordionPanel } from '@ui/molecules/AccordionPanel';
 import { useMembersQuery } from '@entities/members/api/members.query';
+import InviteDialog from '@entities/server/ui/organisms/InviteDialog';
+import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
+import { IconButton } from '@ui/atoms/IconButton';
 
 const ServerPage: React.FC = () => {
   const { selectedServerId } = useServerStore();
   const { data: servers } = useServersQuery();
   const { data: members } = useMembersQuery(selectedServerId!);
+
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
 
   const selectedServer = useMemo(() => {
     if (!servers || !selectedServerId) return null;
@@ -75,9 +80,27 @@ const ServerPage: React.FC = () => {
                 title="Users"
                 disabled={true}
                 subtitle={`${members?.length} members`}
+                actions={
+                  <IconButton
+                    icon={<PersonAddAlt1Icon />}
+                    hasBorder={false}
+                    size="small"
+                    onClick={(e)=>{
+                      e.stopPropagation();
+                      setShowInviteDialog(true);
+                    }}
+                  />
+                }
               >
                 <MembersTemplate />
               </AccordionPanel>
+              {selectedServer && (
+                <InviteDialog
+                  open={showInviteDialog}
+                  server={selectedServer}
+                  onClose={() => setShowInviteDialog(false)}
+                />
+              )}
             </Accordion>
           </Box>
         </LiveKitRoom>

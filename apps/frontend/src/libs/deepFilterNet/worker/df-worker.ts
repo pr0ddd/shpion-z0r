@@ -19,6 +19,8 @@ let dfState: any;
 let frameCounter = 0;
 let lastLog = Date.now();
 let underflows = 0;
+let waits = 0;
+let drops = 0;
 
 self.onmessage = async (e: MessageEvent<InitMsg | { type: 'dispose' }>) => {
   const data: any = e.data;
@@ -50,33 +52,42 @@ self.onmessage = async (e: MessageEvent<InitMsg | { type: 'dispose' }>) => {
 
 function loop() {
   if (!running) return;
-  const buf = new Float32Array(frameLen);
-  if (inRing.pop(buf)) {
-    const processed = wasm.df_process_frame(dfState, buf) as Float32Array;
-    // Wait until there is space in the outRing to avoid dropping frames
-    if (!outRing.push(processed)) {
-      // back-off: wait couple of ms for consumer to catch up
-      const start = performance.now();
-      while (!outRing.push(processed)) {
-        if (performance.now() - start > 20) {
-          console.warn('[DF-Worker] dropping frame, ring still full');
-          break;
-        }
-      }
-    }
 
-    frameCounter++;
-    if (frameCounter % 100 === 0) {
-      const now = Date.now();
-      console.log('[DF-Worker] processed', frameCounter, 'frames in', now - lastLog, 'ms', 'inRing', inRing.size(), 'outRing', outRing.size());
-      lastLog = now;
-    }
-  } else {
-    underflows++;
-    if (underflows % 100 === 0) {
-      console.warn('[DF-Worker] inRing underflow', underflows, 'outRing size', outRing.size());
-    }
-    inRing.waitForData();
+  const buf = new Float32Array(frameLen);
+
+  if (!inRing.pop(buf)) {
+    // Нет новых данных – ждём уведомление от producer (AudioWorklet)
+    inRing.waitForData(); // Atomics.wait ≤5 мс
+    queueMicrotask(loop);
+    return;
   }
-  setTimeout(loop, 0);
+
+  const processed = wasm.df_process_frame(dfState, buf) as Float32Array;
+
+  // throttle if outRing almost full to prevent extra latency
+  if (outRing.size() >= (outRing.capacityFrames - 2)) {
+    // wait until consumer frees at least one slot
+    const ctrl: Int32Array = (outRing as any).ctrl;
+    Atomics.wait(ctrl, 1, Atomics.load(ctrl, 1), 4);
+    queueMicrotask(loop);
+    return;
+  }
+
+  // Если выходной буфер полон, подождём, чтобы не терять кадры
+  while (!outRing.push(processed)) {
+    // ring full – ждём, пока consumer заберёт хотя бы один кадр
+    const ctrl: Int32Array = (outRing as any).ctrl;
+    if (ctrl) {
+      waits++;
+      Atomics.wait(ctrl, 1, Atomics.load(ctrl, 1), 8); // подождём до 8 мс
+    }
+  }
+
+  frameCounter++;
+  if (frameCounter % 100 === 0) {
+    lastLog = Date.now();
+  }
+
+  // Планируем следующую итерацию сразу, чтобы держаться в real-time
+  queueMicrotask(loop);
 } 
