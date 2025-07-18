@@ -10,6 +10,8 @@ fi
 
 npx prisma generate
 npx prisma migrate deploy --schema=./prisma/schema.prisma || true
+# As fallback ensure schema up to date
+npx prisma db push --skip-generate --schema=./prisma/schema.prisma
 npx prisma db seed --schema=./prisma/schema.prisma || echo "⚠️  Seed failed (maybe already applied)"
 
-exec node dist/index.js 
+exec node dist/src/index.js 
