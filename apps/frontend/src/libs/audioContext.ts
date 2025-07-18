@@ -6,6 +6,10 @@
   everywhere else.
 */
 
+// Added visibility change debug log
+document.addEventListener('visibilitychange', () =>
+  console.log('visibility', document.visibilityState));
+
 let globalAudioContext: AudioContext | null = null;
 let ctxReadyPromise: Promise<AudioContext> | null = null;
 let ctxReadyResolver: ((ctx: AudioContext) => void) | null = null;
@@ -18,7 +22,8 @@ export const createGlobalAudioContext = (): AudioContext => {
   if (!globalAudioContext) {
     // Use 48 kHz everywhere to avoid implicit resampling and quality loss
     globalAudioContext = new AudioContext({ sampleRate: 48_000 });
-    console.log('globalAudioContext', globalAudioContext);
+    // Periodically log current sample rate
+    setInterval(() => console.log('ctx rate', globalAudioContext!.sampleRate), 500);
     if (ctxReadyResolver) {
       ctxReadyResolver(globalAudioContext);
       ctxReadyResolver = null;

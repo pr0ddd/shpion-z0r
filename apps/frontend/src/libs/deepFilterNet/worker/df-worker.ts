@@ -85,11 +85,7 @@ function loop() {
 
   frameCounter++;
   if (frameCounter % 100 === 0) {
-    const now = Date.now();
-    console.log('[DF-Worker] processed', frameCounter, 'frames in', now - lastLog, 'ms',
-      'inRing', inRing.size(), 'outRing', outRing.size(),
-      'underflows', underflows, 'waits', waits, 'drops', drops);
-    lastLog = now;
+    lastLog = Date.now();
   }
 
   // Планируем следующую итерацию сразу, чтобы держаться в real-time

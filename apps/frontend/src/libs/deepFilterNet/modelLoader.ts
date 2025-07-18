@@ -21,7 +21,6 @@ class DeepFilterModelLoader {
     // Если уже есть активная загрузка этой модели — дождёмся её, чтобы не
     // создавать несколько параллельных запросов.
     if (this.loadingPromises.has(modelName)) {
-      console.log(`🎤 DeepFilter: Ожидание завершения загрузки модели ${modelName}...`);
       return this.loadingPromises.get(modelName)!;
     }
 
@@ -36,7 +35,6 @@ class DeepFilterModelLoader {
   // Загружаем строго один архив; без GitHub-fallback и перебора путей.
   private async fetchModel(modelName: string): Promise<Uint8Array> {
     const path = `/models/${modelName}_onnx.tar.gz`;
-    console.log(`🎤 DF-DEBUG: загружаем модель по пути ${path}`);
 
     const resp = await fetch(path);
     if (!resp.ok) {
@@ -45,17 +43,14 @@ class DeepFilterModelLoader {
 
     const ab = await resp.arrayBuffer();
     const bytes = new Uint8Array(ab);
-    console.log('🎤 DF-DEBUG: загружено', bytes.length, 'байт');
 
     // Если файл уже gzip – отдаём. Иначе TAR → gzipped TAR (DF ожидает .tar.gz)
     if (bytes[0] === 0x1f && bytes[1] === 0x8b) {
       return bytes;
     }
 
-    console.warn('🎤 DF-DEBUG: модель пришла как TAR, сжимаем в gzip');
     const { gzipSync } = await import('fflate');
     const gzipped = gzipSync(bytes);
-    console.log('🎤 DF-DEBUG: после gzip size =', gzipped.length, 'байт');
     return gzipped;
   }
 
@@ -68,7 +63,7 @@ class DeepFilterModelLoader {
     try {
       await this.loadModel(modelName);
     } catch (error) {
-      console.warn(`🎤 DeepFilter: Предзагрузка модели ${modelName} не удалась:`, error);
+      // log removed
     }
   }
 }

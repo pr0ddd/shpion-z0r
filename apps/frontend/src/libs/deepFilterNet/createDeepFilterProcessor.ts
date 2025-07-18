@@ -173,20 +173,7 @@ export const createDeepFilterProcessorSAB = async (
     processorOptions: { sabIn, sabOut, frameLen }
   });
 
-  console.log('[DF] Worklet node created', {
-    channelCount: node.channelCount,
-    numberOfOutputs: node.numberOfOutputs,
-    channelCountMode: node.channelCountMode,
-    frameLen,
-  });
-
-  // Dynamics compressor to equalize input levels
-  const comp = audioContext.createDynamicsCompressor();
-  comp.threshold.value = compressorOptions.threshold; 
-  comp.knee.value = compressorOptions.knee;
-  comp.ratio.value = compressorOptions.ratio;
-  comp.attack.value = compressorOptions.attack;
-  comp.release.value = compressorOptions.release;
+  // log removed
 
   // Output gain applied AFTER noise suppression
   const gainNode = audioContext.createGain();
@@ -206,18 +193,17 @@ export const createDeepFilterProcessorSAB = async (
       srcNode = audioContext.createMediaStreamSource(new MediaStream([track]));
       dstNode = audioContext.createMediaStreamDestination();
 
-      srcNode.connect(comp);
-      comp.connect(node);
+      srcNode.connect(node);
       merger.connect(dstNode);
 
-      console.log('[DF] dstNode stream track settings', dstNode.stream.getAudioTracks()[0].getSettings?.());
+      // log removed
       proc.processedTrack = dstNode.stream.getAudioTracks()[0];
     },
     restart: async (opts) => {},
     destroy: async () => {
       worker.postMessage({ type: 'dispose' });
       srcNode?.disconnect();
-      comp.disconnect();
+      // compressor removed
       node.disconnect();
       gainNode.disconnect();
       dstNode?.disconnect();
