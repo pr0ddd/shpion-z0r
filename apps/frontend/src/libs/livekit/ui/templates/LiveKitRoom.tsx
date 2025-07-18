@@ -8,6 +8,7 @@ import { useLiveKitTokenQuery } from '../../model/liveKitToken.query';
 import { LiveKitRoomLoading } from '../atoms/LiveKitRoomLoading';
 import { LivekitVirtualMic } from '../organisms/LivekitVirtualMic';
 import { LiveKitRoomAudioRenderer } from '../organisms/LiveKitRoomAudioRenderer';
+import { SpeakingSync } from '../organisms/SpeakingSync';
 import { AudioProcessorOptions, Track, TrackProcessor } from 'livekit-client';
 import { createDeepFilterProcessorSAB } from '@libs/deepFilterNet/createDeepFilterProcessor';
 import { createGlobalAudioContext } from '@libs/audioContext';
@@ -106,6 +107,7 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
       {/* NOTE: RoomAudioRenderer is LiveKit pre-built component for audio rendering */}
       {/* <RoomAudioRenderer /> */}
       <LiveKitRoomAudioRenderer />
+      <SpeakingSync />
       {isProcessorReady && !!processor && audioContext && (
         <LivekitVirtualMic
           processor={processor}

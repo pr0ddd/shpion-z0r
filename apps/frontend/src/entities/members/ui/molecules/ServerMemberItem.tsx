@@ -12,7 +12,7 @@ import { Avatar } from '@ui/atoms/Avatar';
 
 import { LocalParticipant, RemoteParticipant, Track } from 'livekit-client';
 import { useIsMuted } from '@livekit/components-react';
-import { useInstantIsSpeaking } from '@hooks/useInstantIsSpeaking';
+import { useFastIsSpeaking } from '@libs/livekit/hooks/useFastIsSpeaking';
 import { useParticipantMetadata } from '@entities/members/model/useLocalParticipantMetadata';
 
 interface ServerMemberItemProps {
@@ -30,7 +30,7 @@ export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
   totalStreamCount,
   isStreaming,
 }) => {
-  const isSpeaking = useInstantIsSpeaking(participant);
+  const isSpeaking = useFastIsSpeaking(participant);
   const isMuted = useIsMuted({ source: Track.Source.Microphone, participant });
   const { getMetadata } = useParticipantMetadata(participant);
   const isVolumeOn = getMetadata('volumeOn') ?? true;
