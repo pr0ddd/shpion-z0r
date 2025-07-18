@@ -140,7 +140,7 @@ class DFSabProcessor extends AudioWorkletProcessor {
 
     this._procCount = (this._procCount || 0) + 1;
     if (this._procCount % 100 === 0) {
-      console.debug('[DF-Worklet:step]', {
+      console.log('[DF-Worklet:step]', {
         inRing: this.inRing.size(),
         outRing: this.outRing.size(),
         writePos: this.writePos,
