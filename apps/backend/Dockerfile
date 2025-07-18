@@ -17,8 +17,8 @@ COPY tsconfig.base.json /tsconfig.base.json
 # Skip Prisma generate during build to avoid external binary download;
 # it will run on container startup (see CMD).
 
-# Generate Prisma types without downloading engines (Prisma <6)
-RUN npx prisma generate --no-engine
+# Generate Prisma client
+RUN npx prisma generate
 
 # Build TypeScript
 RUN npm run build

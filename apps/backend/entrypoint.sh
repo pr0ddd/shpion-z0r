@@ -8,7 +8,7 @@ if [ -z "$DATABASE_URL" ] && [ -n "$POSTGRES_USER" ] && [ -n "$POSTGRES_PASSWORD
   echo "INFO  Generated DATABASE_URL from individual PG variables"
 fi
 
-npx prisma generate --no-engine
+npx prisma generate
 npx prisma migrate deploy --schema=./prisma/schema.prisma || true
 npx prisma db seed --schema=./prisma/schema.prisma || echo "⚠️  Seed failed (maybe already applied)"
 
