@@ -26,6 +26,10 @@ RUN npm run build
 # Prune development dependencies already omitted above if needed
 RUN npm prune --production
 
+# Copy entrypoint
+COPY apps/backend/entrypoint.sh ./entrypoint.sh
+RUN chmod +x entrypoint.sh
+
 # Stage 2: Production
 FROM node:22-alpine
 
@@ -45,5 +49,5 @@ COPY apps/backend/.env.production ./
 # Expose the application port
 EXPOSE 3001
 
-# Run the application
-CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && npx prisma db seed && node dist/index.js"] 
+# Run the application via entrypoint that prepares DB & seeds
+ENTRYPOINT ["sh","./entrypoint.sh"] 
