@@ -1,12 +1,13 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2020",
     "module": "commonjs",
     "lib": ["ES2020"],
     "outDir": "./dist",
+    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
@@ -21,10 +22,8 @@
     "noUnusedParameters": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "baseUrl": ".",
-    "paths": {
-      "@shared/types": ["../../shared/types/src/index.ts"],
-    }
+    "moduleResolution": "node",
+    "baseUrl": "."
   },
   "include": [
     "src/**/*"

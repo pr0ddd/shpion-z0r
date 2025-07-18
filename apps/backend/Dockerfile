@@ -11,9 +11,6 @@ RUN npm install
 # Copy backend source code
 COPY apps/backend/ ./
 
-# Copy shared tsconfig base for TypeScript compilation
-COPY tsconfig.base.json /tsconfig.base.json
-
 # Skip Prisma generate during build to avoid external binary download;
 # it will run on container startup (see CMD).
 
