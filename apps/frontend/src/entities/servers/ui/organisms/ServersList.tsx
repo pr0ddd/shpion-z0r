@@ -1,5 +1,6 @@
 import { useServersQuery } from '@entities/servers/api';
-import { Box } from '@mui/material';
+import { Box, TextField, InputAdornment } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 import { ServersItem } from '../molecules/ServersItem';
 import { useState } from 'react';
 import { Server } from '@shared/types';
@@ -20,6 +21,11 @@ const ServersList: React.FC = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
 
+  const [search, setSearch] = useState('');
+  const filtered = servers?.filter((s) =>
+    [s.name, s.description].some((t) => t?.toLowerCase().includes(search.toLowerCase()))
+  );
+
   return (
     <Box
       sx={() => ({
@@ -27,9 +33,29 @@ const ServersList: React.FC = () => {
         flex: 1,
         flexDirection: 'column',
         gap: 1,
+        pt: 1, // top padding so search doesn't stick to header
       })}
     >
-      {servers?.map((server) => (
+      {/* Search */}
+      <TextField
+        placeholder="Find a server"
+        size="small"
+        fullWidth
+        variant="outlined"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" sx={{ color: 'text.disabled' }} />
+              </InputAdornment>
+            ),
+          },
+        }}
+      />
+
+      {filtered?.map((server) => (
         <ServersItem
           key={server.id}
           server={server}
