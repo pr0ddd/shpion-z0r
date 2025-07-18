@@ -54,7 +54,7 @@ export const createDeepFilterProcessor = ({
       }
 
       // TODO: review processor !!!
-      await audioContext.audioWorklet.addModule('/deepfilter-processor.js');
+      await audioContext.audioWorklet.addModule(`/deepfilter-processor.js?v=${Date.now()}`);
       node = new AudioWorkletNode(audioContext, 'deepfilter-processor', {
         numberOfInputs: 1,
         numberOfOutputs: 1,
@@ -163,7 +163,7 @@ export const createDeepFilterProcessorSAB = async (
     attenLim: deepFilterOptions.attenLim,
     postFilterBeta: deepFilterOptions.postFilterBeta,
   });
-  await audioContext.audioWorklet.addModule('/deepfilter-sab-processor.js');
+  await audioContext.audioWorklet.addModule(`/deepfilter-sab-processor.js?v=${Date.now()}`);
   const node = new AudioWorkletNode(audioContext, 'deepfilter-sab', {
     numberOfInputs: 1,
     numberOfOutputs: 1,
