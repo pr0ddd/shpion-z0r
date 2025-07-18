@@ -6,6 +6,7 @@ import { StreamGallery } from '../organisms/StreamGallery';
 import { useMemo, useState } from 'react';
 import { useScreenShare } from '@entities/members/model/useScreenShare';
 import { useStream } from '@entities/streams/model/useStream';
+import { useSyncStreamCount } from '@entities/streams/model/useSyncStreamCount';
 import { useSessionStore } from '@entities/session';
 import { useLocalParticipantCamera } from '@entities/members/model/useLocalParticipantCamera';
 import { useLocalParticipant, useRoomContext } from '@livekit/components-react';
@@ -13,6 +14,7 @@ import { useLocalParticipant, useRoomContext } from '@livekit/components-react';
 
 export const StreamsTemplate: React.FC = () => {
   const user = useSessionStore(s => s.user);
+  useSyncStreamCount();
   const { stopAll: stopAllScreenShare, startNew } = useScreenShare();
   const { toggleCameraEnabled, isCameraEnabled } = useLocalParticipantCamera();
   const { localParticipant } = useLocalParticipant();

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -30,8 +30,14 @@ const CreateServerDialog: React.FC<CreateServerDialogProps> = ({
   onClose,
 }) => {
   const { data: sfuList } = useSfuServersQuery();
-  const { values, errors, serverError, isPending, handleChange, handleSubmit } =
+  const { values, errors, serverError, isPending, handleChange, handleSubmit, reset } =
     useCreateServerDialog();
+
+  // Reset form when dialog is opened
+  useEffect(() => {
+    if (open) reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handleClose = () => {
     onClose();
@@ -141,7 +147,7 @@ const CreateServerDialog: React.FC<CreateServerDialogProps> = ({
             </FormControl>
           </Stack>
           {/* TODO: handle all error messages */}
-          {serverError && (
+          {typeof serverError === 'string' && (
             <Alert severity="error" sx={{ mt: 2 }}>
               {serverError}
             </Alert>

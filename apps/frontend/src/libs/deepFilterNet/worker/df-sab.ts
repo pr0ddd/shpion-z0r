@@ -53,7 +53,8 @@ export class SabRing {
   }
 
   waitForData() {
-    Atomics.wait(this.ctrl, 1, Atomics.load(this.ctrl, 1), 5);
+    // ждём дольше, чем длительность одного аудиокадра (10 мс @48 kHz)
+    Atomics.wait(this.ctrl, 1, Atomics.load(this.ctrl, 1), 15);
   }
 
   size(): number {

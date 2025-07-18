@@ -148,7 +148,8 @@ export const createDeepFilterProcessorSAB = async (
   deepFilterOptions: DeepFilterOptions,
   compressorOptions: CompressorOptions
 ): Promise<TrackProcessor<Track.Kind.Audio, AudioProcessorOptions>> => {
-  const frameLen = 480; // DeepFilterNet3 expects 480-sample frames at 48 kHz
+  // Используем блок 480 сэмплов для модели; worklet отдаёт точно 480 после FIR ресэмплера 16→15
+  const frameLen = 480;
   const capacity = deepFilterOptions.sabRingCapacity;  // ≈320 ms буфер для стартовой стабилизации
   const { SabRing } = await import('./worker/df-sab');
   const sabIn = new SabRing(frameLen, capacity).sab;
@@ -159,7 +160,7 @@ export const createDeepFilterProcessorSAB = async (
     sabIn,
     sabOut,
     frameLen,
-    modelName: 'DeepFilterNet3',
+    modelName: 'DeepFilterNet3_ll',
     attenLim: deepFilterOptions.attenLim,
     postFilterBeta: deepFilterOptions.postFilterBeta,
   });

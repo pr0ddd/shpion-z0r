@@ -23,7 +23,6 @@ export const createGlobalAudioContext = (): AudioContext => {
     // Use 48 kHz everywhere to avoid implicit resampling and quality loss
     globalAudioContext = new AudioContext({ sampleRate: 48_000 });
     // Periodically log current sample rate
-    setInterval(() => console.log('ctx rate', globalAudioContext!.sampleRate), 500);
     if (ctxReadyResolver) {
       ctxReadyResolver(globalAudioContext);
       ctxReadyResolver = null;

@@ -22,6 +22,16 @@ let underflows = 0;
 let waits = 0;
 let drops = 0;
 
+// вспомогательная функция для безопасного push (подсчёт drops)
+function pushOut(frame: Float32Array): boolean {
+  if (outRing.push(frame)) return true;
+  drops++;
+  return false;
+}
+
+// Раз в LOG_INTERVAL мс выводим статистику буферов/ошибок
+const LOG_INTERVAL = 2_000; // 2 с
+
 self.onmessage = async (e: MessageEvent<InitMsg | { type: 'dispose' }>) => {
   const data: any = e.data;
   if ((data as any).type === 'dispose') {
@@ -56,6 +66,7 @@ function loop() {
   const buf = new Float32Array(frameLen);
 
   if (!inRing.pop(buf)) {
+    underflows++;
     // Нет новых данных – ждём уведомление от producer (AudioWorklet)
     inRing.waitForData(); // Atomics.wait ≤5 мс
     queueMicrotask(loop);
@@ -74,7 +85,7 @@ function loop() {
   }
 
   // Если выходной буфер полон, подождём, чтобы не терять кадры
-  while (!outRing.push(processed)) {
+  while (!pushOut(processed)) {
     // ring full – ждём, пока consumer заберёт хотя бы один кадр
     const ctrl: Int32Array = (outRing as any).ctrl;
     if (ctrl) {
@@ -84,10 +95,26 @@ function loop() {
   }
 
   frameCounter++;
-  if (frameCounter % 100 === 0) {
-    lastLog = Date.now();
-  }
 
+  // Периодический лог каждые LOG_INTERVAL мс
+  if (Date.now() - lastLog >= LOG_INTERVAL) {
+    // eslint-disable-next-line no-console
+    console.log('[DF-worker]', {
+      frameCounter,
+      inSize: inRing.size(),
+      outSize: outRing.size(),
+      capacityIn: inRing.capacityFrames,
+      capacityOut: outRing.capacityFrames,
+      underflows,
+      waits,
+      drops,
+    });
+    lastLog = Date.now();
+    // обнуляем счётчики, чтобы видеть изменения за интервал
+    underflows = 0;
+    waits = 0;
+    drops = 0;
+  }
   // Планируем следующую итерацию сразу, чтобы держаться в real-time
   queueMicrotask(loop);
 } 

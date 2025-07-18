@@ -1,157 +1,113 @@
+// deepfilter-sab-processor.js – пакует 480 сэмплов без ресэмплинга
+/* eslint-disable */
 class SabRing {
   constructor(sab, frameLen) {
-    this.frameLen = frameLen;
-    this.ctrl = new Int32Array(sab, 0, 2);
+    this.len = frameLen;
+    this.ctrl = new Int32Array(sab, 0, 2); // head, tail
     this.data = new Float32Array(sab, 8);
-    this.capacity = (sab.byteLength - 8) / (frameLen * 4);
+    this.cap = (sab.byteLength - 8) / (4 * frameLen);
   }
   push(frame) {
-    const head = Atomics.load(this.ctrl, 0);
-    const tail = Atomics.load(this.ctrl, 1);
-    const next = (tail + 1) % this.capacity;
-    if (next === head) return false;
-    this.data.set(frame, tail * this.frameLen);
-    Atomics.store(this.ctrl, 1, next);
+    const h = Atomics.load(this.ctrl, 0);
+    const t = Atomics.load(this.ctrl, 1);
+    const n = (t + 1) % this.cap;
+    if (n === h) return false;
+    this.data.set(frame, t * this.len);
+    Atomics.store(this.ctrl, 1, n);
+    Atomics.notify(this.ctrl, 1);
     return true;
   }
-  pop(target) {
-    const head = Atomics.load(this.ctrl, 0);
-    const tail = Atomics.load(this.ctrl, 1);
-    if (head === tail) return false;
-    target.set(this.data.subarray(head * this.frameLen, (head + 1) * this.frameLen));
-    Atomics.store(this.ctrl, 0, (head + 1) % this.capacity);
+  pop(dst) {
+    const h = Atomics.load(this.ctrl, 0);
+    const t = Atomics.load(this.ctrl, 1);
+    if (h === t) return false;
+    dst.set(this.data.subarray(h * this.len, (h + 1) * this.len));
+    Atomics.store(this.ctrl, 0, (h + 1) % this.cap);
     return true;
   }
+}
 
-  size() {
-    const head = Atomics.load(this.ctrl, 0);
-    const tail = Atomics.load(this.ctrl, 1);
-    return tail >= head ? tail - head : this.capacity - head + tail;
+class Packer {
+  constructor(frameLen, pushCb) {
+    this.len = frameLen;
+    this.push = pushCb;
+    this.buf = new Float32Array(frameLen);
+    this.pos = 0;
+    this.tail = new Float32Array(32);
+    this.tailPos = 0;
+  }
+  feed(block) {
+    let idx = 0;
+    // 1. достраиваем предыдущий кадр хвостом
+    if (this.tailPos) {
+      const take = Math.min(this.len - this.pos, this.tailPos);
+      this.buf.set(this.tail.subarray(0, take), this.pos);
+      this.pos += take;
+      this.tail.copyWithin(0, take, this.tailPos);
+      this.tailPos -= take;
+      if (this.pos === this.len) {
+        this.push(this.buf);
+        this.pos = 0;
+      }
+    }
+    // 2. основной поток
+    while (idx < block.length) {
+      const take = Math.min(this.len - this.pos, block.length - idx);
+      this.buf.set(block.subarray(idx, idx + take), this.pos);
+      this.pos += take; idx += take;
+      if (this.pos === this.len) {
+        this.push(this.buf);
+        this.pos = 0;
+      }
+    }
+    // 3. хвост (<=32)
+    if (idx < block.length) {
+      const remain = block.length - idx;
+      this.tail.set(block.subarray(idx), 0);
+      this.tailPos = remain;
+    }
+  }
+}
+
+class Unpacker {
+  constructor(frameLen, popCb) {
+    this.len = frameLen;
+    this.pop = popCb;
+    this.src = new Float32Array(frameLen);
+    this.readPos = frameLen; // force pop first time
+  }
+  pull(block) {
+    let i = 0;
+    while (i < block.length) {
+      if (this.readPos === this.len) {
+        if (!this.pop(this.src)) break;
+        this.readPos = 0;
+      }
+      const take = Math.min(this.len - this.readPos, block.length - i);
+      block.set(this.src.subarray(this.readPos, this.readPos + take), i);
+      this.readPos += take; i += take;
+    }
+    if (i < block.length) block.fill(0, i); // fallback silence
   }
 }
 
 class DFSabProcessor extends AudioWorkletProcessor {
   constructor(opts) {
     super();
-    const { sabIn, sabOut, frameLen } = opts.processorOptions;
-    this.frameLen = frameLen;
-    this.inRing = new SabRing(sabIn, frameLen);
-    this.outRing = new SabRing(sabOut, frameLen);
-    this.tmpIn = new Float32Array(frameLen);
-    this.tmpOut = new Float32Array(frameLen);
-    // write pointer for collecting input samples into tmpIn
-    this.writePos = 0;
-    // read pointer inside tmpOut when streaming processed frame to output
-    this.readPos = frameLen; // force initial pop on first process()
-    this.prevTail = 0; // last sample of previous frame
-
-    // stats
-    this.stats = {
-      framesIn: 0,
-      framesOut: 0,
-      underflow: 0,
-      overflow: 0,
-    };
-    this.lastLog = currentTime;
-
-    // debug every 100 process calls
-    this._procCount = 0;
+    const { sabIn, sabOut } = opts.processorOptions;
+    this.packer = new Packer(480, (f) => this.inRing.push(f));
+    this.inRing = new SabRing(sabIn, 480);
+    this.unpacker = new Unpacker(480, (dst) => this.outRing.pop(dst));
+    this.outRing = new SabRing(sabOut, 480);
   }
-
   process(inputs, outputs) {
-    const input = inputs[0];
-    const output = outputs[0];
-    if (!input || input.length === 0 || output.length === 0) {
-      return true;
-    }
-
-    const chIn = input[0];
-    // We'll write first channel then optionally copy to others
-    const chOut0 = output[0];
-
-    let idx = 0;
-    while (idx < chIn.length) {
-      const remaining = this.frameLen - this.writePos;
-      const toCopy = Math.min(remaining, chIn.length - idx);
-      this.tmpIn.set(chIn.subarray(idx, idx + toCopy), this.writePos);
-      this.writePos += toCopy;
-      idx += toCopy;
-      if (this.writePos === this.frameLen) {
-        if (!this.inRing.push(this.tmpIn)) {
-          this.stats.overflow++;
-          if (this.stats.overflow % 10 === 0) {
-            console.warn('[DF-Worklet] OVERFLOW', this.stats.overflow, 'inRing size', this.inRing.size());
-          }
-        }
-        this.writePos = 0;
-      }
-    }
-
-    // ---------------- Output side ----------------
-    const blockLen = chOut0.length; // 128 samples @48 kHz
-    let outIdx = 0;
-
-    while (outIdx < blockLen) {
-      // если исчерпали текущий кадр – берём следующий
-      if (this.readPos === this.frameLen) {
-        if (this.outRing.pop(this.tmpOut)) {
-          // smooth boundary between frames
-          const headDiff = Math.abs(this.tmpOut[0] - this.prevTail);
-          if (headDiff > 0.1) {
-            const FADE = 32;
-            for (let i = 0; i < FADE && i < this.tmpOut.length; i++) {
-              const t = i / FADE;
-              this.tmpOut[i] = this.prevTail * (1 - t) + this.tmpOut[i] * t;
-            }
-          }
-          this.prevTail = this.tmpOut[this.tmpOut.length - 1];
-          this.readPos = 0;
-        } else {
-          // обработанных данных нет – пасс-тру остатка
-          this.stats.underflow++;
-          if (this.stats.underflow % 10 === 0) {
-            console.warn('[DF-Worklet] UNDERFLOW', this.stats.underflow, 'outRing size', this.outRing.size());
-          }
-          chOut0.set(chIn.subarray(outIdx), outIdx);
-          break;
-        }
-      }
-
-      const copy = Math.min(this.frameLen - this.readPos, blockLen - outIdx);
-      chOut0.set(this.tmpOut.subarray(this.readPos, this.readPos + copy), outIdx);
-
-      this.readPos += copy;
-      outIdx      += copy;
-    }
-
-    // Если осталось незаполненное место (редко) – копируем сырой сигнал
-    if (outIdx < blockLen) {
-      chOut0.set(chIn.subarray(outIdx), outIdx);
-    }
-
-    // if node outputs more than 1 channel, copy mono data to the rest
-    for (let ch = 1; ch < output.length; ch++) {
-      output[ch].set(output[0]);
-    }
-
-    // stats update
-    this.stats.framesIn += chIn.length;
-    this.stats.framesOut += chOut0.length;
-
-    this._procCount = (this._procCount || 0) + 1;
-    if (this._procCount % 100 === 0) {
-      console.log('[DF-Worklet:step]', {
-        inRing: this.inRing.size(),
-        outRing: this.outRing.size(),
-        writePos: this.writePos,
-        readPos: this.readPos,
-        framesInTotal: this.stats.framesIn,
-        framesOutTotal: this.stats.framesOut,
-      });
-    }
-
+    const inp = inputs[0][0];
+    const out = outputs[0];
+    if (!inp) return true;
+    this.packer.feed(inp);
+    this.unpacker.pull(out[0]);
+    for (let c = 1; c < out.length; c++) out[c].set(out[0]);
     return true;
   }
 }
-
-registerProcessor('deepfilter-sab', DFSabProcessor); 
+registerProcessor('deepfilter-sab', DFSabProcessor);

@@ -125,7 +125,7 @@ export const useSystemSettingsStore = create<SystemSettingsStore>((set) => ({
         attenLim: setValue<number>('DEEPFILTER_ATTEN_LIM', 40),
         postFilterBeta: setValue<number>('DEEPFILTER_POSTFILTER_BETA', 0.05),
         outputGain: setValue<number>('DEEPFILTER_OUTPUT_GAIN', 1.2),
-        sabRingCapacity: setValue<number>('DEEPFILTER_SAB_RING_CAPACITY', 32),
+        sabRingCapacity: setValue<number>('DEEPFILTER_SAB_RING_CAPACITY', 64),
       },
       compressorOptions: {
         threshold: setValue<number>('COMPRESSOR_THRESHOLD', -24),

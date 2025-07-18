@@ -1,5 +1,5 @@
 import { ServerCreateDto } from '@shared/data';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useCreateServerMutation } from '../api';
 
 type CreateServerFormValues = {
@@ -16,12 +16,14 @@ type CreateServerFormErrors = Partial<
 export function useCreateServerDialog() {
   const { mutate, error: serverError, isPending } = useCreateServerMutation();
 
-  const [values, setValues] = useState<CreateServerFormValues>({
+  const initialValues: CreateServerFormValues = {
     name: '',
     description: '',
     icon: '',
     sfuId: '',
-  });
+  };
+
+  const [values, setValues] = useState<CreateServerFormValues>(initialValues);
 
   const [errors, setErrors] = useState<CreateServerFormErrors>({});
 
@@ -57,6 +59,8 @@ export function useCreateServerDialog() {
     mutate(payload);
   };
 
+  const reset = useCallback(() => setValues(initialValues), []);
+
   return {
     values,
     errors,
@@ -64,5 +68,6 @@ export function useCreateServerDialog() {
     isPending,
     handleChange,
     handleSubmit,
+    reset,
   };
 }
