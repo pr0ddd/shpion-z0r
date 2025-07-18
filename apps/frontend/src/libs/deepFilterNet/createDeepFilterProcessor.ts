@@ -20,7 +20,7 @@ export const getDeepFilterNetFiles = async (): Promise<
     fetch('/wasm/df_bg.wasm')
       .then((r) => r.arrayBuffer())
       .then((buf) => new Uint8Array(buf)),
-    loadDeepFilterModel('DeepFilterNet3_ll'),
+    loadDeepFilterModel('DeepFilterNet3'),
   ]);
 };
 
@@ -160,7 +160,7 @@ export const createDeepFilterProcessorSAB = async (
     sabIn,
     sabOut,
     frameLen,
-    modelName: 'DeepFilterNet3_ll',
+    modelName: 'DeepFilterNet3',
     attenLim: deepFilterOptions.attenLim,
     postFilterBeta: deepFilterOptions.postFilterBeta,
   });
