@@ -17,7 +17,7 @@ class DeepFilterModelLoader {
    * @param modelName - имя модели (DeepFilterNet3, DeepFilterNet2, etc.)
    * @returns Promise с байтами модели
    */
-  async loadModel(modelName: string = 'DeepFilterNet3'): Promise<Uint8Array> {
+  async loadModel(modelName: string = 'DeepFilterNet3_ll'): Promise<Uint8Array> {
     // Если уже есть активная загрузка этой модели — дождёмся её, чтобы не
     // создавать несколько параллельных запросов.
     if (this.loadingPromises.has(modelName)) {
@@ -59,7 +59,7 @@ class DeepFilterModelLoader {
    * вызов loadModel(), который отработает мгновенно, если модель уже
    * загружается.
    */
-  async preloadModel(modelName: string = 'DeepFilterNet3'): Promise<void> {
+  async preloadModel(modelName: string = 'DeepFilterNet3_ll'): Promise<void> {
     try {
       await this.loadModel(modelName);
     } catch (error) {
