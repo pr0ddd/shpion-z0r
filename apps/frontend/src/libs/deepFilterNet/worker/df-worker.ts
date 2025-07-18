@@ -50,33 +50,38 @@ self.onmessage = async (e: MessageEvent<InitMsg | { type: 'dispose' }>) => {
 
 function loop() {
   if (!running) return;
-  const buf = new Float32Array(frameLen);
-  if (inRing.pop(buf)) {
-    const processed = wasm.df_process_frame(dfState, buf) as Float32Array;
-    // Wait until there is space in the outRing to avoid dropping frames
-    if (!outRing.push(processed)) {
-      // back-off: wait couple of ms for consumer to catch up
-      const start = performance.now();
-      while (!outRing.push(processed)) {
-        if (performance.now() - start > 20) {
-          console.warn('[DF-Worker] dropping frame, ring still full');
-          break;
-        }
-      }
-    }
 
-    frameCounter++;
-    if (frameCounter % 100 === 0) {
-      const now = Date.now();
-      console.log('[DF-Worker] processed', frameCounter, 'frames in', now - lastLog, 'ms', 'inRing', inRing.size(), 'outRing', outRing.size());
-      lastLog = now;
-    }
-  } else {
-    underflows++;
-    if (underflows % 100 === 0) {
-      console.warn('[DF-Worker] inRing underflow', underflows, 'outRing size', outRing.size());
-    }
-    inRing.waitForData();
+  const buf = new Float32Array(frameLen);
+
+  if (!inRing.pop(buf)) {
+    // Нет новых данных – ждём уведомление от producer (AudioWorklet)
+    inRing.waitForData(); // Atomics.wait ≤5 мс
+    queueMicrotask(loop);
+    return;
   }
+
+  const processed = wasm.df_process_frame(dfState, buf) as Float32Array;
+
+  // Если выходной буфер полон, подождём, чтобы не терять кадры
+  if (!outRing.push(processed)) {
+    // ждём, пока consumer освободит место (tail изменится)
+    const ctrl: Int32Array = (outRing as any).ctrl;
+    if (ctrl) {
+      Atomics.wait(ctrl, 1, Atomics.load(ctrl, 1), 4); // max 4 мс ожидания
+    }
+    // второй попытки достаточно; если всё ещё full — дропаем кадр
+    if (!outRing.push(processed)) {
+      console.warn('[DF-Worker] dropping frame, ring still full');
+    }
+  }
+
+  frameCounter++;
+  if (frameCounter % 100 === 0) {
+    const now = Date.now();
+    console.log('[DF-Worker] processed', frameCounter, 'frames in', now - lastLog, 'ms', 'inRing', inRing.size(), 'outRing', outRing.size());
+    lastLog = now;
+  }
+
+  // Планируем следующую итерацию сразу, чтобы держаться в real-time
   queueMicrotask(loop);
 } 
