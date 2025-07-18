@@ -26,22 +26,20 @@ RUN npm run build
 # Prune development dependencies already omitted above if needed
 RUN npm prune --production
 
-# Copy entrypoint
-COPY apps/backend/entrypoint.sh ./entrypoint.sh
-RUN chmod +x entrypoint.sh
-
+# ---------------------------
 # Stage 2: Production
 FROM node:22-alpine
 
 WORKDIR /app
 
-# Copy production dependencies from builder
+# Copy production dependencies and built files from builder
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
-
-# Application code and Prisma client
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
+# Copy entrypoint script
+COPY --from=builder /app/entrypoint.sh ./entrypoint.sh
+RUN chmod +x entrypoint.sh
 
 # Copy production env so dotenv can load variables inside container
 COPY apps/backend/.env.production ./
@@ -50,4 +48,4 @@ COPY apps/backend/.env.production ./
 EXPOSE 3001
 
 # Run the application via entrypoint that prepares DB & seeds
-ENTRYPOINT ["sh","./entrypoint.sh"] 
+ENTRYPOINT ["sh","/app/entrypoint.sh"] 
