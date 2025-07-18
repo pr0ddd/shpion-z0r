@@ -78,5 +78,5 @@ function loop() {
     }
     inRing.waitForData();
   }
-  setTimeout(loop, 0);
+  queueMicrotask(loop);
 } 
