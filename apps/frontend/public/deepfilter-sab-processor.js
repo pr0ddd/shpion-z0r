@@ -53,6 +53,9 @@ class DFSabProcessor extends AudioWorkletProcessor {
       overflow: 0,
     };
     this.lastLog = currentTime;
+
+    // debug every 100 process calls
+    this._procCount = 0;
   }
 
   process(inputs, outputs) {
@@ -134,16 +137,17 @@ class DFSabProcessor extends AudioWorkletProcessor {
     // stats update
     this.stats.framesIn += chIn.length;
     this.stats.framesOut += chOut0.length;
-    if (currentTime - this.lastLog > 1000) {
-      console.log('[DF-Worklet] inRing', this.inRing.size(),
-        'outRing', this.outRing.size(),
-        'overflow', this.stats.overflow,
-        'underflow', this.stats.underflow,
-        'writePos', this.writePos,
-        'readPos', this.readPos,
-        'framesIn', this.stats.framesIn,
-        'framesOut', this.stats.framesOut);
-      this.lastLog = currentTime;
+
+    this._procCount = (this._procCount || 0) + 1;
+    if (this._procCount % 100 === 0) {
+      console.debug('[DF-Worklet:step]', {
+        inRing: this.inRing.size(),
+        outRing: this.outRing.size(),
+        writePos: this.writePos,
+        readPos: this.readPos,
+        framesInTotal: this.stats.framesIn,
+        framesOutTotal: this.stats.framesOut,
+      });
     }
 
     return true;
