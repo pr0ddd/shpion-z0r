@@ -11,9 +11,6 @@ RUN npm install
 # Copy backend source code
 COPY apps/backend/ ./
 
-# Copy shared workspace so TS path aliases like "../../shared/*" resolve
-COPY shared /shared
-
 # Copy shared tsconfig base for TypeScript compilation
 COPY tsconfig.base.json /tsconfig.base.json
 

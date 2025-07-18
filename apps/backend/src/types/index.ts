@@ -1,5 +1,4 @@
 import { Request } from 'express';
-import { SystemSettingsPayload } from '@shared/types';
 
 export type RequestUser = {
   id: string;
@@ -22,4 +21,7 @@ export interface ApiResponse<T = any> {
   message?: string;
 }
 
-export type BulkUpdateSystemSettingsRequest = SystemSettingsPayload;
+export type BulkUpdateSystemSettingsRequest = {
+  id: number;
+  value: string;
+}[];
