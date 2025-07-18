@@ -64,6 +64,15 @@ function loop() {
 
   const processed = wasm.df_process_frame(dfState, buf) as Float32Array;
 
+  // throttle if outRing almost full to prevent extra latency
+  if (outRing.size() >= (outRing.capacityFrames - 2)) {
+    // wait until consumer frees at least one slot
+    const ctrl: Int32Array = (outRing as any).ctrl;
+    Atomics.wait(ctrl, 1, Atomics.load(ctrl, 1), 4);
+    queueMicrotask(loop);
+    return;
+  }
+
   // Если выходной буфер полон, подождём, чтобы не терять кадры
   while (!outRing.push(processed)) {
     // ring full – ждём, пока consumer заберёт хотя бы один кадр
