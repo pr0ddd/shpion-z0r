@@ -4,7 +4,7 @@ import {
 } from '@mui/material';
 
 type AvatarProps = MuiAvatarProps & {
-  src: string;
+  src?: string;
   borderColor?: string;
   borderWidth?: number;
 };

@@ -11,7 +11,6 @@ import { useSocket } from '@libs/socket';
 import { Message } from '@shared/types';
 import { createPortal } from 'react-dom';
 import Avatar from '@mui/material/Avatar';
-import { dicebearAvatar } from '@libs/dicebearAvatar';
 import { useChatWindowStore } from '@entities/chat/model/chatWindow.store';
 import ReactDOM from 'react-dom/client';
 import ArticleIcon from '@mui/icons-material/Article';
@@ -256,7 +255,7 @@ export const StreamActiveInner: React.FC<StreamActiveProps> = memo(
               }}
             >
               <Avatar
-                src={msg.author?.avatar || dicebearAvatar(msg.author?.id ?? msg.authorId)}
+                src={msg.author?.avatar || undefined}
                 sx={{ width: 24, height: 24, fontSize: '0.75rem' }}
               >
                 {msg.author?.username?.[0] ?? 'U'}

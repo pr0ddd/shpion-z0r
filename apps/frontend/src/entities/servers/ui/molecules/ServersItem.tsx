@@ -1,7 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import { Server } from '@shared/types';
 import { Avatar } from '@ui/atoms/Avatar';
-import { dicebearAvatar } from '@libs/dicebearAvatar';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
@@ -67,7 +66,7 @@ export const ServersItem: React.FC<ServersItemProps> = ({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Box sx={{ position: 'relative', flexShrink: 0 }}>
             <Avatar
-              src={server.icon || dicebearAvatar(server.id)}
+              src={server.icon || undefined}
               sx={{ width: 40, height: 40, borderRadius: '7px 0 0 7px' }}
             />
           </Box>

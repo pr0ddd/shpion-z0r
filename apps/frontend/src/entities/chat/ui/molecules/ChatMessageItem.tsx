@@ -9,7 +9,6 @@ import {
 import { useSessionStore } from '@entities/session';
 import { Message } from '@shared/types';
 import { Interweave } from 'interweave';
-import { dicebearAvatar } from '@libs/dicebearAvatar';
 import { ErrorOutline } from '@mui/icons-material';
 import { Avatar } from '@ui/atoms/Avatar';
 
@@ -43,7 +42,7 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
       {!isMine && (
         <ListItemAvatar sx={{ minWidth: 'auto', mt: 0.5 }}>
           <Avatar
-            src={message.author?.avatar || dicebearAvatar(message.authorId)}
+            src={message.author?.avatar || undefined}
             sx={{ width: 32, height: 32 }}
           />
         </ListItemAvatar>
