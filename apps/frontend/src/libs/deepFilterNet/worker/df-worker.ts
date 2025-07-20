@@ -95,26 +95,6 @@ function loop() {
   }
 
   frameCounter++;
-
-  // Периодический лог каждые LOG_INTERVAL мс
-  if (Date.now() - lastLog >= LOG_INTERVAL) {
-    // eslint-disable-next-line no-console
-    console.log('[DF-worker]', {
-      frameCounter,
-      inSize: inRing.size(),
-      outSize: outRing.size(),
-      capacityIn: inRing.capacityFrames,
-      capacityOut: outRing.capacityFrames,
-      underflows,
-      waits,
-      drops,
-    });
-    lastLog = Date.now();
-    // обнуляем счётчики, чтобы видеть изменения за интервал
-    underflows = 0;
-    waits = 0;
-    drops = 0;
-  }
   // Планируем следующую итерацию сразу, чтобы держаться в real-time
   queueMicrotask(loop);
 } 

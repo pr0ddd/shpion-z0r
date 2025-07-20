@@ -1,4 +1,6 @@
 import prisma from '../lib/prisma';
+import { s3 } from '../lib/s3Client';
+import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { Response } from 'express';
 import { AuthenticatedRequest, ApiResponse } from '../types';
 import { socketService } from '../index';
@@ -215,6 +217,28 @@ export class MessageController {
     }
     
     const serverId = existingMessage.serverId;
+
+    // Attempt to remove attachment from S3 if exists
+    if (existingMessage.attachment) {
+      try {
+        // stored key may include prefix path, strip leading url part if needed
+        let key = existingMessage.attachment;
+        if (key.startsWith('/api/upload/file/')) {
+          key = key.replace('/api/upload/file/', '');
+        }
+        // Safety: do not allow directory traversal
+        if (!key.includes('..')) {
+          await s3.send(
+            new DeleteObjectCommand({
+              Bucket: process.env.R2_BUCKET,
+              Key: key,
+            })
+          );
+        }
+      } catch (err) {
+        console.error('Failed to delete attachment from S3', err);
+      }
+    }
 
     await prisma.message.delete({
       where: { id: messageId },

@@ -53,10 +53,16 @@ export interface Server {
 export interface Message {
   id: string;
   content: string;
+  attachment?: string;
+  type: 'TEXT' | 'IMAGE' | 'FILE';
   authorId: string;
   serverId: string;
   createdAt: string;
   updatedAt: string;
+  // optimistic helpers
+  status?: 'thinking' | 'failed' | 'uploading';
+  uploadTotal?: number;
+  uploadLoaded?: number;
   replyToId?: string | null;
   replyTo?: Message | null;
   author: {
@@ -64,7 +70,6 @@ export interface Message {
     username: string;
     avatar: string | null;
   };
-  status?: 'sending' | 'failed' | 'thinking';
 }
 
 export interface MessagesPage {
@@ -109,6 +114,7 @@ export interface ServerToClientEvents {
   'message:new': (message: Message) => void;
   'message:updated': (message: Message) => void;
   'message:deleted': (messageId: string, serverId: string) => void;
+  'typing': (payload: { userId: string; serverId: string; typing: boolean; username: string }) => void;
   'server:deleted': (serverId: string) => void;
   'server:updated': (server: Server) => void;
   'server:created': (server: Server) => void;
@@ -124,6 +130,7 @@ export interface ClientToServerEvents {
     callback: (ack: { success: boolean }) => void
   ) => void;
   'user:listening': (listening: boolean) => void;
+  'typing': (payload: { serverId: string; typing: boolean }) => void;
   'preview:update': (sid: string, dataUrl: string) => void;
   'bot:thinking': (payload: any) => void;
 }
