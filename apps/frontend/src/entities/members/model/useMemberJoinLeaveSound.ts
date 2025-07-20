@@ -9,7 +9,7 @@ import { useSessionStore } from '@entities/session/model/auth.store';
    Pleasant, short notification sounds based on small chords/envelopes
    ------------------------------------------------------------------ */
 
-const playChord = async (frequencies: number[], duration = 0.4) => {
+const playChord = async (frequencies: number[], duration = 0.8, volume = 0.12) => {
   const ctx = await waitForGlobalAudioContext();
   if (!ctx) return;
 
@@ -18,7 +18,7 @@ const playChord = async (frequencies: number[], duration = 0.4) => {
   // Shared gain node with fade-in / fade-out envelope
   const gain = ctx.createGain();
   gain.gain.setValueAtTime(0, now);
-  gain.gain.linearRampToValueAtTime(0.08, now + 0.02); // attack
+  gain.gain.linearRampToValueAtTime(volume, now + 0.02); // attack
   gain.gain.exponentialRampToValueAtTime(0.0001, now + duration); // release
   gain.connect(ctx.destination);
 
