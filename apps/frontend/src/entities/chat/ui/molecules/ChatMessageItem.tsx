@@ -63,13 +63,18 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
   const isImageAttachment = message.type === 'IMAGE';
   const noBubbleMedia = isImageAttachment || !!youtubeId;
 
-  // Prepare attachment URL for files
-  let fileDownloadUrl: string | undefined = undefined;
-  if (message.type === 'FILE' && message.attachment) {
+  // Build base URL for any attachment (image or file)
+  let attachmentUrl: string | undefined = undefined;
+  if (message.attachment) {
     const isPrefixed = message.attachment.startsWith('/api/upload/file');
-    const base = isPrefixed ? message.attachment : `/api/upload/file/${encodeURIComponent(message.attachment)}`;
+    attachmentUrl = isPrefixed ? message.attachment : `/api/upload/file/${encodeURIComponent(message.attachment)}`;
+  }
+
+  // For files we also append ?name=<filename> so browser suggests original name
+  let fileDownloadUrl: string | undefined = undefined;
+  if (message.type === 'FILE' && attachmentUrl) {
     const param = message.content ? `?name=${encodeURIComponent(message.content)}` : '';
-    fileDownloadUrl = `${base}${param}`;
+    fileDownloadUrl = `${attachmentUrl}${param}`;
   }
 
   const prefixColor = isMine ? 'new.primaryForeground' : 'new.mutedForeground';
@@ -214,16 +219,15 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
           )}
 
           {message.attachment && message.status!=='uploading' && (()=>{
-            const full = message.attachment;
-            const filenameParam = message.type==='FILE' && message.content ? `?name=${encodeURIComponent(message.content)}` : '';
-            const fullWithParam = fileDownloadUrl || `${full}${filenameParam}`;
+            const full = attachmentUrl;
+            const fullWithParam = fileDownloadUrl || full;
 
             // for files always render download link
             return message.type === 'IMAGE' ? (
               <img
-                src={fullWithParam}
+                src={full}
                 style={{ maxWidth: 200, borderRadius: 8, cursor: 'pointer' }}
-                onClick={() => onImageClick?.(fullWithParam)}
+                onClick={() => onImageClick?.(full || '')}
                 onContextMenu={handleContextMenu}
               />
             ) : (
