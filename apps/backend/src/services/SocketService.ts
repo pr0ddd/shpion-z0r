@@ -46,18 +46,21 @@ export class SocketService {
       });
 
       socket.on('message:send', async (data: any, callback) => {
-        const { serverId, content, clientNonce } = data;
+        const { serverId, content, attachment, type, clientNonce, replyToId } = data;
         const userId = socket.data.user?.id;
         if (!userId) {
             return callback({ success: false });
         }
 
         try {
-            const message = await this.prisma.message.create({
+            const message = await (this.prisma.message as any).create({
                 data: {
                     content,
+                    attachment,
+                    type,
                     serverId,
                     authorId: userId,
+                    replyToId: replyToId ?? null,
                 },
                 include: {
                     author: {
@@ -65,6 +68,11 @@ export class SocketService {
                             id: true,
                             username: true,
                             avatar: true,
+                        },
+                    },
+                    replyTo: {
+                        include: {
+                            author: { select: { id: true, username: true, avatar: true } },
                         },
                     },
                 },
@@ -141,6 +149,15 @@ export class SocketService {
 
         if (!serverId) return;
         socket.to(`server:${serverId}`).emit('preview:update', sid, dataUrl);
+      });
+
+      socket.on('typing', (payload: any) => {
+        const userId = socket.data.user?.id;
+        const { serverId, typing } = payload || {};
+        if (!userId || !serverId) return;
+        // broadcast to others (exclude sender) in room
+        const username = socket.data.user?.username;
+        socket.to(`server:${serverId}`).emit('typing', { userId, serverId, typing: !!typing, username });
       });
 
       socket.on('disconnect', () => {

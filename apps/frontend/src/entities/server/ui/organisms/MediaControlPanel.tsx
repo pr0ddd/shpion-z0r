@@ -2,7 +2,6 @@ import React from 'react';
 import { Box } from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import LogoutIcon from '@mui/icons-material/Logout';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
@@ -12,7 +11,6 @@ import { useLocalParticipantVolume } from '@entities/members/model/useLocalParti
 import { useServerStore } from '@entities/server/model';
 import { Chip } from '@ui/atoms/Chip';
 import { IconButton } from '@ui/atoms/IconButton';
-import { ChatFloatingWindow, useChatWindowStore } from '@entities/chat';
 import { SettingsDialog, useSettingsDialogStore, GlobalHotkeys } from '@entities/settings';
 
 interface MediaControlPanelProps {}
@@ -49,12 +47,11 @@ export const MediaControlPanel: React.FC<MediaControlPanelProps> = () => {
           gap: 1,
         }}
       >
-        <ChatButton />
+        {/* Chat controls migrated to sidebar – no floating chat button needed anymore */}
         <ToggleMicButton />
         <ToggleVolumeButton />
         <SettingsButton />
         <LeaveButton />
-        <ChatFloatingWindow />
         <SettingsDialog />
         <GlobalHotkeys />
       </Box>
@@ -115,21 +112,6 @@ export const LeaveButton: React.FC = () => {
       icon={<LogoutIcon />}
       tooltip="Выйти из комнаты"
       onClick={() => setSelectedServerId(null)}
-    />
-  );
-};
-
-export const ChatButton: React.FC = () => {
-  const isOpen = useChatWindowStore((s) => s.isOpen);
-  const toggle = useChatWindowStore((s) => s.toggle);
-
-  return (
-    <IconButton
-      hasBorder={true}
-      color={isOpen ? 'primary' : 'default'}
-      icon={<ChatBubbleOutlineIcon />}
-      tooltip={isOpen ? 'Скрыть чат' : 'Показать чат'}
-      onClick={toggle}
     />
   );
 };

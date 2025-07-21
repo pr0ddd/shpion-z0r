@@ -36,21 +36,26 @@ export const useSendMessageMutation = (serverId: string) => {
     undefined
   );
 
-  const mutate = (text: string) => {
+  const mutate = (text: string, extras?: { attachment?: string; type?: 'IMAGE' | 'FILE' }, replyTo?: Message) => {
     if (!user) {
       console.error('User not set in store');
       return
     };
-    const message = createOptimisticMessage(text, user, serverId);
+    const message = createOptimisticMessage(text, user, serverId, { ...extras, replyTo });
 
     addMessageToCache(queryClient, serverId, message);
 
     const clientNonce = message.id.slice(5);
-    const payload = {
+    const payload: any = {
       serverId,
       content: message.content,
       clientNonce,
-    } as any;
+    };
+    if (extras?.attachment) {
+      payload.attachment = extras.attachment;
+      payload.type = extras.type;
+    }
+    if(replyTo && replyTo.id) payload.replyToId = replyTo.id;
 
     socket?.emit('message:send', payload, (response: { success: boolean }) => {
       if (response.success) {

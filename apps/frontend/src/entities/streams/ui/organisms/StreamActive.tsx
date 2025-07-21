@@ -11,9 +11,6 @@ import { useSocket } from '@libs/socket';
 import { Message } from '@shared/types';
 import { createPortal } from 'react-dom';
 import Avatar from '@mui/material/Avatar';
-import { useChatWindowStore } from '@entities/chat/model/chatWindow.store';
-import ReactDOM from 'react-dom/client';
-import ArticleIcon from '@mui/icons-material/Article';
 import { Button } from '@mui/material';
 import { TrackReference } from '@livekit/components-react';
 import { StreamGalleryItem } from '../molecules/StreamGalleryItem';
@@ -322,44 +319,7 @@ export const StreamActiveInner: React.FC<StreamActiveProps> = memo(
 
     // Register custom chat button component once
     useEffect(() => {
-      if (!playerRef.current) return;
-
-      const Component = videojs.getComponent('ChatToggleButton');
-      if (!Component) {
-        // Define new component extending Button
-        const Button = videojs.getComponent('Button');
-        const ChatToggleButton = class extends Button {
-          constructor(player: any, options: any) {
-            super(player, options);
-            (this as any).controlText && (this as any).controlText('Chat');
-            this.addClass('vjs-chat-toggle-control');
-
-            // Render MUI icon into button element using ReactDOM
-            const iconContainer = document.createElement('span');
-            iconContainer.className = 'vjs-chat-icon';
-            this.el().appendChild(iconContainer);
-
-            const root = ReactDOM.createRoot(iconContainer);
-            root.render(<ArticleIcon />);
-          }
-
-          handleClick() {
-            // Toggle chat window via store
-            useChatWindowStore.getState().toggle();
-          }
-        };
-
-        videojs.registerComponent('ChatToggleButton', ChatToggleButton as any);
-      }
-
-      // Add to control bar if not yet
-      const controlBar = playerRef.current.getChild('controlBar');
-      if (controlBar && !controlBar.getChild('ChatToggleButton')) {
-        // Insert before fullscreen toggle (if present), else at end
-        const fsToggle = controlBar.getChild('fullscreenToggle');
-        const insertIndex = fsToggle ? controlBar.children().indexOf(fsToggle) : controlBar.children().length;
-        controlBar.addChild('ChatToggleButton', {}, insertIndex);
-      }
+      /* ChatToggleButton removed – chat relocated to sidebar */
     }, [playerRef.current]);
 
     // Sync custom overlay visibility with Video.js control bar visibility

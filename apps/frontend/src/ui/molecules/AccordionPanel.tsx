@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { IconButton } from '@ui/atoms/IconButton';
 
 type AccordionPanelProps = {
-  title: string;
+  title: React.ReactNode;
   subtitle?: string;
   expanded?: boolean;
   disabled?: boolean;
@@ -12,6 +12,8 @@ type AccordionPanelProps = {
   onToggle?: (isExpanded: boolean) => void;
   actions?: React.ReactNode;
   children: React.ReactNode;
+  headerHeight?: number;
+  height?: 1 | 2;
 };
 
 export const AccordionPanel: React.FC<AccordionPanelProps> = ({
@@ -22,10 +24,12 @@ export const AccordionPanel: React.FC<AccordionPanelProps> = ({
   disabled = false,
   onToggle,
   actions,
+  headerHeight,
+  height = 1,
 }) => {
   const [isExpanded, setIsExpanded] = useState(expanded);
 
-  const handleExpand = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleExpand = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -39,12 +43,12 @@ export const AccordionPanel: React.FC<AccordionPanelProps> = ({
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        flex: isExpanded ? 1 : 0,
+        flex: isExpanded ? height : 0,
       }}
     >
       {/* Header */}
       <Box
-        component="button"
+        component="div"
         onClick={disabled ? undefined : handleExpand}
         sx={{
           display: 'flex',
@@ -56,7 +60,8 @@ export const AccordionPanel: React.FC<AccordionPanelProps> = ({
           borderColor: 'new.border',
           gap: 1,
           paddingInline: 2,
-
+          minHeight: headerHeight ?? 'auto',
+          cursor: disabled ? 'default' : 'pointer',
         }}
       >
         <Box
