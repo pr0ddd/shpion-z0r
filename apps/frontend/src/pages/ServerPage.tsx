@@ -10,8 +10,12 @@ import { ServersTemplate } from '@entities/servers/ui';
 import { useServersQuery } from '@entities/servers/api';
 import { StreamsTemplate } from '@entities/streams/ui';
 import { MembersTemplate } from '@entities/members/ui';
+import { ChatMessages } from '@entities/chat';
 import { Accordion } from '@ui/molecules/Accordion';
 import { AccordionPanel } from '@ui/molecules/AccordionPanel';
+import Badge from '@mui/material/Badge';
+import { useUnreadStore } from '@entities/chat/model/unread.store';
+import { useUnreadSocketSync } from '@entities/chat/model/useUnreadSocketSync';
 import { useMembersQuery } from '@entities/members/api/members.query';
 import InviteDialog from '@entities/server/ui/organisms/InviteDialog';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
@@ -19,6 +23,8 @@ import { IconButton } from '@ui/atoms/IconButton';
 
 const ServerPage: React.FC = () => {
   const { selectedServerId } = useServerStore();
+  // sync unread counts via socket regardless of chat panel mount
+  useUnreadSocketSync(selectedServerId!);
   const { data: servers } = useServersQuery();
   const { data: members } = useMembersQuery(selectedServerId!);
 
@@ -94,6 +100,14 @@ const ServerPage: React.FC = () => {
               >
                 <MembersTemplate />
               </AccordionPanel>
+
+              <AccordionPanel
+                title={<ChatTitleWithBadge serverId={selectedServerId!} />}
+                headerHeight={56}
+                height={2}
+              >
+                <ChatMessages />
+              </AccordionPanel>
               {selectedServer && (
                 <InviteDialog
                   open={showInviteDialog}
@@ -112,3 +126,18 @@ const ServerPage: React.FC = () => {
 };
 
 export default ServerPage;
+
+/* Helper component to show unread badge */
+const ChatTitleWithBadge: React.FC<{ serverId: string }> = ({ serverId }) => {
+  const unread = useUnreadStore((s) => s.counts[serverId] ?? 0);
+  return (
+    <Badge
+      color="error"
+      badgeContent={unread}
+      invisible={unread === 0}
+      sx={{ '.MuiBadge-badge': { right: -10, top: 6 } }}
+    >
+      Chat
+    </Badge>
+  );
+};

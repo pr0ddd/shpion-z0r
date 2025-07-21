@@ -17,6 +17,7 @@ export interface ServerToClientEvents {
     'message:new': (message: Message & { author: { id: string, username: string, avatar: string | null }}) => void;
     'message:updated': (message: Message) => void;
     'message:deleted': (messageId: string, serverId: string) => void;
+    'typing': (payload: { userId: string; serverId: string; typing: boolean; username: string }) => void;
     'server:deleted': (serverId: string) => void;
     'server:updated': (server: any) => void;
     'server:created': (server: any) => void;
@@ -29,6 +30,7 @@ export interface ClientToServerEvents {
     'server:join': (serverId: string) => void;
     'server:leave': (serverId:string) => void;
     'message:send': (data: { serverId: string; content: string; }, callback: (ack: { success: boolean }) => void) => void;
+    'typing': (payload: { serverId: string; typing: boolean }) => void;
     'bot:thinking': (payload: any) => void;
     'user:listening': (listening: boolean) => void;
     'preview:update': (sid: string, dataUrl: string) => void;

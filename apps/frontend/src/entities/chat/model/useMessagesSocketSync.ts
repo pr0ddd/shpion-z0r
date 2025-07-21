@@ -3,6 +3,7 @@ import { useQueryClient, InfiniteData } from '@tanstack/react-query';
 import { Message } from '@shared/types';
 
 import { useSocket } from '@libs/socket';
+import { removeMessageFromCache } from '../api/removeMessageFromCache';
 
 interface MessagesPage {
   messages: Message[];
@@ -54,14 +55,34 @@ export const useMessagesSocketSync = (serverId: string) => {
         pages[firstPageIdx] = updatedFirstPage;
         return { ...old, pages } as InfiniteData<MessagesPage>;
       });
+      // Unread counting moved to global hook to avoid duplication
+    };
+
+    const update = (msg: Message) => {
+      if(msg.serverId!==serverId) return;
+      qc.setQueryData<InfiniteData<MessagesPage>>(['messages', serverId], old=>{
+        if(!old) return old;
+        const first = old.pages[0];
+        const updatedPage = { ...first, messages: first.messages.map(m=>m.id===msg.id?msg:m)};
+        return { ...old, pages: [updatedPage, ...old.pages.slice(1)] } as InfiniteData<MessagesPage>;
+      });
+    };
+
+    const remove = (messageId: string, sId: string) => {
+      if (sId !== serverId) return;
+      removeMessageFromCache(qc, serverId, messageId);
     };
 
     socket.on('message:new', add as any);
+    socket.on('message:updated', update as any);
+    socket.on('message:deleted', remove as any);
     return () => {
       socket.off('message:new', add as any);
+      socket.off('message:updated', update as any);
+      socket.off('message:deleted', remove as any);
       // Do not emit 'server:leave' here to avoid leaving the room when the
       // chat panel is closed. `StreamActive` (video player) maintains its own
-      // join/leave lifecycle tied to the page, guaranteeing we stay in the
+      // join/leave lifecycle tied to the page, guaranteeing мы stay in the
       // room while the server page is open and leave automatically when the
       // user navigates away.
     };

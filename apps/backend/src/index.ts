@@ -19,6 +19,8 @@ import userRoutes from './routes/users';
 import sfuRoutes from './routes/sfu';
 import previewRouter from './routes/preview';
 import systemSettingsRoutes from './routes/systemSettings';
+import uploadRoutes from './routes/upload';
+import { getFile } from './controllers/UploadController';
 
 // Middleware
 import { authMiddleware } from './middleware/auth';
@@ -101,6 +103,8 @@ app.use('/api/livekit', authMiddleware, livekitRoutes);
 app.use('/api/sfu', sfuRoutes);
 app.use('/api/preview', previewRouter);
 app.use('/api/system-settings', systemSettingsRoutes);
+app.get('/api/upload/file/:key', getFile);
+app.use('/api/upload', authMiddleware, uploadRoutes);
 
 // Initialize Socket.IO
 const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents, {}, SocketData>(httpServer, {
@@ -136,6 +140,7 @@ app.use('/api/invites', invitePublicRoutes);
 app.use('/api/invites', authMiddleware, inviteProtectedRoutes);
 app.use('/api/users', authMiddleware, userRoutes);
 app.use('/api/sfu', sfuRoutes);
+app.use('/api/upload', authMiddleware, uploadRoutes);
 
 // Central error handler
 app.use(errorHandler);

@@ -1,5 +1,4 @@
 import { Box, Typography } from '@mui/material';
-import { dicebearAvatar } from '@libs/dicebearAvatar';
 import { Member } from '@shared/types';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
@@ -11,10 +10,8 @@ import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { Avatar } from '@ui/atoms/Avatar';
 
 import { LocalParticipant, RemoteParticipant, Track } from 'livekit-client';
-import {
-  useIsMuted,
-  useIsSpeaking,
-} from '@livekit/components-react';
+import { useIsMuted } from '@livekit/components-react';
+import { useFastIsSpeaking } from '@libs/livekit/hooks/useFastIsSpeaking';
 import { useParticipantMetadata } from '@entities/members/model/useLocalParticipantMetadata';
 
 interface ServerMemberItemProps {
@@ -32,7 +29,7 @@ export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
   totalStreamCount,
   isStreaming,
 }) => {
-  const isSpeaking = useIsSpeaking(participant);
+  const isSpeaking = useFastIsSpeaking(participant);
   const isMuted = useIsMuted({ source: Track.Source.Microphone, participant });
   const { getMetadata } = useParticipantMetadata(participant);
   const isVolumeOn = getMetadata('volumeOn') ?? true;
@@ -58,7 +55,7 @@ export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
       {/* Avatar with streaming indicator */}
       <Box sx={{ position: 'relative'}}>
         <Avatar
-          src={member?.user.avatar || dicebearAvatar(participant?.identity || '')}
+          src={member?.user.avatar || undefined}
           sx={{ 
             width: 32, 
             height: 32,
