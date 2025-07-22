@@ -1,16 +1,17 @@
 name: CI/CD Deploy
 
-on:
-  push:
-    branches:
-      - master
-
-# Shared environment variables
+# Shared environment variables (set the branch to deploy from in one place below)
 env:
+  DEPLOY_BRANCH: &deploy_branch newlayout
   REGISTRY: ghcr.io
   IMAGE_OWNER: ${{ github.repository_owner }}
   BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/shpion-backend
   FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/shpion-frontend
+
+on:
+  push:
+    branches:
+      - *deploy_branch
 
 jobs:
   build-and-push:
@@ -92,7 +93,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: GITHUB_TOKEN,DATABASE_URL,JWT_SECRET,LIVEKIT_URL,LIVEKIT_API_KEY,LIVEKIT_API_SECRET,CLIENT_URL,VITE_API_URL,VITE_LIVEKIT_URL,REGISTRY,IMAGE_OWNER,SERVER_WORKDIR,POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,R2_ENDPOINT,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY,R2_BUCKET
+          envs: GITHUB_TOKEN,DATABASE_URL,JWT_SECRET,LIVEKIT_URL,LIVEKIT_API_KEY,LIVEKIT_API_SECRET,CLIENT_URL,VITE_API_URL,VITE_LIVEKIT_URL,REGISTRY,IMAGE_OWNER,SERVER_WORKDIR,POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,R2_ENDPOINT,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY,R2_BUCKET,DEPLOY_BRANCH
           script: |
             set -e
             export REGISTRY=${{ env.REGISTRY }}
@@ -107,20 +108,20 @@ jobs:
             # Clone or update project repository
             if [ ! -d "$SERVER_WORKDIR/.git" ]; then
               (rm -rf "$SERVER_WORKDIR" || sudo rm -rf "$SERVER_WORKDIR")
-              git clone --branch master https://github.com/${{ github.repository }} "$SERVER_WORKDIR"
+              git clone --branch ${{ env.DEPLOY_BRANCH }} https://github.com/${{ github.repository }} "$SERVER_WORKDIR"
             fi
 
             cd "$SERVER_WORKDIR"
 
-            # Ensure we are on the master branch (deploy branch)
-            git fetch origin master
-            git checkout master
+            # Ensure we are on the target deployment branch
+            git fetch origin ${{ env.DEPLOY_BRANCH }}
+            git checkout ${{ env.DEPLOY_BRANCH }}
 
-            git pull origin master --ff-only || {
+            git pull origin ${{ env.DEPLOY_BRANCH }} --ff-only || {
               echo "Fast-forward pull failed, recloning repository...";
               cd ..;
               (rm -rf "$SERVER_WORKDIR" || sudo rm -rf "$SERVER_WORKDIR");
-              git clone --branch master https://github.com/${{ github.repository }} "$SERVER_WORKDIR";
+              git clone --branch ${{ env.DEPLOY_BRANCH }} https://github.com/${{ github.repository }} "$SERVER_WORKDIR";
               cd "$SERVER_WORKDIR";
             }
 
