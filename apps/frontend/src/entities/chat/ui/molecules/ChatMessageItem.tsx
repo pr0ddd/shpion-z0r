@@ -58,6 +58,8 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
     hour: '2-digit',
     minute: '2-digit',
   });
+  const isEdited =
+    new Date(message.updatedAt).getTime() - new Date(message.createdAt).getTime() > 500;
 
   const youtubeId = extractYouTubeID(message.content);
   const isImageAttachment = message.type === 'IMAGE';
@@ -104,7 +106,7 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
         alignItems: 'flex-start',
         gap: 1,
         py: 1,
-        px: 1,
+        px: 2,
       }}
       onContextMenu={handleContextMenu}
     >
@@ -147,15 +149,7 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
             >
               {message.author?.username || 'Неизвестный'}
             </Typography>
-            <Typography
-              variant="caption"
-              sx={{
-                color: 'new.mutedForeground',
-                fontSize: '0.75rem',
-              }}
-            >
-              {time}
-            </Typography>
+            {/* time is now shown inside bubble */}
           </Box>
         )}
 
@@ -163,11 +157,15 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
         <Box
           sx={{
             p: noBubbleMedia ? 0 : 1,
+            pr: noBubbleMedia ? 2 : 5,  // extra space for timestamp
+            pb: noBubbleMedia ? 3 : 3,  // more space at bottom for edited label
+              // extra space at bottom
             borderRadius: 1,
             background: noBubbleMedia ? 'transparent' : (isMine ? myGradient : otherGradient),
             border: 'none',
             maxWidth: '100%',
             ml: noBubbleMedia && isMine ? 'auto' : undefined,
+            position: 'relative',
           }}
         >
           {/* Reply preview inside bubble */}
@@ -267,12 +265,20 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
           </Typography>
           )}
 
-          {/* Edited label */}
-          {new Date(message.updatedAt).getTime() - new Date(message.createdAt).getTime() > 500 && (
-            <Typography variant="caption" sx={{ color:'new.mutedForeground', fontSize:'0.65rem', mt:0.25, display:'block', textAlign:isMine?'right':'left' }}>
-              (edited)
-            </Typography>
-          )}
+          {/* combined time & edited label – bottom-right (absolute) */}
+          <Typography
+            variant="caption"
+            sx={{
+              position: 'absolute',
+              bottom: 4,
+              right: 6,
+              color: 'new.mutedForeground',
+              fontSize: '0.65rem',
+            }}
+          >
+            {time}
+            {isEdited ? ' (edited)' : ''}
+          </Typography>
 
           {/* YouTube preview */}
           {!message.attachment && youtubeId && (() => {
@@ -329,19 +335,7 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
           })()}
         </Box>
 
-        {/* Time for my messages – align right under bubble */}
-        {isMine && (
-          <Typography
-            variant="caption"
-            sx={{
-              color: 'new.mutedForeground',
-              fontSize: '0.75rem',
-              mt: 0.5,
-            }}
-          >
-            {time}
-          </Typography>
-        )}
+        {/* time for my messages moved inside bubble above */}
       </Box>
 
       {/* Context menu */}

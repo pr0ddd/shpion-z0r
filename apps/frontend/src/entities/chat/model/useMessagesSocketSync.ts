@@ -21,41 +21,58 @@ export const useMessagesSocketSync = (serverId: string) => {
   useEffect(() => {
     if (!socket || !serverId) return;
 
-    // join server room to receive real-time events
+    // (room join happens in higher-level hooks; avoid duplicate joins)
     // socket.emit('server:join', serverId);
 
-    const add = (msg: Message) => {
+    const add = (msg: Message & { clientNonce?: string }) => {
       if (msg.serverId !== serverId) return;
       qc.setQueryData<InfiniteData<MessagesPage>>(['messages', serverId], (old) => {
         if (!old) return old;
         const firstPageIdx = 0;
-        let { messages: firstMsgs } = old.pages[firstPageIdx];
+        const pagesCopy = [...old.pages];
+        const first = { ...pagesCopy[firstPageIdx] };
+        let msgs = [...first.messages];
 
-        // remove optimistic temp duplicates
-        firstMsgs = firstMsgs.filter((m) => {
-          if (m.id.startsWith('temp_') && m.content === msg.content && m.authorId === msg.authorId) {
-            return false;
+        // 1. Attempt to replace optimistic temp message using clientNonce
+        let replaced = false;
+        if (msg.clientNonce) {
+          const tempId = `temp_${msg.clientNonce}`;
+          msgs = msgs.map((m) => {
+            if (m.id === tempId) {
+              replaced = true;
+              return { ...msg } as Message;
+            }
+            return m;
+          });
+        }
+
+        if (!replaced) {
+          // 2. Remove any remaining dupes (same content & author) & bot placeholders
+          msgs = msgs.filter((m) => {
+            if (m.id.startsWith('ollama_')) return false;
+            if (
+              m.id.startsWith('temp_') &&
+              m.content === msg.content &&
+              m.authorId === msg.authorId
+            ) {
+              return false;
+            }
+            return true;
+          });
+
+          // skip if real already present
+          if (msgs.some((m) => m.id === msg.id)) {
+            return old;
           }
-          // remove bot thinking placeholders
-          if (m.id.startsWith('ollama_')) {
-            return false;
-          }
-          return true;
-        });
 
-        // skip if real already present
-        if (firstMsgs.some((m) => m.id === msg.id)) return old;
+          msgs.push(msg as Message);
+        }
 
-        const updatedFirstPage = {
-          ...old.pages[firstPageIdx],
-          messages: [...firstMsgs, msg],
-        };
-
-        const pages = [...old.pages];
-        pages[firstPageIdx] = updatedFirstPage;
-        return { ...old, pages } as InfiniteData<MessagesPage>;
+        first.messages = msgs;
+        pagesCopy[firstPageIdx] = first;
+        return { ...old, pages: pagesCopy } as InfiniteData<MessagesPage>;
       });
-      // Unread counting moved to global hook to avoid duplication
+      // Unread counting moved to global hook
     };
 
     const update = (msg: Message) => {

@@ -15,7 +15,7 @@ export const SocketContext = createContext<SocketContextType | null>(null);
 export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const token = useSessionStore(s => s.token);
   const socketRef = useRef<AppSocket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIs] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -36,14 +36,14 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if ((import.meta as any).env?.DEV) {
           console.debug('🔌 Socket connected:', socket.id);
         }
-        setIsConnected(true);
+        setIs(true);
       });
 
       socket.on('disconnect', () => {
         if ((import.meta as any).env?.DEV) {
           console.debug('🔌 Socket disconnected');
         }
-        setIsConnected(false);
+        setIs(false);
       });
 
       let manualPing: ReturnType<typeof setInterval> | null = null;

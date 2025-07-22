@@ -6,112 +6,114 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import SettingsIcon from '@mui/icons-material/Settings';
+import DesktopAccessDisabledIcon from '@mui/icons-material/DesktopAccessDisabled';
+import { useScreenShare } from '@entities/members/model/useScreenShare';
+import { useLocalParticipantCamera } from '@entities/members/model/useLocalParticipantCamera';
+import { useLocalParticipant, useRoomContext } from '@livekit/components-react';
+import { Track } from 'livekit-client';
 import { useLocalParticipantMic } from '@entities/members/model/useLocalParticipantMic';
 import { useLocalParticipantVolume } from '@entities/members/model/useLocalParticipantVolume';
 import { useServerStore } from '@entities/server/model';
-import { Chip } from '@ui/atoms/Chip';
-import { IconButton } from '@ui/atoms/IconButton';
 import { SettingsDialog, useSettingsDialogStore, GlobalHotkeys } from '@entities/settings';
+import { useTheme } from '@mui/material';
 
 interface MediaControlPanelProps {}
 
 export const MediaControlPanel: React.FC<MediaControlPanelProps> = () => {
-  return (
-    <Box
-      sx={{
-        display: 'flex',
-        backgroundColor: 'new.card',
-        borderTop: '1px solid',
-        borderColor: 'new.border',
-        padding: 1,
-        paddingLeft: 2,
-      }}
-    >
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 1,
-          flex: 1,
-        }}
-      >
-        <Chip label="Connected" variant="filled" color="primary" />
-      </Box>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 1,
-        }}
-      >
-        {/* Chat controls migrated to sidebar – no floating chat button needed anymore */}
-        <ToggleMicButton />
-        <ToggleVolumeButton />
-        <SettingsButton />
-        <LeaveButton />
-        <SettingsDialog />
-        <GlobalHotkeys />
-      </Box>
-    </Box>
-  );
-};
-
-const ToggleMicButton: React.FC = () => {
+  /* --- hooks for each control --- */
   const { isMicEnabled, toggleMicEnabled } = useLocalParticipantMic();
-
-  return (
-    <IconButton
-      hasBorder={true}
-      color={isMicEnabled ? 'default' : 'error'}
-      icon={isMicEnabled ? <MicIcon /> : <MicOffIcon />}
-      tooltip={isMicEnabled ? 'Выключить микрофон' : 'Включить микрофон'}
-      onClick={toggleMicEnabled}
-    />
-  );
-};
-
-const ToggleVolumeButton: React.FC = () => {
   const { isVolumeEnabled, toggleVolumeEnabled } = useLocalParticipantVolume();
+  const isSettingsOpen = useSettingsDialogStore((s) => s.isOpen);
+  const toggleSettings = useSettingsDialogStore((s) => s.toggle);
 
-  return (
-    <IconButton
-      hasBorder={true}
-      color={isVolumeEnabled ? 'default' : 'error'}
-      icon={isVolumeEnabled ? <VolumeUpIcon /> : <VolumeOffIcon />}
-      tooltip={isVolumeEnabled ? 'Выключить звук' : 'Включить звук'}
-      onClick={toggleVolumeEnabled}
-    />
-  );
-};
+  /* Stop All logic */
+  const { stopAll: stopAllScreenShare } = useScreenShare();
+  const { toggleCameraEnabled, isCameraEnabled } = useLocalParticipantCamera();
+  const { localParticipant } = useLocalParticipant();
+  const room = useRoomContext();
 
-export const SettingsButton: React.FC = () => {
-  const isOpen = useSettingsDialogStore((s) => s.isOpen);
-  const toggle = useSettingsDialogStore((s) => s.toggle);
+  const handleStopAll = () => {
+    stopAllScreenShare();
+    if (room && localParticipant) {
+      localParticipant.trackPublications.forEach((pub) => {
+        if (pub.source === Track.Source.Camera && pub.track) {
+          room.localParticipant.unpublishTrack(pub.track);
+          pub.track.stop();
+        }
+      });
+    }
+    if (isCameraEnabled) toggleCameraEnabled();
+  };
 
-  return (
-    <IconButton
-      hasBorder={true}
-      color={isOpen ? 'primary' : 'default'}
-      icon={<SettingsIcon />}
-      tooltip={isOpen ? 'Скрыть настройки' : 'Настройки'}
-      onClick={toggle}
-    />
-  );
-};
-
-export const LeaveButton: React.FC = () => {
   const { setSelectedServerId } = useServerStore();
 
+  const theme = useTheme();
+
+  /* --- helper to render a button in unified style --- */
+  const btnStyle = (addRightBorder: boolean) => ({
+    flex: 1,
+    backgroundColor: 'unset',
+    border: 'none',
+    borderRight: addRightBorder ? '1px solid' : 'none',
+    borderRightColor: 'new.border',
+    cursor: 'pointer',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    height: '45px',
+    outline: 'none',
+    '& svg': { color: 'new.foreground', fontSize: 16 },
+    '&:hover': {
+      backgroundColor: 'new.redLight',
+    },
+    '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main' },
+  });
+
+  const buttons = [
+    {
+      icon: isMicEnabled ? <MicIcon /> : <MicOffIcon />,
+      label: 'Mic',
+      onClick: toggleMicEnabled,
+    },
+    {
+      icon: isVolumeEnabled ? <VolumeUpIcon /> : <VolumeOffIcon />,
+      label: 'Vol',
+      onClick: toggleVolumeEnabled,
+    },
+    {
+      icon: <SettingsIcon />,
+      label: 'Settings',
+      onClick: toggleSettings,
+    },
+    {
+      icon: <DesktopAccessDisabledIcon />,
+      label: 'Stop',
+      onClick: handleStopAll,
+    },
+    {
+      icon: <LogoutIcon />,
+      label: 'Exit',
+      onClick: () => setSelectedServerId(null),
+    },
+  ];
+
   return (
-    <IconButton
-      hasBorder={true}
-      color="error"
-      icon={<LogoutIcon />}
-      tooltip="Выйти из комнаты"
-      onClick={() => setSelectedServerId(null)}
-    />
+    <Box sx={{ display: 'flex', width: '100%' }}>
+      {buttons.map((b, idx) => (
+        <Box
+          key={idx}
+          component="button"
+          onClick={b.onClick}
+          sx={btnStyle(idx !== buttons.length - 1)}
+        >
+          {b.icon}
+        </Box>
+      ))}
+      {/* Dialogs / helpers */}
+      <SettingsDialog />
+      <GlobalHotkeys />
+    </Box>
   );
 };

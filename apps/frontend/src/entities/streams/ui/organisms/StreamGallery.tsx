@@ -61,11 +61,6 @@ export const StreamGallery: React.FC<StreamGalleryProps> = ({
       }}
     >
       {/* Fixed control panel on the left */}
-      <StreamControlPanel
-        onStartScreenShare={onStartScreenShare}
-        onStartCamera={onStartCamera}
-        onStopAll={handleStopAll}
-      />
 
       {/* Scrollable gallery of streams */}
       <Box

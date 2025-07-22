@@ -122,7 +122,7 @@ export const ChatMessagesList: React.FC = () => {
 
   const typingUsers = Object.values(typingState).filter(t=>t.typing).map(t=>t.username).filter(n=>!!n && n!==user?.username);
   const selfTyping = typingState[user?.id ?? '']?.typing;
-  const typingDisplay = typingUsers.length>0 ? `${typingUsers.join(', ')} печатает…` : selfTyping? 'Вы печатаете…' : '';
+  const typingDisplay = typingUsers.length > 0 ? `${typingUsers.join(', ')} печатает…` : '';
 
   const [atBottom,setAtBottom] = useState(true);
   useListening(serverId!, atBottom);
@@ -234,8 +234,8 @@ export const ChatMessagesList: React.FC = () => {
       overscan={200}
     />
     {typingDisplay && (
-      <Box sx={{ px:2, py:0.5 }}>
-        <Typography variant="caption" sx={{color:'new.mutedForeground'}}>
+      <Box sx={{ position:'absolute', bottom:48, left:0, right:0, display:'flex', justifyContent:'center', pointerEvents:'none' }}>
+        <Typography variant="caption" sx={{ color:'new.mutedForeground', backgroundColor:'rgba(0,0,0,0.4)', px:1.5, py:0.25, borderRadius:6 }}>
           {typingDisplay}
         </Typography>
       </Box>

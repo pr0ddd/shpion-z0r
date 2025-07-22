@@ -13,6 +13,8 @@ type ShpionPalette = {
   border: string;
   borderLight: string;
   hover: string;
+  hoverOverlay: string;
+  dangerHover: string;
   formField: string;
   primary: string;
   primaryForeground: string;
@@ -44,6 +46,8 @@ export const createAppTheme = (mode: 'dark' | 'light' = 'dark') => {
       border: 'hsl(220, 13%, 18%)',
       borderLight: 'hsl(220, 13%, 18%)',
       hover: 'hsl(220, 13%, 15%)',
+      hoverOverlay: 'hsl(220, 13%, 10%)',
+      dangerHover: 'hsl(220, 13%, 10%)',
       formField: '#1d2025',
       primary: '#8b5cd6',
       primaryForeground: 'hsl(210, 40%, 98%)',
@@ -64,6 +68,8 @@ export const createAppTheme = (mode: 'dark' | 'light' = 'dark') => {
     border: '#d0d0d0',
     borderLight: '#e0e0e0',
     hover: '#eaeaea',
+    hoverOverlay: '#f0f0f0',
+    dangerHover: '#ffdddd',
     formField: '#f5f5f5',
     primary: '#8b5cd6',
     primaryForeground: '#ffffff',
@@ -302,7 +308,7 @@ export const createAppTheme = (mode: 'dark' | 'light' = 'dark') => {
         styleOverrides: {
           body: {
             '*::-webkit-scrollbar': {
-              width: '8px',
+              width: '4px',
             },
             '*::-webkit-scrollbar-track': {
               background: '#141517',

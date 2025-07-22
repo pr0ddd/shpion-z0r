@@ -172,6 +172,8 @@ export const ChatMessagesForm: React.FC = () => {
           }}
           disabled={!serverId}
           inputRef={inputRef}
+          autoComplete="off"
+          inputProps={{ autoComplete: 'off', spellCheck: 'false' }}
         />
         <input
           ref={fileInputRef}

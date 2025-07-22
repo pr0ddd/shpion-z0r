@@ -18,6 +18,9 @@ export const useUnreadSocketSync = (serverId?: string) => {
   useEffect(() => {
     if (!socket || !serverId) return;
 
+    // Join server room once when mounted
+    socket.emit('server:join', serverId);
+
     const handler = (msg: Message) => {
       if (msg.serverId !== serverId) return;
       if (msg.authorId === user?.id) return; // ignore own
@@ -31,6 +34,7 @@ export const useUnreadSocketSync = (serverId?: string) => {
     socket.on('message:new', handler as any);
     return () => {
       socket.off('message:new', handler as any);
+      socket.emit('server:leave', serverId);
     };
   }, [socket, serverId, user?.id]);
 }; 

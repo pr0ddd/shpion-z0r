@@ -1,5 +1,4 @@
-import { Box, lighten, Typography, useTheme } from '@mui/material';
-import { StreamCard } from '../atoms/StreamCard';
+import { Box, Typography } from '@mui/material';
 import MonitorIcon from '@mui/icons-material/Monitor';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import CallEndIcon from '@mui/icons-material/CallEnd';
@@ -9,118 +8,117 @@ interface StreamControlPanelProps {
   onStartScreenShare: () => void;
   onStartCamera: () => void;
   onStopAll: () => void;
+  showStopAll?: boolean;
 }
 
 export const StreamControlPanel: React.FC<StreamControlPanelProps> = ({
   onStartScreenShare,
   onStartCamera,
   onStopAll,
+  showStopAll = false,
 }) => {
-  const theme = useTheme();
-
   return (
-    <StreamCard>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+      }}
+    >
+      {/* Top row with two buttons */}
       <Box
         sx={{
-          height: '110px',
-          width: '190px',
           display: 'flex',
-          flexDirection: 'column',
+          height: '65px',
         }}
       >
-        {/* Top row with two buttons */}
+        {/* Screen share button */}
         <Box
+          component="button"
+          onClick={onStartScreenShare}
           sx={{
+            flex: 1,
+            backgroundColor: 'unset',
+            border: 'none',
+            borderRight: '1px solid',
+            borderRightColor: 'new.border',
+            borderBottom: '1px solid',
+            borderBottomColor: 'new.border',
+            cursor: 'pointer',
             display: 'flex',
-            height: '65px',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 0.5,
+            '&:hover': {
+              backgroundColor: 'new.redLight',
+            },
+            
           }}
         >
-          {/* Screen share button */}
-          <Box
-            component="button"
-            onClick={onStartScreenShare}
+          <MonitorIcon
             sx={{
-              flex: 1,
-              backgroundColor: 'unset',
-              border: 'none',
-              borderRight: '1px solid',
-              borderRightColor: 'new.border',
-              borderBottom: '1px solid',
-              borderBottomColor: 'new.border',
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 0.5,
-              '&:hover': {
-                backgroundColor: 'new.hover',
-              },
+              fontSize: 16,
+              color: 'new.foreground',
+            }}
+          />
+          <Typography
+            variant="caption"
+            sx={{
+              color: 'new.foreground',
+              fontSize: '0.65rem',
+              fontWeight: 500,
+              textAlign: 'center',
+              lineHeight: 1,
             }}
           >
-            <MonitorIcon
-              sx={{
-                fontSize: 16,
-                color: 'new.foreground',
-              }}
-            />
-            <Typography
-              variant="caption"
-              sx={{
-                color: 'new.foreground',
-                fontSize: '0.65rem',
-                fontWeight: 500,
-                textAlign: 'center',
-                lineHeight: 1,
-              }}
-            >
-              Screen
-            </Typography>
-          </Box>
-
-          {/* Camera button */}
-          <Box
-            component="button"
-            onClick={onStartCamera}
-            sx={{
-              flex: 1,
-              backgroundColor: 'unset',
-              border: 'none',
-              borderBottom: '1px solid',
-              borderBottomColor: 'new.border',
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 0.5,
-              '&:hover': {
-                backgroundColor: 'new.hover',
-              },
-            }}
-          >
-            <VideocamIcon
-              sx={{
-                fontSize: 16,
-                color: 'new.foreground',
-              }}
-            />
-            <Typography
-              variant="caption"
-              sx={{
-                color: 'new.foreground',
-                fontSize: '0.65rem',
-                fontWeight: 500,
-                textAlign: 'center',
-                lineHeight: 1,
-              }}
-            >
-              Camera
-            </Typography>
-          </Box>
+            Screen
+          </Typography>
         </Box>
 
-        {/* Bottom row with stop button */}
+        {/* Camera button */}
+        <Box
+          component="button"
+          onClick={onStartCamera}
+          sx={{
+            flex: 1,
+            backgroundColor: 'unset',
+            border: 'none',
+            borderBottom: '1px solid',
+            borderBottomColor: 'new.border',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 0.5,
+            '&:hover': {
+              backgroundColor: 'new.redLight',
+            },
+          }}
+        >
+          <VideocamIcon
+            sx={{
+              fontSize: 16,
+              color: 'new.foreground',
+            }}
+          />
+          <Typography
+            variant="caption"
+            sx={{
+              color: 'new.foreground',
+              fontSize: '0.65rem',
+              fontWeight: 500,
+              textAlign: 'center',
+              lineHeight: 1,
+            }}
+          >
+            Camera
+          </Typography>
+        </Box>
+      </Box>
+
+      {showStopAll && (
         <Box
           component="button"
           onClick={onStopAll}
@@ -142,7 +140,7 @@ export const StreamControlPanel: React.FC<StreamControlPanelProps> = ({
           <DesktopAccessDisabledIcon sx={{ fontSize: 16 }} />
           <Typography variant="caption">Stop All</Typography>
         </Box>
-      </Box>
-    </StreamCard>
+      )}
+    </Box>
   );
 };

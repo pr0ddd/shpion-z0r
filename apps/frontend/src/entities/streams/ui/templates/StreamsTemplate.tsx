@@ -72,6 +72,7 @@ export const StreamsTemplate: React.FC = () => {
   return (
     <Box
       sx={{
+        // layout container for stream area and gallery
         display: 'flex',
         flexDirection: 'column',
         flexGrow: 1,
@@ -81,29 +82,32 @@ export const StreamsTemplate: React.FC = () => {
       }}
     >
       <StreamActive
-        tracks={mediaStreamTracks}
-        galleryTracks={streamTracks}
-        activeSid={activeVideoTrackSid}
-        onSelectStream={(stream) => setActiveVideoTrackSid(stream.publication?.track?.sid ?? null)}
-        onExit={() => {
-          setActiveVideoTrackSid(null);
-          setMediaStreamTracks([]);
-        }}
-      />
-      <StreamGallery
-        tracks={streamTracks}
-        activeSid={activeVideoTrackSid}
-        onSelect={(stream) =>
-          setActiveVideoTrackSid(stream.publication?.track?.sid ?? null)
-        }
-        onStartScreenShare={() => startNew(user?.id ?? 'unknown')}
-        onStartCamera={() => {
-          if (!isCameraEnabled) {
-            toggleCameraEnabled();
-          }
-        }}
-        handleStopAll={handleStopAll}
-      />
+            tracks={mediaStreamTracks}
+            galleryTracks={streamTracks}
+            activeSid={activeVideoTrackSid}
+            onSelectStream={(stream) =>
+              setActiveVideoTrackSid(stream.publication?.track?.sid ?? null)
+            }
+            onExit={() => {
+              setActiveVideoTrackSid(null);
+              setMediaStreamTracks([]);
+            }}
+          />
+          <StreamGallery
+            tracks={streamTracks}
+            activeSid={activeVideoTrackSid}
+            onSelect={(stream) =>
+              setActiveVideoTrackSid(stream.publication?.track?.sid ?? null)
+            }
+            onStartScreenShare={() => startNew(user?.id ?? 'unknown')}
+            onStartCamera={() => {
+              if (!isCameraEnabled) {
+                toggleCameraEnabled();
+              }
+            }}
+            handleStopAll={handleStopAll}
+          />
+
     </Box>
   );
 };

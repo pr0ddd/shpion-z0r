@@ -6,10 +6,6 @@
   everywhere else.
 */
 
-// Added visibility change debug log
-document.addEventListener('visibilitychange', () =>
-  console.log('visibility', document.visibilityState));
-
 let globalAudioContext: AudioContext | null = null;
 let ctxReadyPromise: Promise<AudioContext> | null = null;
 let ctxReadyResolver: ((ctx: AudioContext) => void) | null = null;
