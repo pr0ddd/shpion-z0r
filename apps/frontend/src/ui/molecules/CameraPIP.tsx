@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Box, useTheme } from '@mui/material';
+import { Box, IconButton, useTheme } from '@mui/material';
+import FlipCameraAndroidIcon from '@mui/icons-material/FlipCameraAndroid';
 import { useLocalParticipant } from '@livekit/components-react';
 import { Track } from 'livekit-client';
+import { useCameraSettingsStore } from '@entities/members/model';
 
 interface CameraPIPProps {
   visible?: boolean;
@@ -11,6 +13,9 @@ export const CameraPIP: React.FC<CameraPIPProps> = ({ visible = true }) => {
   const theme = useTheme();
   const { localParticipant } = useLocalParticipant();
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  const preferredCamera = useCameraSettingsStore((s) => s.preferredCamera);
+  const setPreferredCamera = useCameraSettingsStore((s) => s.setPreferredCamera);
 
   // initial bottom-right position
   const [pos, setPos] = useState(() => ({
@@ -77,6 +82,25 @@ export const CameraPIP: React.FC<CameraPIPProps> = ({ visible = true }) => {
         cursor: 'move',
       }}
     >
+      {/* Switch camera button */}
+      <IconButton
+        size="small"
+        sx={{
+          position: 'absolute',
+          top: 4,
+          left: 4,
+          bgcolor: 'rgba(0,0,0,0.6)',
+          color: 'common.white',
+          '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' },
+          zIndex: 1,
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          setPreferredCamera(preferredCamera === 'front' ? 'back' : 'front');
+        }}
+      >
+        <FlipCameraAndroidIcon fontSize="inherit" />
+      </IconButton>
       <video ref={videoRef} muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
     </Box>
   );

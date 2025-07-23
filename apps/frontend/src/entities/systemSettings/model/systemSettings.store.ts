@@ -120,6 +120,13 @@ export const useSystemSettingsStore = create<SystemSettingsStore>((set) => ({
           autoGainControl: setValue<boolean>('AUDIO_AUTO_GAIN_CONTROL', false),
           voiceIsolation: setValue<boolean>('AUDIO_VOICE_ISOLATION', false),
         },
+        videoCaptureDefaults: {
+          resolution: {
+            width: 640,
+            height: 480,
+            frameRate: 30,
+          },
+        },
       },
       deepFilterOptions: {
         attenLim: setValue<number>('DEEPFILTER_ATTEN_LIM', 40),

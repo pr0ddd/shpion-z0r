@@ -97,7 +97,15 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
       serverUrl={sfuUrl}
       connect={isReady}
       audio={false}
-      options={roomOptions}
+      options={{
+        ...roomOptions,
+        videoCaptureDefaults: {
+          resolution: {
+            width: 1280,
+            height: 720
+          },
+        },
+      }}
       onConnected={() => setIsConnected(true)}
       onDisconnected={() => setIsConnected(false)}
       onError={(error) => {
