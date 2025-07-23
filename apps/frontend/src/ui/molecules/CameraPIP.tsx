@@ -17,6 +17,31 @@ export const CameraPIP: React.FC<CameraPIPProps> = ({ visible = true }) => {
   const preferredCamera = useCameraSettingsStore((s) => s.preferredCamera);
   const setPreferredCamera = useCameraSettingsStore((s) => s.setPreferredCamera);
 
+  /**
+   * Try to pick a deviceId that matches desired facing.
+   * On most mobile browsers, device labels contain words like 'front', 'user', 'back', 'rear', 'environment'.
+   * Fallback: choose first (front) or second (back) camera.
+   */
+  const getDeviceIdForFacing = useCallback(async (facing: 'front' | 'back') => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cams = devices.filter((d) => d.kind === 'videoinput');
+      if (!cams.length) return undefined;
+      const keywords = facing === 'front' ? ['front', 'user'] : ['back', 'rear', 'environment'];
+      for (const key of keywords) {
+        const found = cams.find((d) => d.label.toLowerCase().includes(key));
+        if (found) return found.deviceId;
+      }
+      // Fallback to position in list: assumption first = front, second = back
+      if (facing === 'front') return cams[0].deviceId;
+      if (cams.length > 1) return cams[1].deviceId;
+      return cams[0].deviceId; // only one camera
+    } catch (e) {
+      console.warn('[CameraPIP] Failed to enumerate devices', e);
+      return undefined;
+    }
+  }, []);
+
   // initial bottom-right position
   const [pos, setPos] = useState(() => ({
     right: 10,
@@ -71,8 +96,8 @@ export const CameraPIP: React.FC<CameraPIPProps> = ({ visible = true }) => {
         bottom: pos.bottom,
         right: pos.right,
         zIndex: theme.zIndex.modal,
-        width: 200,
-        height: 120,
+        width: 260,
+        height: 160,
         borderRadius: 2,
         overflow: 'hidden',
         border: '2px solid',
@@ -94,9 +119,27 @@ export const CameraPIP: React.FC<CameraPIPProps> = ({ visible = true }) => {
           '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' },
           zIndex: 1,
         }}
-        onClick={(e) => {
+        onClick={async (e) => {
           e.stopPropagation();
-          setPreferredCamera(preferredCamera === 'front' ? 'back' : 'front');
+          if (!localParticipant) return;
+
+          const newFacing = preferredCamera === 'front' ? 'back' : 'front';
+
+          // Disable current camera first to stop existing track
+          try {
+            await localParticipant.setCameraEnabled(false);
+          } catch {}
+
+          const deviceId = await getDeviceIdForFacing(newFacing);
+          try {
+            const opts = deviceId ? { deviceId } : undefined;
+            // @ts-ignore: LiveKit typings accept VideoCaptureOptions, string is deprecated
+            await localParticipant.setCameraEnabled(true, opts as any);
+          } catch (err) {
+            console.warn('[CameraPIP] Failed to switch camera', err);
+          }
+
+          setPreferredCamera(newFacing);
         }}
       >
         <FlipCameraAndroidIcon fontSize="inherit" />

@@ -68,7 +68,17 @@ export const MobileBottomBar: React.FC = () => {
   const buttons = [
     { label: 'Chat', icon: <ChatIcon />, onClick: () => setMobileSheet('chat') },
     { label: 'Streams', icon: <VideocamIcon />, onClick: () => setMobileSheet('streams') },
-    { label: 'Camera', icon: <VideocamIcon />, onClick: () => toggleCameraEnabled() },
+    {
+      label: 'Camera',
+      icon: <VideocamIcon />,
+      onClick: () => {
+        if (isCameraEnabled) {
+          handleStopAll();
+        } else {
+          handleStartCamera();
+        }
+      },
+    },
     { label: 'Mic', icon: isMicEnabled ? <MicIcon /> : <MicOffIcon />, onClick: toggleMicEnabled },
     { label: 'Vol', icon: isVolumeEnabled ? <VolumeUpIcon /> : <VolumeOffIcon />, onClick: toggleVolumeEnabled },
     { label: 'Settings', icon: <SettingsIcon />, onClick: toggleSettings },
