@@ -134,7 +134,7 @@ async function seedSystemSettings() {
       id: 18,
       code_name: 'LIVEKIT_VIDEO_ENCODING_MAX_BITRATE_BALANCED',
       description: 'Максимальная битрейт видео',
-      value: '3_000_000',
+      value: '3000000',
     },
     {
       id: 19,
@@ -152,7 +152,7 @@ async function seedSystemSettings() {
       id: 21,
       code_name: 'LIVEKIT_SCREEN_SHARE_ENCODING_MAX_BITRATE_BALANCED',
       description: 'Максимальная битрейт демонстрации экрана',
-      value: '3_000_000',
+      value: '3000000',
     },
     {
       id: 22,
@@ -171,7 +171,7 @@ async function seedSystemSettings() {
       id: 24,
       code_name: 'LIVEKIT_AUDIO_MAX_BITRATE',
       description: 'Настройки аудио',
-      value: '24_000',
+      value: '24000',
     },
     {
       id: 25,
