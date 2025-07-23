@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Box, IconButton, useTheme } from '@mui/material';
 import FlipCameraAndroidIcon from '@mui/icons-material/FlipCameraAndroid';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
+import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import { useLocalParticipant } from '@livekit/components-react';
 import { Track, createLocalVideoTrack } from 'livekit-client';
 import { useCameraSettingsStore } from '@entities/members/model';
@@ -15,6 +16,23 @@ export const CameraPIP: React.FC<CameraPIPProps> = ({ visible = true }) => {
   const { localParticipant } = useLocalParticipant();
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Track fullscreen state for icon toggle
+  const [isFs, setIsFs] = useState(false);
+
+  useEffect(() => {
+    const handler = () => {
+      const fs = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+      setIsFs(fs);
+    };
+    document.addEventListener('fullscreenchange', handler);
+    // Safari
+    document.addEventListener('webkitfullscreenchange', handler as any);
+    return () => {
+      document.removeEventListener('fullscreenchange', handler);
+      document.removeEventListener('webkitfullscreenchange', handler as any);
+    };
+  }, []);
 
   // Helper: attach current camera track to <video>
   const setVideoStream = useCallback(() => {
@@ -153,9 +171,12 @@ export const CameraPIP: React.FC<CameraPIPProps> = ({ visible = true }) => {
           const newFacing = preferredCamera === 'front' ? 'back' : 'front';
 
           const deviceId = await getDeviceIdForFacing(newFacing);
+          // Prefer high resolution (1080p). Browser may downgrade if unsupported.
+          const baseConstraints = { resolution: { width: 1920, height: 1080 } } as const;
+
           const constraints = deviceId
-            ? { deviceId }
-            : { facingMode: newFacing === 'front' ? 'user' : 'environment' };
+            ? { ...baseConstraints, deviceId }
+            : { ...baseConstraints, facingMode: newFacing === 'front' ? 'user' : 'environment' };
 
           // Try to restart existing camera track with new constraints for seamless switch
           const camPub = localParticipant.getTrackPublication(Track.Source.Camera);
@@ -172,6 +193,9 @@ export const CameraPIP: React.FC<CameraPIPProps> = ({ visible = true }) => {
               }
 
               const newTrack = await createLocalVideoTrack(constraints as any);
+              try {
+                newTrack.mediaStreamTrack.contentHint = 'detail';
+              } catch {}
               await localParticipant.publishTrack(newTrack, { source: Track.Source.Camera });
             }
             // Re-attach to new track
@@ -202,14 +226,24 @@ export const CameraPIP: React.FC<CameraPIPProps> = ({ visible = true }) => {
           e.stopPropagation();
           const elem = containerRef.current;
           if (!elem) return;
-          if (!document.fullscreenElement) {
-            elem.requestFullscreen().catch(() => {});
+          const requestFs = () => {
+            if (elem.requestFullscreen) return elem.requestFullscreen();
+            if ((elem as any).webkitRequestFullscreen) return (elem as any).webkitRequestFullscreen();
+            if (videoRef.current && (videoRef.current as any).webkitEnterFullscreen) return (videoRef.current as any).webkitEnterFullscreen();
+          };
+          const exitFs = () => {
+            if (document.exitFullscreen) return document.exitFullscreen();
+            if ((document as any).webkitExitFullscreen) return (document as any).webkitExitFullscreen();
+          };
+
+          if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+            requestFs();
           } else {
-            document.exitFullscreen().catch(() => {});
+            exitFs();
           }
         }}
       >
-        <FullscreenIcon fontSize="inherit" />
+        {isFs ? <FullscreenExitIcon fontSize="inherit" /> : <FullscreenIcon fontSize="inherit" />}
       </IconButton>
       <video ref={videoRef} muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
     </Box>
