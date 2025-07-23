@@ -24,7 +24,7 @@ export const MobileBottomBar: React.FC = () => {
   const theme = useTheme();
 
   // --- Layout constants ---
-  const BAR_HEIGHT = 60; // px
+  const BAR_HEIGHT = 60; // px (visual bar excluding safe area)
 
   // Reserve space for bottom bar globally (body padding) so content is not hidden under it
   useEffect(() => {
@@ -113,8 +113,8 @@ export const MobileBottomBar: React.FC = () => {
           borderTop: '1px solid',
           borderColor: 'new.border',
           display: 'flex',
-          height: BAR_HEIGHT,
-          paddingBottom: 'env(safe-area-inset-bottom)',
+          height: `calc(${BAR_HEIGHT}px + env(safe-area-inset-bottom))`,
+          paddingBottom: 'env(safe-area-inset-bottom)', // keep icons above safe area
         }}
       >
         {buttons.map((btn, idx) => {
