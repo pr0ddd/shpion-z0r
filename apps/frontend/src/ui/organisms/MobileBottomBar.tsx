@@ -22,6 +22,22 @@ import { CameraPIP } from '@ui/molecules/CameraPIP';
 
 export const MobileBottomBar: React.FC = () => {
   const theme = useTheme();
+
+  // --- Layout constants ---
+  const BAR_HEIGHT = 60; // px
+
+  // Reserve space for bottom bar globally (body padding) so content is not hidden under it
+  useEffect(() => {
+    const prevPadding = document.body.style.paddingBottom;
+    document.body.style.paddingBottom = `calc(${BAR_HEIGHT}px + env(safe-area-inset-bottom))`;
+    const prevOverflow = document.body.style.overflowY;
+    document.body.style.overflowY = 'hidden';
+    return () => {
+      document.body.style.paddingBottom = prevPadding;
+      document.body.style.overflowY = prevOverflow;
+    };
+  }, []);
+
   const [mobileSheet, setMobileSheet] = useState<'chat' | 'streams' | null>(null);
 
   // LiveKit / state hooks
@@ -97,6 +113,8 @@ export const MobileBottomBar: React.FC = () => {
           borderTop: '1px solid',
           borderColor: 'new.border',
           display: 'flex',
+          height: BAR_HEIGHT,
+          paddingBottom: 'env(safe-area-inset-bottom)',
         }}
       >
         {buttons.map((btn, idx) => {

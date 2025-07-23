@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Box, IconButton, useTheme } from '@mui/material';
 import FlipCameraAndroidIcon from '@mui/icons-material/FlipCameraAndroid';
 import { useLocalParticipant } from '@livekit/components-react';
-import { Track } from 'livekit-client';
+import { Track, createLocalVideoTrack } from 'livekit-client';
 import { useCameraSettingsStore } from '@entities/members/model';
 
 interface CameraPIPProps {
@@ -13,6 +13,22 @@ export const CameraPIP: React.FC<CameraPIPProps> = ({ visible = true }) => {
   const theme = useTheme();
   const { localParticipant } = useLocalParticipant();
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Helper: attach current camera track to <video>
+  const setVideoStream = useCallback(() => {
+    if (!visible || !videoRef.current) return;
+    const camPub = localParticipant?.getTrackPublication(Track.Source.Camera);
+    const mediaTrack = camPub?.track?.mediaStreamTrack as MediaStreamTrack | undefined;
+    if (mediaTrack) {
+      const stream = new MediaStream([mediaTrack]);
+      if (videoRef.current.srcObject !== stream) {
+        videoRef.current.srcObject = stream;
+      }
+      videoRef.current.play().catch(() => {});
+    } else {
+      videoRef.current.srcObject = null;
+    }
+  }, [visible, localParticipant]);
 
   const preferredCamera = useCameraSettingsStore((s) => s.preferredCamera);
   const setPreferredCamera = useCameraSettingsStore((s) => s.setPreferredCamera);
@@ -54,20 +70,22 @@ export const CameraPIP: React.FC<CameraPIPProps> = ({ visible = true }) => {
   // Pointer offset inside the box when dragging starts
   const dragOffset = useRef<{ x: number; y: number } | null>(null);
 
-  // Set media track when visible toggles
+  // Initial attach & on deps change
   useEffect(() => {
-    if (!visible || !videoRef.current) {
-      if (videoRef.current) videoRef.current.srcObject = null;
-      return;
-    }
-    const camPub = localParticipant?.getTrackPublication(Track.Source.Camera);
-    const mediaTrack = camPub?.track?.mediaStreamTrack as MediaStreamTrack | undefined;
-    if (mediaTrack) {
-      const stream = new MediaStream([mediaTrack]);
-      videoRef.current.srcObject = stream;
-      videoRef.current.play().catch(() => {});
-    }
-  }, [visible, localParticipant]);
+    setVideoStream();
+  }, [setVideoStream]);
+
+  // Update when LiveKit publishes/unpublishes a new camera track
+  useEffect(() => {
+    if (!localParticipant) return;
+    const handler = () => setVideoStream();
+    localParticipant.on('trackPublished', handler);
+    localParticipant.on('trackUnpublished', handler);
+    return () => {
+      localParticipant.off('trackPublished', handler);
+      localParticipant.off('trackUnpublished', handler);
+    };
+  }, [localParticipant, setVideoStream]);
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     dragOffset.current = {
@@ -131,18 +149,30 @@ export const CameraPIP: React.FC<CameraPIPProps> = ({ visible = true }) => {
 
           const newFacing = preferredCamera === 'front' ? 'back' : 'front';
 
-          // Disable current camera first to stop existing track
-          try {
-            await localParticipant.setCameraEnabled(false);
-          } catch {}
-
           const deviceId = await getDeviceIdForFacing(newFacing);
+          const constraints = deviceId
+            ? { deviceId }
+            : { facingMode: newFacing === 'front' ? 'user' : 'environment' };
+
+          // Try to restart existing camera track with new constraints for seamless switch
+          const camPub = localParticipant.getTrackPublication(Track.Source.Camera);
+          const track = camPub?.track as any;
+
           try {
-            const opts = deviceId
-              ? { deviceId }
-              : { facingMode: newFacing === 'front' ? 'user' : 'environment' };
-            // @ts-ignore: LiveKit typings accept VideoCaptureOptions, string is deprecated
-            await localParticipant.setCameraEnabled(true, opts as any);
+            if (track && typeof track.restart === 'function') {
+              await track.restart(constraints as any);
+            } else {
+              // Hard fallback: unpublish old track and publish new one
+              if (track) {
+                localParticipant.unpublishTrack(track);
+                track.stop();
+              }
+
+              const newTrack = await createLocalVideoTrack(constraints as any);
+              await localParticipant.publishTrack(newTrack, { source: Track.Source.Camera });
+            }
+            // Re-attach to new track
+            setVideoStream();
           } catch (err) {
             console.warn('[CameraPIP] Failed to switch camera', err);
           }
