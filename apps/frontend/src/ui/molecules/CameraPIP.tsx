@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Box, IconButton, useTheme } from '@mui/material';
 import FlipCameraAndroidIcon from '@mui/icons-material/FlipCameraAndroid';
+import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import { useLocalParticipant } from '@livekit/components-react';
 import { Track, createLocalVideoTrack } from 'livekit-client';
 import { useCameraSettingsStore } from '@entities/members/model';
@@ -13,6 +14,7 @@ export const CameraPIP: React.FC<CameraPIPProps> = ({ visible = true }) => {
   const theme = useTheme();
   const { localParticipant } = useLocalParticipant();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Helper: attach current camera track to <video>
   const setVideoStream = useCallback(() => {
@@ -114,6 +116,7 @@ export const CameraPIP: React.FC<CameraPIPProps> = ({ visible = true }) => {
 
   return (
     <Box
+      ref={containerRef}
       onPointerDown={onPointerDown}
       sx={{
         position: 'fixed',
@@ -181,6 +184,32 @@ export const CameraPIP: React.FC<CameraPIPProps> = ({ visible = true }) => {
         }}
       >
         <FlipCameraAndroidIcon fontSize="inherit" />
+      </IconButton>
+
+      {/* Fullscreen toggle button */}
+      <IconButton
+        size="small"
+        sx={{
+          position: 'absolute',
+          top: 4,
+          right: 4,
+          bgcolor: 'rgba(0,0,0,0.6)',
+          color: 'common.white',
+          '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' },
+          zIndex: 1,
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          const elem = containerRef.current;
+          if (!elem) return;
+          if (!document.fullscreenElement) {
+            elem.requestFullscreen().catch(() => {});
+          } else {
+            document.exitFullscreen().catch(() => {});
+          }
+        }}
+      >
+        <FullscreenIcon fontSize="inherit" />
       </IconButton>
       <video ref={videoRef} muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
     </Box>
