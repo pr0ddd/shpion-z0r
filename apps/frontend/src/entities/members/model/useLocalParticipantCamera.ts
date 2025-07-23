@@ -5,7 +5,14 @@ export const useLocalParticipantCamera = () => {
 
   const isCameraEnabled = localParticipant?.isCameraEnabled;
   const toggleCameraEnabled = () => {
-    localParticipant?.setCameraEnabled(!isCameraEnabled);
+    if (!localParticipant) return;
+    if (isCameraEnabled) {
+      localParticipant.setCameraEnabled(false);
+    } else {
+      localParticipant.setCameraEnabled(true, {
+        resolution: { width: 1280, height: 720 },
+      } as any);
+    }
   };
 
   return { isCameraEnabled, toggleCameraEnabled };
