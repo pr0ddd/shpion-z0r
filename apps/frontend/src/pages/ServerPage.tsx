@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { Box } from '@mui/material';
+import { Box, useMediaQuery, useTheme } from '@mui/material';
 
 import { LiveKitRoom } from '@libs/livekit/ui/templates/LiveKitRoom';
 
 import { useServerStore } from '@entities/server/model';
 import { LobbyTemplate } from '@entities/server';
 
-import { ServersTemplate } from '@entities/servers/ui';
+import { ServersTemplate, MediaControlsSection } from '@entities/servers/ui';
 import { useServersQuery } from '@entities/servers/api';
 import { StreamsTemplate } from '@entities/streams/ui';
 import { useStream } from '@entities/streams/model/useStream';
@@ -21,20 +21,32 @@ import { useMembersQuery } from '@entities/members/api/members.query';
 import InviteDialog from '@entities/server/ui/organisms/InviteDialog';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import { IconButton } from '@ui/atoms/IconButton';
+import { MobileBottomBar } from '@ui/organisms/MobileBottomBar';
 
 const ServerPage: React.FC = () => {
-  const { selectedServerId } = useServerStore();
+  const theme = useTheme();
+  const isMobile = useMediaQuery('(max-width:767.95px)'); // <768
+  const isCollapsedSidebar = useMediaQuery(theme.breakpoints.down(1280)); // <1280
+  const isNarrowRight = useMediaQuery('(max-width:1023.95px)'); // <1024
+  const { selectedServerId, setSelectedServerId } = useServerStore();
   // sync unread counts via socket regardless of chat panel mount
   useUnreadSocketSync(selectedServerId!);
   const { data: servers } = useServersQuery();
   const { data: members } = useMembersQuery(selectedServerId!);
 
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  // mobile bottom bar handled in MobileBottomBar component inside LiveKit context
 
   const selectedServer = useMemo(() => {
     if (!servers || !selectedServerId) return null;
     return servers.find((s) => s.id === selectedServerId) || null;
   }, [servers, selectedServerId]);
+
+  const rightSidebarStyles = isMobile
+    ? { flex: 1, width: 'auto' }
+    : { width: isNarrowRight ? '260px' : '384px', flexShrink: 0 };
+
+  // (mobile LiveKit hooks now inside MobileBottomBar)
 
   return (
     <Box
@@ -58,37 +70,39 @@ const ServerPage: React.FC = () => {
           <Box
             sx={{ display: 'flex', width: '100%', height: '100%', minWidth: 0 }}
           >
-            <ServersTemplate showControls={true} />
+            <ServersTemplate showControls={!isCollapsedSidebar && !isMobile} collapsed={isCollapsedSidebar} />
 
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                flex: 1,
-                height: '100%',
-                minWidth: 0,
-              }}
-            >
-              <CentralColumn />
-              {selectedServer && (
-                <InviteDialog
-                  open={showInviteDialog}
-                  server={selectedServer}
-                  onClose={() => setShowInviteDialog(false)}
-                />
-              )}
-            </Box>
+            {!isMobile && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  flex: 1,
+                  height: '100%',
+                  minWidth: 0,
+                }}
+              >
+                <CentralColumn />
+              </Box>
+            )}
+
+            {selectedServer && (
+              <InviteDialog
+                open={showInviteDialog}
+                server={selectedServer}
+                onClose={() => setShowInviteDialog(false)}
+              />
+            )}
 
             <Box
               sx={{
                 display: 'flex',
                 flexDirection: 'column',
                 backgroundColor: 'new.card',
-                width: '384px',
                 borderLeft: '1px solid',
                 borderColor: 'new.border',
                 paddingTop: 1,
-                flexShrink: 0,
+                ...rightSidebarStyles,
               }}
             >
               <Accordion>
@@ -111,10 +125,18 @@ const ServerPage: React.FC = () => {
                   <MembersTemplate />
                 </AccordionPanel>
 
-                <SidebarChatPanel serverId={selectedServerId!} />
+                {!isMobile && <SidebarChatPanel serverId={selectedServerId!} />}
+                {/* Media Controls move here when left sidebar collapsed (width <1280) but not on small mobile */}
+                {isCollapsedSidebar && !isMobile && (
+                  <Box sx={{ borderTop: '1px solid', borderColor: 'new.border' }}>
+                    <MediaControlsSection />
+                  </Box>
+                )}
+                {/* media controls removed from sidebar on mobile (<900) */}
               </Accordion>
             </Box>
           </Box>
+          {isMobile && <MobileBottomBar />}
         </LiveKitRoom>
       ) : (
         <>

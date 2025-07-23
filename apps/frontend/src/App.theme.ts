@@ -115,6 +115,18 @@ export const createAppTheme = (mode: 'dark' | 'light' = 'dark') => {
     shape: {
       borderRadius: 8,
     },
+    // Explicitly declare breakpoints so that we can rely on them across the app
+    // and adjust them centrally later if required. These are Material UI defaults
+    // but having them in the theme object makes intent clear and enables easy tweaks.
+    breakpoints: {
+      values: {
+        xs: 0,       // mobile
+        sm: 600,     // ≥600px – small tablets / landscape phones
+        md: 900,     // ≥900px – tablets / small laptops
+        lg: 1200,    // ≥1200px – desktops
+        xl: 1536,    // ≥1536px – large screens
+      },
+    },
   };
 
   // reuse components overrides from existing (not repeating whole) - we keep previous overrides referencing theme.palette.new etc.

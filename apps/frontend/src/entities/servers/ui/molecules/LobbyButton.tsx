@@ -7,9 +7,11 @@ const LobbyButton: React.FC = () => {
   return (
     <IconButton
       hasBorder={false}
+      size="small"
       tooltip="Космическое пространство"
       icon={<img width={24} height={24} src="/lobby.png" alt="Lobby" />}
       onClick={() => setSelectedServerId(null)}
+      sx={{ width:44, height:44, p:0, borderRadius:1, backgroundColor:'new.card' }}
     />
   );
 };
