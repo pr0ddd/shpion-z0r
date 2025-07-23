@@ -42,11 +42,16 @@ export const CameraPIP: React.FC<CameraPIPProps> = ({ visible = true }) => {
     }
   }, []);
 
-  // initial bottom-right position
+  // --- Draggable position (left / top) ---
+  const WIDTH = 260;
+  const HEIGHT = 160;
+
   const [pos, setPos] = useState(() => ({
-    right: 10,
-    bottom: 70,
+    left: typeof window !== 'undefined' ? window.innerWidth - WIDTH - 10 : 10,
+    top: typeof window !== 'undefined' ? window.innerHeight - HEIGHT - 70 : 70,
   }));
+
+  // Pointer offset inside the box when dragging starts
   const dragOffset = useRef<{ x: number; y: number } | null>(null);
 
   // Set media track when visible toggles
@@ -66,8 +71,8 @@ export const CameraPIP: React.FC<CameraPIPProps> = ({ visible = true }) => {
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     dragOffset.current = {
-      x: e.clientX - pos.right,
-      y: window.innerHeight - e.clientY - pos.bottom,
+      x: e.clientX - pos.left,
+      y: e.clientY - pos.top,
     };
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
@@ -75,9 +80,10 @@ export const CameraPIP: React.FC<CameraPIPProps> = ({ visible = true }) => {
 
   const onPointerMove = (e: PointerEvent) => {
     if (!dragOffset.current) return;
-    const newLeft = Math.max(0, Math.min(window.innerWidth - 120, e.clientX - dragOffset.current.x));
-    const newBottom = Math.max(50, Math.min(window.innerHeight - 160, window.innerHeight - e.clientY - dragOffset.current.y));
-    setPos({ right: newLeft, bottom: newBottom });
+
+    const newLeft = Math.max(0, Math.min(window.innerWidth - WIDTH, e.clientX - dragOffset.current.x));
+    const newTop = Math.max(0, Math.min(window.innerHeight - HEIGHT, e.clientY - dragOffset.current.y));
+    setPos({ left: newLeft, top: newTop });
   };
 
   const onPointerUp = () => {
@@ -93,11 +99,11 @@ export const CameraPIP: React.FC<CameraPIPProps> = ({ visible = true }) => {
       onPointerDown={onPointerDown}
       sx={{
         position: 'fixed',
-        bottom: pos.bottom,
-        right: pos.right,
+        left: pos.left,
+        top: pos.top,
         zIndex: theme.zIndex.modal,
-        width: 260,
-        height: 160,
+        width: WIDTH,
+        height: HEIGHT,
         borderRadius: 2,
         overflow: 'hidden',
         border: '2px solid',
