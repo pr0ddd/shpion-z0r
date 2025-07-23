@@ -138,7 +138,9 @@ export const CameraPIP: React.FC<CameraPIPProps> = ({ visible = true }) => {
 
           const deviceId = await getDeviceIdForFacing(newFacing);
           try {
-            const opts = deviceId ? { deviceId } : undefined;
+            const opts = deviceId
+              ? { deviceId }
+              : { facingMode: newFacing === 'front' ? 'user' : 'environment' };
             // @ts-ignore: LiveKit typings accept VideoCaptureOptions, string is deprecated
             await localParticipant.setCameraEnabled(true, opts as any);
           } catch (err) {
