@@ -1,25 +1,24 @@
 import React, { useState } from 'react';
-import AddIcon from '@mui/icons-material/Add';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useServerStore } from '@entities/server/model';
 import InviteDialog from '@entities/server/ui/organisms/InviteDialog';
-import CreateServerDialog from '@entities/server/ui/organisms/CreateServerDialog';
 import { useSettingsDialogStore } from '@entities/settings';
-import { useSelectedServerName } from '@hooks/useSelectedServerName';
-import { useMembersQuery } from '@entities/members/api/members.query';
 import { SectionHeader } from '@ui/organisms/SectionHeader';
+import { useParticipants } from '@livekit/components-react';
 import { SectionAction } from '@ui/molecules/SectionActionBar';
+import { Box } from '@mui/material';
+import { SettingsDialog, GlobalHotkeys } from '@entities/settings';
 
 export const ServerHeader: React.FC = () => {
   const { selectedServerId, setSelectedServerId } = useServerStore();
-  const serverName = useSelectedServerName();
-  const { data: members } = useMembersQuery(selectedServerId!);
 
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [createOpen,setCreateOpen]=useState(false);
   const toggleSettings = useSettingsDialogStore((s)=>s.toggle);
+
+  const participants = useParticipants();
+  const onlineCount = participants?.length ?? 0;
 
   const actions: SectionAction[] = [
     {
@@ -44,9 +43,7 @@ export const ServerHeader: React.FC = () => {
 
   return (
     <>
-      <SectionHeader
-        actions={actions}
-      />
+      <SectionHeader title={`Members ${onlineCount}`} actions={actions} />
       {inviteOpen && selectedServerId && (
         <InviteDialog
           open={inviteOpen}
@@ -54,9 +51,9 @@ export const ServerHeader: React.FC = () => {
           onClose={() => setInviteOpen(false)}
         />
       )}
-      {createOpen && (
-        <CreateServerDialog open={createOpen} onClose={()=>setCreateOpen(false)} />
-      )}
+      {/* Settings dialog & global hotkeys */}
+      <SettingsDialog />
+      <GlobalHotkeys />
     </>
   );
 }; 

@@ -150,10 +150,6 @@ export const ChatMessagesList: React.FC = () => {
     }
   },[atBottom]);
 
-  if (isLoading) {
-    return <ChatMessagesLoading />;
-  }
-
   const handleImageClick = (url: string) => {
     const index = globalImages.indexOf(url);
     if (index === -1) return;

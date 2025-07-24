@@ -1,5 +1,5 @@
 import React from 'react';
-import { ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
+import { ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material';
 
 interface SettingsSidebarItemProps {
   icon: React.ReactNode;
@@ -20,6 +20,7 @@ export const SettingsSidebarItem: React.FC<SettingsSidebarItemProps> = ({
       onClick={onClick}
       sx={{
         borderRadius: 1,
+        my: 0.5,
         '&.Mui-selected': {
           backgroundColor: 'new.sidebarAccent',
           '&:hover': {
@@ -29,7 +30,7 @@ export const SettingsSidebarItem: React.FC<SettingsSidebarItemProps> = ({
       }}
     >
       <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>{icon}</ListItemIcon>
-      <ListItemText primary={label} primaryTypographyProps={{ variant: 'body2' }} />
+      <ListItemText primary={<Typography variant="body2">{label}</Typography>} />
     </ListItemButton>
   );
 }; 

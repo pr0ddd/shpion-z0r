@@ -1,11 +1,7 @@
-import { Box, Typography, useTheme, useMediaQuery } from '@mui/material';
-import LobbyButton from '../molecules/LobbyButton';
+import { Box } from '@mui/material';
 import ServersList from '../organisms/ServersList';
-import CreateServerButton from '../molecules/CreateServerButton';
 // import LogoutButton from '@entities/session/ui/molecules/LogoutButton';
 import { UnifiedMediaControlPanel } from '../organisms/UnifiedMediaControlPanel';
-import { useServersQuery } from '@entities/servers/api';
-import { useState } from 'react';
 
 // Controls subsection separated to safely use LiveKit hooks only when rendered inside LiveKitRoom
 export const MediaControlsSection: React.FC = () => {
@@ -13,12 +9,7 @@ export const MediaControlsSection: React.FC = () => {
 };
 
 export const ServersTemplate: React.FC<{ showControls?: boolean; collapsed?: boolean }> = ({ showControls = false, collapsed = false }) => {
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
-
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const bgDark = 'linear-gradient(135deg, #111827 0%, #1f2937 100%)';
-  const bgLight = 'linear-gradient(135deg, #ffffff 0%, #f7f7f7 100%)';
+  // Placeholder state if needed in future
 
   return (
     <Box
@@ -33,15 +24,8 @@ export const ServersTemplate: React.FC<{ showControls?: boolean; collapsed?: boo
         pb: 2
       }}
     >
-      {/* Header – скрываем при collapsed */}
-      {!collapsed && <HeaderSection />}
 
-      {/* Quick access buttons removed; Lobby in header */}
-      {collapsed && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.25, pt: 0.25, '& button': { width: 44, height: 44, mx: 'auto', my: 0.25, p: 0, borderRadius: 1, backgroundColor: 'new.card', '& svg': { fontSize: 24 } } }}>
-          <CreateServerButton />
-        </Box>
-      )}
+      {/* Кнопка создания сервера убрана из списка */}
 
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, px: 1, minHeight: 0 }}>
         <Box sx={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
@@ -64,21 +48,6 @@ export const ServersTemplate: React.FC<{ showControls?: boolean; collapsed?: boo
   );
 };
 
-const HeaderSection: React.FC = () => {
-  const { data: servers } = useServersQuery();
-  const totalMembers = servers?.reduce((sum, s) => sum + (s._count?.members ?? 0), 0) || 0;
-
-  return (
-    <Box sx={{ p: 1, borderBottom: '1px solid', borderColor: 'new.border' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Box>
-        </Box>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <CreateServerButton />
-        </Box>
-      </Box>
-    </Box>
-  );
-};
+// HeaderSection removed – unified header in parent
 
 // removed ConditionalMediaControls – logic moved to parent

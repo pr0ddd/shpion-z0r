@@ -22,7 +22,7 @@ export const SettingsSidebar: React.FC = () => {
   const setSection = useSettingsDialogStore((s) => s.setSection);
 
   return (
-    <Box sx={{ width: 200, borderRight: '1px solid', borderColor: 'new.border' }}>
+    <Box sx={{ width: 200, borderRight: '1px solid', borderColor: 'new.border', p:1 }}>
       <List disablePadding>
         {sections.map((sec) => (
           <SettingsSidebarItem

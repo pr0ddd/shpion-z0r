@@ -39,11 +39,7 @@ export const ServerMembers: React.FC<ServerMembersProps> = ({ serverId }) => {
     });
     return map;
   }, [streamTracks]);
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
+  
   return (
     <Box
       sx={{
@@ -51,7 +47,7 @@ export const ServerMembers: React.FC<ServerMembersProps> = ({ serverId }) => {
         flexDirection: 'column',
         overflowY: 'auto',
         flex: 1,
-        padding: 2,
+        p: 1, // remove all padding to eliminate gaps
       }}
     >
       {participants?.map((participant) => {

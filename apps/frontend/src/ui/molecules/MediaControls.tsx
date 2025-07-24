@@ -53,10 +53,21 @@ export const MediaControls: React.FC<MediaControlsProps> = ({ userId, onLeave, o
   };
 
   const buttonBaseStyle = {
-    width: 36,
-    height: 36,
+    minWidth: 60,
+    height: 32,
+    maxHeight: 32,
     border: '1px solid',
     borderColor: 'new.border',
+    borderRadius: 1, // rectangular with subtle rounding
+    margin: 0,
+    '&.MuiIconButton-root': {
+      height: 32,
+      maxHeight: 32,
+      padding: 0,
+    },
+    '& .MuiSvgIcon-root': {
+      fontSize: '1.2rem',
+    },
   } as const;
 
   return (
@@ -143,38 +154,6 @@ export const MediaControls: React.FC<MediaControlsProps> = ({ userId, onLeave, o
           <DesktopAccessDisabledIcon />
         </IconButton>
       </Tooltip>
-
-      <Box sx={{ width: '1px', height: 24, backgroundColor: 'new.border', mx: 0.5 }} />
-
-      {/* Settings */}
-      <Tooltip title="Settings" placement="top" arrow>
-        <IconButton
-          onClick={onOpenSettings}
-          sx={{
-            ...buttonBaseStyle,
-            backgroundColor: 'new.muted',
-            color: 'new.mutedForeground',
-            '&:hover': { backgroundColor: 'new.hover' },
-          }}
-        >
-          <SettingsIcon />
-        </IconButton>
-      </Tooltip>
-
-      {/* Leave */}
-      <Tooltip title="Leave Server" placement="top" arrow>
-        <IconButton
-          onClick={onLeave}
-          sx={{
-            ...buttonBaseStyle,
-            backgroundColor: 'new.muted',
-            color: 'new.mutedForeground',
-            '&:hover': { backgroundColor: 'new.redLight', color: 'new.primaryForeground' },
-          }}
-        >
-          <LogoutIcon />
-        </IconButton>
-      </Tooltip>
     </Box>
   );
 };
@@ -182,12 +161,21 @@ export const MediaControls: React.FC<MediaControlsProps> = ({ userId, onLeave, o
 /* ---------------------------- Disabled stub ---------------------------- */
 export const PlaceholderControls: React.FC = () => {
   const base = {
-    width: 36,
-    height: 36,
+    minWidth: 60,
+    height: 32,
+    maxHeight: 32,
     border: '1px solid',
     borderColor: 'new.border',
-    backgroundColor: 'new.muted',
-    color: 'new.mutedForeground',
+    borderRadius: 1, // rectangular with subtle rounding
+    margin: 0,
+    '&.MuiIconButton-root': {
+      height: 32,
+      maxHeight: 32,
+      padding: 0,
+    },
+    '& .MuiSvgIcon-root': {
+      fontSize: '1.2rem',
+    },
   } as const;
   return (
     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
@@ -205,12 +193,8 @@ export const PlaceholderControls: React.FC = () => {
       {/* Stop all */}
       <IconButton disabled sx={base}><DesktopAccessDisabledIcon /></IconButton>
 
-      <Box sx={{ width: '1px', height: 24, backgroundColor: 'new.border', mx: 0.5 }} />
 
-      {/* Settings */}
-      <IconButton disabled sx={base}><SettingsIcon /></IconButton>
-      {/* Leave */}
-      <IconButton disabled sx={base}><LogoutIcon /></IconButton>
+
     </Box>
   );
 }; 

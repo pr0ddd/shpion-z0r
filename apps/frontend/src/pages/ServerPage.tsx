@@ -43,9 +43,7 @@ const ServerPage: React.FC = () => {
     return servers.find((s) => s.id === selectedServerId) || null;
   }, [servers, selectedServerId]);
 
-  const rightSidebarStyles = isMobile
-    ? { flex: 1, width: 'auto' }
-    : { width: isNarrowRight ? '220px' : '300px', flexShrink: 0 };
+
 
   return (
     <Box
@@ -84,14 +82,17 @@ const ServerPage: React.FC = () => {
                     backgroundColor: 'new.card',
                     borderLeft: '1px solid',
                     borderColor: 'new.border',
-                    ...rightSidebarStyles,
+                    flex: 1,
                   }}
                 >
-                  <ServerHeader />
+                  {/* Header now inside members sidebar */}
+                  <Box sx={{ p:0.5, borderBottom:'1px solid', borderColor:'new.border' }}>
+                    <ServerHeader />
+                  </Box>
                   <Accordion>
                       <MembersTemplate />
 
-                    {!isMobile && <SidebarChatPanel serverId={selectedServerId!} />}
+                    {/* Chat panel inside members accordion removed – chat will now live next to stream */}
                   </Accordion>
                 </Box>
               </Box>
@@ -151,15 +152,45 @@ export default ServerPage;
 
 /* -------- Nested components -------- */
 
-/* Central column: shows Chat by default, Streams when active */
+/* Central column: shows Chat by default, Streams with side chat when active */
 const CentralColumn: React.FC = () => {
   const { streamTracks } = useStream();
   const hasActiveStreams = streamTracks.length > 0;
 
+  // Hide side-chat on narrow screens (<1024px) just like original sidebar collapse behaviour
+  const isNarrow = useMediaQuery('(max-width:1023.95px)');
+
+  if (!hasActiveStreams) {
+    // No live streams – keep existing behaviour
+    return <ChatMessages />;
+  }
+
+  // Streams are active – split area: stream (left) and chat (right)
   return (
-    <>
-      {hasActiveStreams ? <StreamsTemplate /> : <ChatMessages />}
-    </>
+    <Box sx={{ display: 'flex', flex: 1, minWidth: 0, minHeight: 0 }}>
+      {/* Active streams */}
+      <Box sx={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex' }}>
+        <StreamsTemplate />
+      </Box>
+
+      {/* Chat column – hidden on very narrow layouts */}
+      {!isNarrow && (
+        <Box
+          sx={{
+            width: 340,
+            maxWidth: '100%',
+            borderLeft: '1px solid',
+            borderColor: 'new.border',
+            backgroundColor: 'new.card',
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 0,
+          }}
+        >
+          <ChatMessages />
+        </Box>
+      )}
+    </Box>
   );
 };
 

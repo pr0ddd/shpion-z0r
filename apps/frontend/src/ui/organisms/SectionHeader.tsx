@@ -11,7 +11,7 @@ interface Props {
 }
 
 export const SectionHeader: React.FC<Props> = ({ icon, onIconClick, title, subtitle, actions = [] }) => (
-  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1, py: 0.75 }}>
+  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1}}>
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
       {icon && (onIconClick ? <Box onClick={onIconClick} sx={{cursor:'pointer'}}>{icon}</Box> : icon)}
       <Box sx={{ minWidth: 0 }}>
