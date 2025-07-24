@@ -93,19 +93,6 @@ app.get('/', (req, res) => {
     res.send('Hello from Shpion backend!');
 });
 
-app.use('/api/auth', authRoutes);
-app.use('/api/users', authMiddleware, userRoutes);
-app.use('/api/servers', authMiddleware, serverRoutes);
-app.use('/api/messages', authMiddleware, messageRoutes);
-app.use('/api/invite', invitePublicRoutes);
-app.use('/api/invite', authMiddleware, inviteProtectedRoutes);
-app.use('/api/livekit', authMiddleware, livekitRoutes);
-app.use('/api/sfu', sfuRoutes);
-app.use('/api/preview', previewRouter);
-app.use('/api/system-settings', systemSettingsRoutes);
-app.get('/api/upload/file/:key', getFile);
-app.use('/api/upload', authMiddleware, uploadRoutes);
-
 // Initialize Socket.IO
 const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents, {}, SocketData>(httpServer, {
   path: '/api/socket.io',
@@ -116,11 +103,7 @@ const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents, {}, So
   },
 });
 
-// ---- Middleware (once) ----
-app.use(helmet());
-app.use(compression());
-app.use(express.json({ limit: '5mb' }));
-app.use(express.urlencoded({ extended: true, limit: '5mb' }));
+// ---- Extra middleware duplication removed (already applied at top) ----
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -136,11 +119,14 @@ app.use('/api/auth', authRoutes);
 app.use('/api/servers', authMiddleware, serverRoutes);
 app.use('/api/messages', authMiddleware, messageRoutes);
 app.use('/api/livekit', authMiddleware, livekitRoutes);
-app.use('/api/invites', invitePublicRoutes);
-app.use('/api/invites', authMiddleware, inviteProtectedRoutes);
+app.use('/api/invite', invitePublicRoutes);
+app.use('/api/invite', authMiddleware, inviteProtectedRoutes);
 app.use('/api/users', authMiddleware, userRoutes);
 app.use('/api/sfu', sfuRoutes);
 app.use('/api/upload', authMiddleware, uploadRoutes);
+app.use('/api/preview', previewRouter);
+app.use('/api/system-settings', systemSettingsRoutes);
+app.get('/api/upload/file/:key', getFile);
 
 // Central error handler
 app.use(errorHandler);

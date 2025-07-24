@@ -1,10 +1,7 @@
-import prisma from '../lib/prisma';
-import { s3 } from '../lib/s3Client';
-import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { Response } from 'express';
 import { AuthenticatedRequest, ApiResponse } from '../types';
 import { socketService } from '../index';
-import { ApiError } from '../utils/ApiError';
+import MessageService from '../services/MessageService';
 
 export class MessageController {
   // Получить сообщения для сервера
@@ -13,34 +10,7 @@ export class MessageController {
     const userId = req.user!.id;
     const { before } = req.query as { before?: string };
 
-    const PAGE_SIZE = 50;
-
-    const member = await prisma.member.findUnique({
-      where: { userId_serverId: { userId, serverId } },
-    });
-
-    if (!member) {
-      throw new ApiError(403, "You are not a member of this server");
-    }
-
-    const where: any = { serverId };
-    if (before) {
-      // fetch messages strictly older than provided cursor
-      where.createdAt = { lt: new Date(before) };
-    }
-
-    const fetched = await prisma.message.findMany({
-      where,
-      include: {
-        author: { select: { id: true, username: true, avatar: true } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: PAGE_SIZE,
-    });
-
-    // Return in chronological (asc) order so UI can simply append/prepend.
-    const messages = fetched.reverse();
-
+    const messages = await MessageService.getMessages(userId, serverId, before);
     res.json({ success: true, data: messages });
   }
 
@@ -50,38 +20,14 @@ export class MessageController {
     const { content, replyToId } = req.body;
     const userId = req.user!.id;
 
-    if (!content) {
-      throw new ApiError(400, "Message content cannot be empty");
-    }
-
-    if (replyToId) {
-      const parent = await prisma.message.findUnique({ where: { id: replyToId } });
-      if (!parent || parent.serverId !== serverId) {
-        throw new ApiError(400, 'Invalid replyToId');
-      }
-    }
-
-    const member = await prisma.member.findUnique({
-      where: { userId_serverId: { userId, serverId } },
+    const message = await MessageService.createMessage({
+      userId,
+      serverId,
+      content,
+      replyToId,
     });
 
-    if (!member) {
-      throw new ApiError(403, "You are not a member of this server");
-    }
-
-    // For user message block
-    const createArgs1: any = {
-      data: { content, serverId, authorId: userId, replyToId },
-      include: {
-        author: { select: { id: true, username: true, avatar: true } },
-        replyTo: { include: { author: { select: { id: true, username: true, avatar: true } } } },
-      },
-    };
-    const message = await (prisma.message as any).create(createArgs1);
-
-    // Отправляем сообщение через сокеты всем участникам сервера
     socketService.notifyNewMessage(serverId, message);
-
     res.status(201).json({ success: true, data: message });
   }
 
@@ -89,75 +35,10 @@ export class MessageController {
   static async sendBotMessage(req: AuthenticatedRequest, res: Response<ApiResponse>) {
     const { serverId } = req.params;
     const { content, replyToId } = req.body;
-    const userId = req.user!.id;
 
-    if (!content) {
-      throw new ApiError(400, 'Message content cannot be empty');
-    }
-
-    if (replyToId) {
-      const parent = await prisma.message.findUnique({ where: { id: replyToId } });
-      if (!parent || parent.serverId !== serverId) {
-        throw new ApiError(400, 'Invalid replyToId');
-      }
-    }
-
-    // Проверяем, что отправитель является участником сервера
-    const member = await prisma.member.findUnique({
-      where: { userId_serverId: { userId, serverId } },
-    });
-
-    if (!member) {
-      throw new ApiError(403, 'You are not a member of this server');
-    }
-
-    // --- Upsert бота ---
-    // Позволяем задать через переменные окружения, но если их нет — используем
-    // безопасные значения по умолчанию, чтобы прод-деплой не падал ошибкой 500.
-
-    const BOT_USER_ID = process.env.BOT_USER_ID ?? 'ollama-bot';
-    const BOT_USERNAME = process.env.BOT_USERNAME ?? 'Shpion AI';
-    const BOT_AVATAR = process.env.BOT_AVATAR_URL ?? '/bot-avatar.png';
-
-    if (!process.env.BOT_USER_ID || !process.env.BOT_USERNAME || !process.env.BOT_AVATAR_URL) {
-      // Логируем предупреждение, но не прерываем работу.
-      console.warn('[Warning] BOT_* env vars are not fully set; using default values');
-    }
-
-    await prisma.user.upsert({
-      where: { id: BOT_USER_ID },
-      create: {
-        id: BOT_USER_ID,
-        email: `${BOT_USER_ID}@local`,
-        username: BOT_USERNAME,
-        password: '!', // never used
-        avatar: BOT_AVATAR,
-      },
-      update: {
-        username: BOT_USERNAME,
-        avatar: BOT_AVATAR,
-      },
-    });
-
-    // Ensure bot is a member of server (role MEMBER)
-    await prisma.member.upsert({
-      where: { userId_serverId: { userId: BOT_USER_ID, serverId } },
-      create: { userId: BOT_USER_ID, serverId },
-      update: {},
-    });
-
-    // For bot message block
-    const createArgs2: any = {
-      data: { content, serverId, authorId: BOT_USER_ID, replyToId },
-      include: {
-        author: { select: { id: true, username: true, avatar: true } },
-        replyTo: { include: { author: { select: { id: true, username: true, avatar: true } } } },
-      },
-    };
-    const message = await (prisma.message as any).create(createArgs2);
+    const message = await MessageService.createBotMessage({ serverId, content, replyToId });
 
     socketService.notifyNewMessage(serverId, message);
-
     return res.status(201).json({ success: true, data: message });
   }
 
@@ -166,31 +47,9 @@ export class MessageController {
     const { messageId } = req.params;
     const { content } = req.body;
     const userId = req.user!.id;
-    
-    if (!content) {
-      throw new ApiError(400, "Message content cannot be empty");
-    }
 
-    const existingMessage = await prisma.message.findUnique({
-      where: { id: messageId },
-    });
-
-    if (!existingMessage) {
-      throw new ApiError(404, "Message not found");
-    }
-
-    if (existingMessage.authorId !== userId) {
-      throw new ApiError(403, "You are not the author of this message");
-    }
-
-    const updatedMessage = await prisma.message.update({
-      where: { id: messageId },
-      data: { content, updatedAt: new Date() },
-      include: { author: { select: { id: true, username: true, avatar: true } } },
-    });
-
+    const updatedMessage = await MessageService.editMessage(userId, messageId, content);
     socketService.notifyUpdatedMessage(updatedMessage.serverId, updatedMessage);
-
     res.json({ success: true, data: updatedMessage });
   }
 
@@ -198,54 +57,9 @@ export class MessageController {
   static async deleteMessage(req: AuthenticatedRequest, res: Response<ApiResponse>) {
     const { messageId } = req.params;
     const userId = req.user!.id;
-    
-    const existingMessage = await prisma.message.findUnique({
-      where: { id: messageId },
-    });
 
-    if (!existingMessage) {
-      throw new ApiError(404, "Message not found");
-    }
-    
-    // Позволяем удалять сообщения либо автору, либо админу сервера
-    const member = await prisma.member.findFirst({
-      where: { serverId: existingMessage.serverId, userId: userId },
-    });
-
-    if (existingMessage.authorId !== userId && member?.role !== 'ADMIN') {
-      throw new ApiError(403, "You do not have permission to delete this message");
-    }
-    
-    const serverId = existingMessage.serverId;
-
-    // Attempt to remove attachment from S3 if exists
-    if (existingMessage.attachment) {
-      try {
-        // stored key may include prefix path, strip leading url part if needed
-        let key = existingMessage.attachment;
-        if (key.startsWith('/api/upload/file/')) {
-          key = key.replace('/api/upload/file/', '');
-        }
-        // Safety: do not allow directory traversal
-        if (!key.includes('..')) {
-          await s3.send(
-            new DeleteObjectCommand({
-              Bucket: process.env.R2_BUCKET,
-              Key: key,
-            })
-          );
-        }
-      } catch (err) {
-        console.error('Failed to delete attachment from S3', err);
-      }
-    }
-
-    await prisma.message.delete({
-      where: { id: messageId },
-    });
-
+    const serverId = await MessageService.deleteMessage(userId, messageId);
     socketService.notifyDeletedMessage(serverId, messageId);
-
     res.status(204).send();
   }
 } 

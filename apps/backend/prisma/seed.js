@@ -13,15 +13,11 @@ async function seedSfuServers() {
     { id: 'eu', name: 'Local (EU)', url: 'wss://eu-shpion.pr0d.ru/' },
   ];
 
-  await Promise.all(
-    presets.map((preset) =>
-      prisma.sfuServer.upsert({
-        where: { id: preset.id },
-        create: preset,
-        update: { name: preset.name, url: preset.url },
-      })
-    )
-  );
+  // Удаляем все существующие записи, чтобы база содержала _только_ эти пресеты
+  await prisma.sfuServer.deleteMany();
+
+  // Массовое создание (одним запросом быстрее, чем upsert поштучно)
+  await prisma.sfuServer.createMany({ data: presets });
   console.log('✅  SFU presets seeded');
 }
 

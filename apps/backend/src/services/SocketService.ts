@@ -1,6 +1,7 @@
 import { PrismaClient, Server as PrismaServer } from '@prisma/client';
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { ServerToClientEvents, ClientToServerEvents, SocketData, SocketUser } from '../types/socket';
+import MessageService from './MessageService';
 
 export class SocketService {
   private io: SocketIOServer<ClientToServerEvents, ServerToClientEvents, {}, SocketData>;
@@ -53,37 +54,23 @@ export class SocketService {
         }
 
         try {
-            const message = await (this.prisma.message as any).create({
-                data: {
-                    content,
-                    attachment,
-                    type,
-                    serverId,
-                    authorId: userId,
-                    replyToId: replyToId ?? null,
-                },
-                include: {
-                    author: {
-                        select: {
-                            id: true,
-                            username: true,
-                            avatar: true,
-                        },
-                    },
-                    replyTo: {
-                        include: {
-                            author: { select: { id: true, username: true, avatar: true } },
-                        },
-                    },
-                },
+            // Reuse shared service logic
+            const message = await MessageService.createMessage({
+                userId,
+                serverId,
+                content,
+                attachment,
+                type,
+                replyToId,
             });
 
             const payload = { ...message, clientNonce };
+            // Broadcast to room incl. sender
             this.io.to(`server:${serverId}`).emit('message:new', payload);
             callback({ success: true });
 
         } catch (error) {
-            console.error("Error sending message via socket:", error);
+            console.error('Error sending message via socket:', error);
             callback({ success: false });
         }
       });
