@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Tooltip } from '@mui/material';
 import { Server } from '@shared/types';
 import { Avatar } from '@ui/atoms/Avatar';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
@@ -51,12 +51,13 @@ export const ServersItem: React.FC<ServersItemProps> = ({
         onSetMenuServer(server);
       }}
     >
-      <Box
-        onClick={() => onSelectServer(server)}
-        sx={(theme) => {
-          const defaultGradient = 'linear-gradient(135deg, rgba(59,130,246,0.20) 0%, rgba(168,85,247,0.20) 100%)'; // blue-500/20 to purple-500/20
-          const selectedGradient = 'linear-gradient(135deg, #111827 0%, #1f2937 100%)';
-          if (compact) {
+      <Tooltip title={server.name} placement="right" arrow>
+        <Box
+          onClick={() => onSelectServer(server)}
+          sx={(theme) => {
+            const defaultGradient = 'linear-gradient(135deg, rgba(59,130,246,0.20) 0%, rgba(168,85,247,0.20) 100%)'; // blue-500/20 to purple-500/20
+            const selectedGradient = 'linear-gradient(135deg, #111827 0%, #1f2937 100%)';
+
             return {
               width: 44,
               height: 44,
@@ -66,34 +67,22 @@ export const ServersItem: React.FC<ServersItemProps> = ({
               overflow: 'visible',
               cursor: 'pointer',
               position: 'relative',
+              background: active ? defaultGradient : selectedGradient,
+              border: '1px solid',
+              borderColor: 'new.border',
+              backdropFilter: 'blur(6px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             };
-          }
-          return {
-            p: 0,
-            borderRadius: '8px',
-            cursor: 'pointer',
-            background: active ? defaultGradient : selectedGradient,
-            border: '1px solid',
-            borderColor: 'new.border',
-            backdropFilter: 'blur(6px)',
-          };
-        }}
-      >
-
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent:'center', gap: compact ? 0 : 1 }}>
+          }}
+        >
           <Avatar src={server.icon || undefined} sx={{ width: 44, height: 44, borderRadius: '7px' }} />
-          {compact && active && (
+          {active && (
             <Box sx={{ position:'absolute', left:-5, top:'50%', transform:'translateY(-50%)', width:3, height:24, bgcolor:'primary.main', borderRadius:1 }} />
           )}
-          {!compact && (
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="body1" noWrap sx={{ maxWidth: 160 }}>
-              {server.name}
-            </Typography>
-          </Box>
-          )}
         </Box>
-      </Box>
+      </Tooltip>
     </Box>
   );
 };

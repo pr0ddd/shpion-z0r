@@ -1,7 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import { StreamGalleryItem } from '../molecules/StreamGalleryItem';
 import { TrackReference } from '@livekit/components-react';
-import { StreamControlPanel } from '../molecules/StreamControlPanel';
 import { useSessionStore } from '@entities/session';
 import { useScreenShare } from '@entities/members/model/useScreenShare';
 import { useRoomContext, useLocalParticipant } from '@livekit/components-react';

@@ -15,7 +15,6 @@ import { useLocalParticipantMic } from '@entities/members/model/useLocalParticip
 import { useLocalParticipantVolume } from '@entities/members/model/useLocalParticipantVolume';
 import { useServerStore } from '@entities/server/model';
 import { SettingsDialog, useSettingsDialogStore, GlobalHotkeys } from '@entities/settings';
-import { useTheme } from '@mui/material';
 
 interface MediaControlPanelProps {}
 
@@ -47,29 +46,24 @@ export const MediaControlPanel: React.FC<MediaControlPanelProps> = () => {
 
   const { setSelectedServerId } = useServerStore();
 
-  const theme = useTheme();
-
   /* --- helper to render a button in unified style --- */
-  const btnStyle = (addRightBorder: boolean) => ({
+  const btnStyle = {
     flex: 1,
     backgroundColor: 'unset',
-    border: 'none',
-    borderRight: addRightBorder ? '1px solid' : 'none',
-    borderRightColor: 'new.border',
+    border: '1px solid',
+    borderColor: 'new.border',
+    borderRadius: 2,
     cursor: 'pointer',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-
     height: '45px',
-    outline: 'none',
+    mx: 0.5,
     '& svg': { color: 'new.foreground', fontSize: 16 },
-    '&:hover': {
-      backgroundColor: 'new.redLight',
-    },
+    '&:hover': { backgroundColor: 'new.redLight' },
     '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main' },
-  });
+  } as const;
 
   const buttons = [
     {
@@ -100,13 +94,13 @@ export const MediaControlPanel: React.FC<MediaControlPanelProps> = () => {
   ];
 
   return (
-    <Box sx={{ display: 'flex', width: '100%' }}>
+    <Box sx={{ display: 'flex', width: '100%', justifyContent:'center' }}>
       {buttons.map((b, idx) => (
         <Box
           key={idx}
           component="button"
           onClick={b.onClick}
-          sx={btnStyle(idx !== buttons.length - 1)}
+          sx={btnStyle}
         >
           {b.icon}
         </Box>

@@ -1,7 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import MonitorIcon from '@mui/icons-material/Monitor';
 import VideocamIcon from '@mui/icons-material/Videocam';
-import CallEndIcon from '@mui/icons-material/CallEnd';
 import DesktopAccessDisabledIcon from '@mui/icons-material/DesktopAccessDisabled';
 
 interface StreamControlPanelProps {
@@ -26,12 +25,7 @@ export const StreamControlPanel: React.FC<StreamControlPanelProps> = ({
       }}
     >
       {/* Top row with two buttons */}
-      <Box
-        sx={{
-          display: 'flex',
-          height: '65px',
-        }}
-      >
+      <Box sx={{ display: 'flex', gap: 1, justifyContent:'center', py:0.5 }}>
         {/* Screen share button */}
         <Box
           component="button"
@@ -39,21 +33,16 @@ export const StreamControlPanel: React.FC<StreamControlPanelProps> = ({
           sx={{
             flex: 1,
             backgroundColor: 'unset',
-            border: 'none',
-            borderRight: '1px solid',
-            borderRightColor: 'new.border',
-            borderBottom: '1px solid',
-            borderBottomColor: 'new.border',
+            border: '1px solid',
+            borderColor: 'new.border',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             gap: 0.5,
-            '&:hover': {
-              backgroundColor: 'new.redLight',
-            },
-            
+            borderRadius: 2,
+            '&:hover': { backgroundColor: 'new.redLight' },
           }}
         >
           <MonitorIcon
@@ -83,18 +72,16 @@ export const StreamControlPanel: React.FC<StreamControlPanelProps> = ({
           sx={{
             flex: 1,
             backgroundColor: 'unset',
-            border: 'none',
-            borderBottom: '1px solid',
-            borderBottomColor: 'new.border',
+            border: '1px solid',
+            borderColor: 'new.border',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             gap: 0.5,
-            '&:hover': {
-              backgroundColor: 'new.redLight',
-            },
+            borderRadius: 2,
+            '&:hover': { backgroundColor: 'new.redLight' },
           }}
         >
           <VideocamIcon
@@ -126,15 +113,15 @@ export const StreamControlPanel: React.FC<StreamControlPanelProps> = ({
             height: '45px',
             backgroundColor: 'unset',
             color: 'new.foreground',
-            border: 'none',
+            border: '1px solid',
+            borderColor: 'new.border',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: 0.5,
-            '&:hover': {
-              backgroundColor: 'new.redLight',
-            },
+            borderRadius: 2,
+            '&:hover': { backgroundColor: 'new.redLight' },
           }}
         >
           <DesktopAccessDisabledIcon sx={{ fontSize: 16 }} />

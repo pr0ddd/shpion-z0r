@@ -22,6 +22,7 @@ import InviteDialog from '@entities/server/ui/organisms/InviteDialog';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import { IconButton } from '@ui/atoms/IconButton';
 import { MobileBottomBar } from '@ui/organisms/MobileBottomBar';
+import { ServerHeader } from '@entities/server/ui/organisms/ServerHeader';
 
 const ServerPage: React.FC = () => {
   const theme = useTheme();
@@ -44,9 +45,7 @@ const ServerPage: React.FC = () => {
 
   const rightSidebarStyles = isMobile
     ? { flex: 1, width: 'auto' }
-    : { width: isNarrowRight ? '260px' : '384px', flexShrink: 0 };
-
-  // (mobile LiveKit hooks now inside MobileBottomBar)
+    : { width: isNarrowRight ? '220px' : '300px', flexShrink: 0 };
 
   return (
     <Box
@@ -67,10 +66,50 @@ const ServerPage: React.FC = () => {
             (import.meta.env.VITE_LIVEKIT_URL as string)
           }
         >
-          <Box
-            sx={{ display: 'flex', width: '100%', height: '100%', minWidth: 0 }}
-          >
-            <ServersTemplate showControls={!isCollapsedSidebar && !isMobile} collapsed={isCollapsedSidebar} />
+          {/* Layout: column -> header on top, rest content below */}
+          <Box sx={{ display:'flex', flexDirection:'column', width:'100%', height:'100%', minWidth:0 }}>
+    
+
+            <Box sx={{ display: 'flex', flex: 1, minWidth: 0, minHeight:0 }}>
+            {/* Sidebars (left + right) with shared media controls */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', flexShrink: 0, minHeight:0, borderRight:'1px solid', borderColor:'new.border', backgroundColor:'new.card' }}>
+              {/* Row with both sidebars */}
+              <Box sx={{ display: 'flex', flexDirection: 'row', flex: 1, minHeight:0 }}>
+                <ServersTemplate collapsed={isCollapsedSidebar} />
+
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    backgroundColor: 'new.card',
+                    borderLeft: '1px solid',
+                    borderColor: 'new.border',
+                    ...rightSidebarStyles,
+                  }}
+                >
+                  <ServerHeader />
+                  <Accordion>
+                      <MembersTemplate />
+
+                    {!isMobile && <SidebarChatPanel serverId={selectedServerId!} />}
+                  </Accordion>
+                </Box>
+              </Box>
+
+              {/* Shared media controls row */}
+              {!isMobile && (
+                <Box sx={{ mt: 'auto', px: 1, pb: 1 }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <MediaControlsSection />
+                  </Box>
+                </Box>
+              )}
+            </Box>
 
             {!isMobile && (
               <Box
@@ -94,48 +133,8 @@ const ServerPage: React.FC = () => {
               />
             )}
 
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                backgroundColor: 'new.card',
-                borderLeft: '1px solid',
-                borderColor: 'new.border',
-                paddingTop: 1,
-                ...rightSidebarStyles,
-              }}
-            >
-              <Accordion>
-                <AccordionPanel
-                  title="Users"
-                  disabled={true}
-                  subtitle={`${members?.length} members`}
-                  actions={
-                    <IconButton
-                      icon={<PersonAddAlt1Icon />}
-                      hasBorder={false}
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowInviteDialog(true);
-                      }}
-                    />
-                  }
-                >
-                  <MembersTemplate />
-                </AccordionPanel>
-
-                {!isMobile && <SidebarChatPanel serverId={selectedServerId!} />}
-                {/* Media Controls move here when left sidebar collapsed (width <1280) but not on small mobile */}
-                {isCollapsedSidebar && !isMobile && (
-                  <Box sx={{ borderTop: '1px solid', borderColor: 'new.border' }}>
-                    <MediaControlsSection />
-                  </Box>
-                )}
-                {/* media controls removed from sidebar on mobile (<900) */}
-              </Accordion>
-            </Box>
-          </Box>
+            </Box>{/* end inner row */}
+          </Box>{/* end column */}
           {isMobile && <MobileBottomBar />}
         </LiveKitRoom>
       ) : (

@@ -13,7 +13,7 @@ const CreateServerButton: React.FC = () => {
         size="small"
         icon={<AddIcon />}
         onClick={() => setIsCreateDialogOpen(true)}
-        sx={{ width:44, height:44, p:0, borderRadius:1, backgroundColor:'new.card' }}
+        sx={{ width:44, height:44, p:1, borderRadius:1, backgroundColor:'new.card' }}
       />
 
       <CreateServerDialog

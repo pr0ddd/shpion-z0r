@@ -124,7 +124,8 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
         />
       )}
 
-      {isConnected ? children : <LiveKitRoomLoading />}
+      {children}
+      {!isConnected && <LiveKitRoomLoading />}
     </LiveKitRoomBase>
   );
 };

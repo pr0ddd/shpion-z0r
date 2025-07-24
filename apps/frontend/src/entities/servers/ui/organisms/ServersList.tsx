@@ -1,6 +1,5 @@
 import { useServersQuery } from '@entities/servers/api';
-import { Box, TextField, InputAdornment } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
+import { Box } from '@mui/material';
 import { ServersItem } from '../molecules/ServersItem';
 import { useState } from 'react';
 import { Server } from '@shared/types';
@@ -23,10 +22,7 @@ const ServersList: React.FC<ServersListProps> = ({ isCompact = false }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
 
-  const [search, setSearch] = useState('');
-  const filtered = servers?.filter((s) =>
-    [s.name, s.description].some((t) => t?.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filtered = servers;
 
   return (
     <Box
@@ -34,30 +30,11 @@ const ServersList: React.FC<ServersListProps> = ({ isCompact = false }) => {
         display: 'flex',
         flex: 1,
         flexDirection: 'column',
-        gap: isCompact ? 0.25 : 1,
-        pt: isCompact ? 0.25 : 1,
+        gap: 0.25,
+        pt: 0.25
       })}
     >
-      {/* Search – скрываем на мобиле */}
-      {!isCompact && (
-        <TextField
-          placeholder="Find a server"
-          size="small"
-          fullWidth
-          variant="outlined"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" sx={{ color: 'text.disabled' }} />
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
-      )}
+      {/* Search removed as per request */}
 
       {filtered?.map((server) => (
         <ServersItem

@@ -43,7 +43,7 @@ export const createAppTheme = (mode: 'dark' | 'light' = 'dark') => {
       sidebar: 'hsl(220, 13%, 5%)',
       sidebarAccent: 'hsl(220, 13%, 13%)',
       card: 'hsl(220, 13%, 9%)',
-      border: 'hsl(220, 13%, 18%)',
+      border: 'hsla(220, 13.00%, 18.00%, 0.59)',
       borderLight: 'hsl(220, 13%, 18%)',
       hover: 'hsl(220, 13%, 15%)',
       hoverOverlay: 'hsl(220, 13%, 10%)',

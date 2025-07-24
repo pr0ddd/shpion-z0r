@@ -9,9 +9,9 @@ const LobbyButton: React.FC = () => {
       hasBorder={false}
       size="small"
       tooltip="Космическое пространство"
-      icon={<img width={24} height={24} src="/lobby.png" alt="Lobby" />}
+      icon={<img width={44} height={44} src="/lobby.png" alt="Lobby" />}
       onClick={() => setSelectedServerId(null)}
-      sx={{ width:44, height:44, p:0, borderRadius:1, backgroundColor:'new.card' }}
+      sx={{ width:44, height:44, p:0, borderRadius:1, border:'1px solid', borderColor:'new.border', backgroundColor:'new.card' }}
     />
   );
 };
