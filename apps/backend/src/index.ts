@@ -123,10 +123,12 @@ app.use('/api/invite', invitePublicRoutes);
 app.use('/api/invite', authMiddleware, inviteProtectedRoutes);
 app.use('/api/users', authMiddleware, userRoutes);
 app.use('/api/sfu', sfuRoutes);
+// Public file download must come BEFORE auth-protected /api/upload routes
+app.get('/api/upload/file/:key', getFile);
+
 app.use('/api/upload', authMiddleware, uploadRoutes);
 app.use('/api/preview', previewRouter);
 app.use('/api/system-settings', systemSettingsRoutes);
-app.get('/api/upload/file/:key', getFile);
 
 // Central error handler
 app.use(errorHandler);
