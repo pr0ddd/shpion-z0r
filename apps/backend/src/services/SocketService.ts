@@ -70,8 +70,10 @@ export class SocketService {
             });
 
             const payload = { ...message, clientNonce };
-            // Broadcast to room incl. sender
+            // Broadcast to room
             this.io.to(`server:${serverId}`).emit('message:new', payload);
+            // Also emit directly to sender in case they haven't joined the room yet
+            socket.emit('message:new', payload);
             callback({ success: true });
 
         } catch (error) {
