@@ -33,8 +33,9 @@ export const useUnreadSocketSync = (serverId?: string) => {
 
     socket.on('message:new', handler as any);
     return () => {
+      // Do not emit 'server:leave' here: unmounts can occur during responsive layout changes
+      // which would wrongly trigger "user:left" sounds.
       socket.off('message:new', handler as any);
-      socket.emit('server:leave', serverId);
     };
   }, [socket, serverId, user?.id]);
 }; 

@@ -55,8 +55,7 @@ export const ServersItem: React.FC<ServersItemProps> = ({
         <Box
           onClick={() => onSelectServer(server)}
           sx={(theme) => {
-            const defaultGradient = 'linear-gradient(135deg, rgba(59,130,246,0.20) 0%, rgba(168,85,247,0.20) 100%)'; // blue-500/20 to purple-500/20
-            const selectedGradient = 'linear-gradient(135deg, #111827 0%, #1f2937 100%)';
+            const gradient = 'linear-gradient(135deg, rgba(59,130,246,0.20) 0%, rgba(168,85,247,0.20) 100%)';
 
             return {
               width: 44,
@@ -67,9 +66,10 @@ export const ServersItem: React.FC<ServersItemProps> = ({
               overflow: 'visible',
               cursor: 'pointer',
               position: 'relative',
-              background: active ? defaultGradient : selectedGradient,
+              background: gradient,
               border: '1px solid',
               borderColor: 'new.border',
+              transition: 'background .25s ease',
               backdropFilter: 'blur(6px)',
               display: 'flex',
               alignItems: 'center',
@@ -79,7 +79,15 @@ export const ServersItem: React.FC<ServersItemProps> = ({
         >
           <Avatar src={server.icon || undefined} sx={{ width: 44, height: 44, borderRadius: '7px' }} />
           {active && (
-            <Box sx={{ position:'absolute', left:-5, top:'50%', transform:'translateY(-50%)', width:3, height:24, bgcolor:'primary.main', borderRadius:1 }} />
+            <Box sx={{
+              position:'absolute',
+              left:-8,
+              top: '8px',
+              width:4,
+              height:28,
+              borderRadius:2,
+              background:'linear-gradient(180deg, #5865F2 0%, #A855F7 100%)'
+            }} />
           )}
         </Box>
       </Tooltip>

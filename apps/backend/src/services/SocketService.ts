@@ -22,8 +22,13 @@ export class SocketService {
         const userId = socket.data.user?.id;
         if (!userId) return;
 
-        // Leave previous server room if any
+        // If already in this server, ignore duplicate join to prevent false leave/join events
         const previousServerId = this.userCurrentServer.get(userId);
+        if (previousServerId === serverId) {
+          return;
+        }
+
+        // Leave previous server room if any (and it differs)
         if (previousServerId) {
           socket.leave(`server:${previousServerId}`);
           this.notifyUserLeft(userId, previousServerId);

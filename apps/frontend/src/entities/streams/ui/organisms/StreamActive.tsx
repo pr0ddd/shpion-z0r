@@ -106,7 +106,6 @@ export const StreamActiveInner: React.FC<StreamActiveProps> = memo(
       socket.on('message:new', onMsg as any);
       return () => {
         socket.off('message:new', onMsg as any);
-        socket.emit('server:leave', selectedServerId);
         socket.off('connect', joinRoom);
       };
     }, [socket, selectedServerId]);

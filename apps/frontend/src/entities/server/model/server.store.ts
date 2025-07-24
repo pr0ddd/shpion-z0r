@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { createGlobalAudioContext } from '@libs/audioContext';
+import { modelLoader } from '@libs/deepFilterNet/modelLoader';
 
 interface ServerStore {
   isConnected: boolean;
@@ -14,6 +16,18 @@ export const useServerStore = create<ServerStore>((set) => ({
 
   selectedServerId: localStorage.getItem('lastSelectedServerId') || null,
   setSelectedServerId: (serverId: string | null) => {
+    // Это вызывается в обработчике клика по серверу, т.е. внутри пользовательского
+    // жеста → можем безопасно «разлочить» AudioContext.
+    try {
+      const ctx = createGlobalAudioContext();
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {/* ignore */});
+      }
+    } catch {/* ignore */}
+
+    // Старт предзагрузки модели шумоподавления (не блокируем UI).
+    modelLoader.preloadModel('DeepFilterNet3_ll');
+
     if (serverId) {
       localStorage.setItem('lastSelectedServerId', serverId);
     } else {
