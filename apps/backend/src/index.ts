@@ -119,8 +119,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/servers', authMiddleware, serverRoutes);
 app.use('/api/messages', authMiddleware, messageRoutes);
 app.use('/api/livekit', authMiddleware, livekitRoutes);
-app.use('/api/invite', invitePublicRoutes);
-app.use('/api/invite', authMiddleware, inviteProtectedRoutes);
+app.use('/api/invites', invitePublicRoutes);
+app.use('/api/invites', authMiddleware, inviteProtectedRoutes);
 app.use('/api/users', authMiddleware, userRoutes);
 app.use('/api/sfu', sfuRoutes);
 // Public file download must come BEFORE auth-protected /api/upload routes
