@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import HomeIcon from '@mui/icons-material/Home';
+import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import { useServerStore } from '@entities/server/model';
 import InviteDialog from '@entities/server/ui/organisms/InviteDialog';
 import { useSelectedServerName } from '@hooks/useSelectedServerName';
 import { SectionHeader } from '@ui/organisms/SectionHeader';
 import { useParticipants } from '@livekit/components-react';
 import { SectionAction } from '@ui/molecules/SectionActionBar';
-import { Tooltip } from '@mui/material';
+import { Tooltip, Box } from '@mui/material';
 import { SettingsDialog, GlobalHotkeys } from '@entities/settings';
 
 export const ServerHeader: React.FC = () => {
@@ -34,13 +36,21 @@ export const ServerHeader: React.FC = () => {
     <>
       <SectionHeader
         title={
-          serverName ? (
-            <Tooltip title={isLong ? serverName : ''} placement="top" arrow>
-              <span>{displayName}</span>
-            </Tooltip>
-          ) : 'Members'
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <HomeIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+            {serverName ? (
+              <Tooltip title={isLong ? serverName : ''} placement="top" arrow>
+                <span>{displayName}</span>
+              </Tooltip>
+            ) : 'Server'}
+          </Box>
         }
-        subtitle={`Members: ${onlineCount}`}
+        subtitle={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <PeopleAltIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+            Members: {onlineCount}
+          </Box>
+        }
         actions={actions}
       />
       {inviteOpen && selectedServerId && (

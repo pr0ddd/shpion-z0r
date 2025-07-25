@@ -9972,6 +9972,11 @@ tar-stream@~2.2.0:
     inherits "^2.0.3"
     readable-stream "^3.1.1"
 
+tcp-ping@^0.1.1:
+  version "0.1.1"
+  resolved "https://registry.npmjs.org/tcp-ping/-/tcp-ping-0.1.1.tgz"
+  integrity sha512-7Ed10Ds0hYnF+O1lfiZ2iSZ1bCAj+96Madctebmq7Y1ALPWlBY4YI8C6pCL+UTlshFY5YogixKLpgDP/4BlHrw==
+
 tcp-port-used@^1.0.2:
   version "1.0.2"
   resolved "https://registry.npmjs.org/tcp-port-used/-/tcp-port-used-1.0.2.tgz"

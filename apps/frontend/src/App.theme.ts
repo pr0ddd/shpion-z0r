@@ -31,9 +31,19 @@ type ShpionPalette = {
 declare module '@mui/material/styles' {
   interface Palette {
     new: ShpionPalette;
+    gradients: {
+      serverIdle: string;
+      serverHover: string;
+      addServer: string;
+    };
   }
   interface PaletteOptions {
     new?: Partial<ShpionPalette>;
+    gradients?: {
+      serverIdle?: string;
+      serverHover?: string;
+      addServer?: string;
+    };
   }
 }
 
@@ -103,6 +113,11 @@ export const createAppTheme = (mode: 'dark' | 'light' = 'dark') => {
     palette: {
       mode,
       new: paletteNew,
+      gradients: {
+        serverIdle: 'linear-gradient(135deg, rgba(59,130,246,0.25) 0%, rgba(168,85,247,0.25) 100%)',
+        serverHover: 'linear-gradient(135deg, rgba(59,130,246,0.6) 0%, rgba(168,85,247,0.6) 100%)',
+        addServer: 'linear-gradient(135deg,rgb(52, 53, 124) 0%,rgb(112, 40, 133) 100%)',
+      },
     },
     typography: {
       fontFamily: '"Open Sans", "Jura", "Helvetica", "Arial", sans-serif',
@@ -125,6 +140,16 @@ export const createAppTheme = (mode: 'dark' | 'light' = 'dark') => {
       },
       body2: {
         fontSize: '0.875rem',
+      },
+    },
+    components: {
+      MuiTooltip: {
+        defaultProps: {
+          enterDelay: 50,
+          enterNextDelay: 50,
+          enterTouchDelay: 200,
+          leaveDelay: 0,
+        },
       },
     },
     shape: {

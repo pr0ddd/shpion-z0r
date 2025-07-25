@@ -83,7 +83,6 @@ const ServerPage: React.FC = () => {
                     display: 'flex',
                     flexDirection: 'column',
                     backgroundColor: 'new.card',
-                    borderLeft: '1px solid',
                     borderColor: 'new.border',
                     flex: 1,
                   }}

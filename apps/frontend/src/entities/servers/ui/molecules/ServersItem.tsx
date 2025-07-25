@@ -1,4 +1,4 @@
-import { Box, Typography, Tooltip } from '@mui/material';
+import { Box, Typography, Tooltip, useTheme } from '@mui/material';
 import { Server } from '@shared/types';
 import { Avatar } from '@ui/atoms/Avatar';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
@@ -42,6 +42,11 @@ export const ServersItem: React.FC<ServersItemProps> = ({
   compact = false,
 }) => {
   const streamCount = useServerActivityStore((s) => s.activities[server.id]?.streamCount ?? 0);
+  const hasIcon = Boolean(server.icon);
+  const initials = server.name.replace(/\s+/g, '').slice(0, 2).toUpperCase();
+  const theme = useTheme();
+  const idleGradient = theme.palette.gradients.serverIdle;
+  const hoverGradient = theme.palette.gradients.serverHover;
 
   return (
     <Box
@@ -55,29 +60,47 @@ export const ServersItem: React.FC<ServersItemProps> = ({
         <Box
           onClick={() => onSelectServer(server)}
           sx={(theme) => {
-            const gradient = 'linear-gradient(135deg, rgba(59,130,246,0.20) 0%, rgba(168,85,247,0.20) 100%)';
-
             return {
               width: 44,
               height: 44,
               marginInline: 'auto',
               my: 0.25,
-              borderRadius: 1,
-              overflow: 'visible',
+              borderRadius: '50%',
+              overflow: 'hidden',
               cursor: 'pointer',
               position: 'relative',
-              background: gradient,
-              border: '1px solid',
+              backgroundColor: 'transparent',
+              border: 'none',
               borderColor: 'new.border',
               transition: 'background .25s ease',
-              backdropFilter: 'blur(6px)',
+              backdropFilter: hasIcon ? undefined : 'blur(6px)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              '&:hover .server-avatar': {
+                background: hasIcon ? 'transparent' : hoverGradient,
+              },
             };
           }}
         >
-          <Avatar src={server.icon || undefined} sx={{ width: 44, height: 44, borderRadius: '7px' }} />
+          <Avatar
+            className="server-avatar"
+            src={hasIcon ? (server.icon as string) : undefined}
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: '50%',
+              background: hasIcon ? 'transparent' : idleGradient,
+              color: hasIcon ? 'inherit' : 'common.white',
+              transition: 'background .25s ease',
+            }}
+          >
+            {!hasIcon && (
+              <Typography sx={{ fontSize: 14, fontWeight: 700 }}>
+                {initials}
+              </Typography>
+            )}
+          </Avatar>
           {active && (
             <Box sx={{
               position:'absolute',

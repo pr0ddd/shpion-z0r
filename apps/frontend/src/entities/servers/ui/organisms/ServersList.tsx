@@ -59,22 +59,30 @@ const ServersList: React.FC<ServersListProps> = ({ isCompact = false }) => {
         <Tooltip title="Add server" arrow placement="right">
           <Box
             onClick={() => setShowCreateDialog(true)}
-            sx={{
+            sx={(theme) => ({
               width: 44,
               height: 44,
-              borderRadius: 1,
-              background: 'linear-gradient(135deg, rgba(59,130,246,0.20) 0%, rgba(168,85,247,0.20) 100%)',
-              border: '1px solid',
-              borderColor: 'new.border',
+              borderRadius: '50%',
+              background: theme.palette.gradients.addServer,
+              backgroundSize: '200% 200%',
+              animation: 'gradientShift 4s ease infinite',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
               mx: 'auto',
               my: 0.25,
-            }}
+              '&:hover': {
+                filter: 'brightness(1.2)',
+              },
+              '@keyframes gradientShift': {
+                '0%': { backgroundPosition: '0% 50%' },
+                '50%': { backgroundPosition: '100% 50%' },
+                '100%': { backgroundPosition: '0% 50%' },
+              },
+            })}
           >
-            <AddIcon sx={{ fontSize: 24 }} />
+            <AddIcon sx={{ fontSize: 24, color: 'common.white' }} />
           </Box>
         </Tooltip>
       </Box>

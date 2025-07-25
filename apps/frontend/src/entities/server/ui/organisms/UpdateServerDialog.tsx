@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -33,8 +33,41 @@ const UpdateServerDialog: React.FC<UpdateServerDialogProps> = ({
   onClose,
 }) => {
   const { data: sfuList } = useSfuServersQuery();
+  const [latencies, setLatencies] = useState<Record<string, number | null>>({});
+
+  const pingServer = async (sfuUrl: string, timeout = 3000): Promise<number | null> => {
+    try {
+      const { hostname } = new URL(sfuUrl.replace(/^ws/, 'http'));
+      const target = `https://${hostname}/`;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeout);
+      const start = performance.now();
+      await fetch(target, { method: 'HEAD', mode: 'no-cors', cache: 'no-store', signal: controller.signal });
+      clearTimeout(timer);
+      return Math.round(performance.now() - start);
+    } catch {
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    if (!sfuList?.length) return;
+    (async () => {
+      const pairs = await Promise.all(
+        sfuList.map(async (s) => [s.id, await pingServer((s as any).url)])
+      );
+      setLatencies(Object.fromEntries(pairs));
+    })();
+  }, [sfuList]);
+
   const { values, errors, serverError, isPending, handleChange, handleSubmit } =
     useUpdateServerDialog(server);
+
+  useEffect(() => {
+    if (open && sfuList?.length && !values.sfuId) {
+      handleChange('sfuId', sfuList[0].id);
+    }
+  }, [open, sfuList]);
 
   const handleClose = () => {
     onClose();
@@ -129,12 +162,16 @@ const UpdateServerDialog: React.FC<UpdateServerDialogProps> = ({
                 }
                 disabled={isPending}
               >
-                <MenuItem value="">
-                  <em>По умолчанию (.env)</em>
-                </MenuItem>
-                {sfuList?.map((preset: any) => (
+                {sfuList?.map((preset) => (
                   <MenuItem key={preset.id} value={preset.id}>
-                    {preset.name}
+                    <Box sx={{ display:'flex', justifyContent:'space-between', width:'100%' }}>
+                      {preset.name}
+                      {latencies[preset.id] != null ? (
+                        <Box component="span" sx={{ color: 'text.secondary' }}>{latencies[preset.id]} ms</Box>
+                      ) : (
+                        <Box component="span" sx={{ color: 'text.secondary' }}>n/a</Box>
+                      )}
+                    </Box>
                   </MenuItem>
                 ))}
               </Select>

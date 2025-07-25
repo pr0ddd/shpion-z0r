@@ -6,7 +6,7 @@ interface Props {
   icon?: React.ReactNode;
   onIconClick?: () => void;
   title?: React.ReactNode;
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   actions?: SectionAction[];
 }
 
