@@ -23,7 +23,11 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "moduleResolution": "node",
-    "baseUrl": "."
+    "baseUrl": "./",
+    "paths": {
+      "@shared/data": ["../../shared/data/src/index.ts"],
+      "@shared/types": ["../../shared/types/src/index.ts"]
+    }
   },
   "include": [
     "src/**/*"
