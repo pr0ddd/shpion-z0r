@@ -35,7 +35,7 @@ export const ActiveStreamsBanner: React.FC = () => {
         {count} active stream{count === 1 ? '' : 's'}
       </Typography>
       <Box sx={{ flexGrow: 1 }} />
-      <Tooltip title="Остановить все" placement="top" arrow>
+      <Tooltip title="Stop all streams" placement="top" arrow>
         <SmallIconButton
           onClick={() => stopAllScreenShare()}
           sx={{
