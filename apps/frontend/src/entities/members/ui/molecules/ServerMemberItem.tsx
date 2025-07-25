@@ -2,12 +2,11 @@ import { Box, Typography } from '@mui/material';
 import { Member } from '@shared/types';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
-import VideocamIcon from '@mui/icons-material/Videocam';
-import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { Avatar } from '@ui/atoms/Avatar';
+import { DotIndicator } from '@ui/atoms/DotIndicator';
 
 import { LocalParticipant, RemoteParticipant, Track } from 'livekit-client';
 import { useIsMuted } from '@livekit/components-react';
@@ -17,15 +16,13 @@ import { useParticipantMetadata } from '@entities/members/model/useLocalParticip
 interface ServerMemberItemProps {
   member: Member | undefined;
   participant: LocalParticipant | RemoteParticipant;
-  cameraCount: number; // number of active camera video tracks
-  totalStreamCount: number; // camera + screen shares
+  totalStreamCount: number; // video streams (camera + screen share)
   isStreaming: boolean; // any video stream
 }
 
 export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
   member,
   participant,
-  cameraCount,
   totalStreamCount,
   isStreaming,
 }) => {
@@ -64,30 +61,7 @@ export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
           }}
         />
         {isStreaming && (
-          <Box
-            sx={{
-              position: 'absolute',
-              bottom: 0,
-              right: 0,
-              width: 10,
-              height: 10,
-              borderRadius: '50%',
-              bgcolor: 'error.main',
-              border: '2px solid',
-              borderColor: 'background.paper',
-              '@keyframes pulse': {
-                '0%, 100%': {
-                  transform: 'scale(1)',
-                  opacity: 1,
-                },
-                '50%': {
-                  transform: 'scale(1.25)',
-                  opacity: 0.6,
-                },
-              },
-              animation: 'pulse 1.5s ease-in-out infinite',
-            }}
-          />
+          <DotIndicator sx={{ position: 'absolute', bottom: 0, right: 0 }} withBorder />
         )}
       </Box>
 
@@ -117,12 +91,6 @@ export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
 
       {/* Status icons */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-        {cameraCount > 0 ? (
-          <VideocamIcon fontSize="small" sx={{ color: 'success.main' }} />
-        ) : (
-          <VideocamOffIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-        )}
-
         {isMuted ? (
           <MicOffIcon fontSize="small" sx={{ color: 'error.main' }} />
         ) : (

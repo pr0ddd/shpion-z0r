@@ -10,6 +10,7 @@ import { SectionAction, SectionActionBar } from '@ui/molecules/SectionActionBar'
 import { useLocalParticipant, useRoomContext, useConnectionState, ConnectionState as LKConnectionState } from '@livekit/components-react';
 import { useSelectedServerName } from '@hooks/useSelectedServerName';
 import { MediaControls, PlaceholderControls } from '@ui/molecules/MediaControls';
+import { ActiveStreamsBanner } from '@entities/streams/ui/atoms/ActiveStreamsBanner';
 import { QualityIndicator } from '@ui/atoms/QualityIndicator';
 import { Avatar } from '@ui/atoms/Avatar';
 
@@ -72,21 +73,27 @@ export const UnifiedMediaControlPanel: React.FC = () => {
   ];
   return (
     <>
-    <Box sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 1,
-      px: 2,
-      py: 1.5,
-      backgroundColor: 'new.sidebar',
-      borderRadius: 2,
-      border: '1px solid',
-      borderColor: 'new.border',
-      width: { xs: 'auto', md: '100%' },
-      maxWidth: 480,
-      alignSelf: 'center',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-    }}>
+    {/* Wrapper to place banner above control panel */}
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+
+      {/* Active Streams Banner displayed above the control panel */}
+      <ActiveStreamsBanner />
+
+      {/* Control panel container */}
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1,
+        px: 2,
+        py: 1.5,
+        backgroundColor: 'new.sidebar',
+        borderRadius: 1,
+        border: '1px solid',
+        borderColor: 'new.border',
+        width: '100%',
+        maxWidth: 480,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+      }}>
 
       {/* User info row */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
@@ -143,7 +150,7 @@ export const UnifiedMediaControlPanel: React.FC = () => {
       </Box>
 
       {/* Controls row */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
         {isConnected ? (
           <MediaControls
             userId={user?.id}
@@ -154,6 +161,9 @@ export const UnifiedMediaControlPanel: React.FC = () => {
           <PlaceholderControls />
         )}
       </Box>
+    </Box>
+
+    {/* Close wrapper */}
     </Box>
 
     {/* Leave confirmation dialog */}

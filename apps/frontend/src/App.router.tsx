@@ -12,6 +12,7 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { useSystemSettingsQuery } from '@entities/systemSettings/api/systemSettings.query';
 import { useSystemSettingsStore } from '@entities/systemSettings';
 import { useDeepFilterModelStore } from '@libs/deepFilterNet/modelLoad.store';
+import { loadDeepFilterAssets } from '@libs/deepFilterNet/loadAssets';
 
 const RequireAuth = () => {
   const { data, isFetching } = useUserQuery();
@@ -44,6 +45,19 @@ const RequireSystemSettings = () => {
 
 const RequireDeepFilter: React.FC = () => {
   const loaded = useDeepFilterModelStore((s)=>s.loaded);
+  const loading = useDeepFilterModelStore((s)=>s.loading);
+  const setLoading = useDeepFilterModelStore((s)=>s.setLoading);
+  const setLoaded = useDeepFilterModelStore((s)=>s.setLoaded);
+
+  React.useEffect(()=>{
+    if(!loaded && !loading){
+      setLoading(true);
+      loadDeepFilterAssets()
+        .catch(()=>{/* ignore */})
+        .finally(()=>setLoaded());
+    }
+  }, [loaded, loading]);
+
   if(!loaded) return null;
   return <Outlet />;
 };

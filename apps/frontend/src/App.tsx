@@ -7,7 +7,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SocketProvider } from '@libs/socket';
 import { useEffect } from 'react';
 import { useDeepFilterModelStore } from '@libs/deepFilterNet/modelLoad.store';
-import { loadDeepFilterAssets } from '@libs/deepFilterNet/loadAssets';
 import { createGlobalAudioContext } from '@libs/audioContext';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
@@ -35,18 +34,11 @@ const App: React.FC = () => {
 
   // Ранняя предзагрузка модели шумоподавления с индикатором
   const modelLoading = useDeepFilterModelStore((s) => s.loading);
-  const modelLoaded = useDeepFilterModelStore((s)=>s.loaded);
-  const setModelLoading = useDeepFilterModelStore((s) => s.setLoading);
-  const setModelLoaded = useDeepFilterModelStore((s) => s.setLoaded);
+  // we no longer read modelLoaded here
+  // setters are managed inside RequireDeepFilter now
 
   useEffect(() => {
     audioCtxRef.current = createGlobalAudioContext();
-
-    // Always trigger asset loading – if they are already in cache it will resolve instantly.
-    setModelLoading(true);
-    loadDeepFilterAssets()
-      .catch(() => {/* ignore errors, stay on loading screen */})
-      .finally(() => setModelLoaded());
   }, []);
 
   // Show unlock dialog once we actually joined a server and still need gesture
@@ -69,8 +61,8 @@ const App: React.FC = () => {
               <AppRouter />
             </SocketProvider>
           </BrowserRouter>
-          {/* Model loading dialog */}
-          <Dialog open={modelLoading || !modelLoaded} hideBackdrop>
+          {/* Model loading dialog (shows only when actual download is in progress) */}
+          <Dialog open={modelLoading} hideBackdrop>
             <DialogTitle>Preparing audio processing</DialogTitle>
             <DialogContent sx={{ minWidth: 300 }}>
               Downloading required files. This may take a few seconds…

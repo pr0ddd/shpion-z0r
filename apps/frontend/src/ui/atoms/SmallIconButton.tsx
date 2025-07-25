@@ -11,7 +11,10 @@ export const SmallIconButton: React.FC<IconButtonProps> = ({ sx, ...rest }) => (
       borderColor: 'new.border',
       backgroundColor: 'new.muted',
       color: 'new.mutedForeground',
-      '&:hover': { backgroundColor: 'new.hover' },
+      '&:hover': {
+        backgroundColor: 'new.hover',
+        color: 'new.primaryForeground',
+      },
       ...sx,
     }}
     {...rest}

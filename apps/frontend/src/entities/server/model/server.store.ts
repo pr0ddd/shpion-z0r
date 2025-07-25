@@ -25,8 +25,7 @@ export const useServerStore = create<ServerStore>((set) => ({
       }
     } catch {/* ignore */}
 
-    // Старт предзагрузки модели шумоподавления (не блокируем UI).
-    modelLoader.preloadModel('DeepFilterNet3_ll');
+    // Модель будет загружена лениво при первом заходе на сервер (RequireDeepFilter).
 
     if (serverId) {
       localStorage.setItem('lastSelectedServerId', serverId);
