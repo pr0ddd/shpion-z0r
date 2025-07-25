@@ -59,14 +59,14 @@ const UpdateServerDialog: React.FC<UpdateServerDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
-      <DialogTitle>Настройки сервера</DialogTitle>
+      <DialogTitle>Server settings</DialogTitle>
       <Box component="form" onSubmit={onSubmit}>
         <DialogContent>
           <Stack direction="column" spacing={2}>
             <TextField
               autoFocus
               margin="dense"
-              label="Название сервера"
+              label="Server name"
               fullWidth
               variant="standard"
               value={values.name}
@@ -76,7 +76,7 @@ const UpdateServerDialog: React.FC<UpdateServerDialogProps> = ({
             />
             <TextField
               margin="dense"
-              label="Описание"
+              label="Description"
               fullWidth
               variant="standard"
               value={values.description}
@@ -110,7 +110,7 @@ const UpdateServerDialog: React.FC<UpdateServerDialogProps> = ({
                 variant="outlined"
                 size="small"
               >
-                Загрузить иконку
+                Upload icon
                 <input
                   type="file"
                   accept="image/*"
@@ -128,7 +128,7 @@ const UpdateServerDialog: React.FC<UpdateServerDialogProps> = ({
               </Button>
             </Stack>
             <FormControl fullWidth variant="standard">
-              <InputLabel>SFU сервер</InputLabel>
+              <InputLabel>SFU server</InputLabel>
               <Select
                 value={values.sfuId}
                 onChange={(e) =>
@@ -153,10 +153,10 @@ const UpdateServerDialog: React.FC<UpdateServerDialogProps> = ({
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} disabled={isPending}>
-            Отмена
+            Cancel
           </Button>
           <Button type="submit" disabled={isPending}>
-            {isPending ? <CircularProgress size={24} /> : 'Применить'}
+            {isPending ? <CircularProgress size={24} /> : 'Apply'}
           </Button>
         </DialogActions>
       </Box>

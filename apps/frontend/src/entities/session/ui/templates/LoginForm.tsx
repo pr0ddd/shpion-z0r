@@ -44,7 +44,7 @@ export const LoginForm: React.FC = () => {
         required
         fullWidth
         name="password"
-        label="Пароль"
+        label="Password"
         type="password"
         id="password"
         autoComplete="current-password"

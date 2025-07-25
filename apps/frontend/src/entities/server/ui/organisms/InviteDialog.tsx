@@ -45,10 +45,10 @@ const InviteDialog: React.FC<InviteDialogProps> = ({ open, onClose, server }) =>
         },
       }}
     >
-      <DialogTitle>Пригласить друзей</DialogTitle>
+      <DialogTitle>Invite friends</DialogTitle>
       <DialogContent>
         <Typography sx={{ mb: 2 }}>
-          Поделитесь этой ссылкой, чтобы пригласить кого-нибудь на этот сервер.
+          Share this link to invite someone to this server.
         </Typography>
         <TextField
           fullWidth
@@ -60,7 +60,7 @@ const InviteDialog: React.FC<InviteDialogProps> = ({ open, onClose, server }) =>
               readOnly: true,
               endAdornment: (
                 <InputAdornment position="end">
-                  <Tooltip title={copied ? 'Скопировано!' : 'Копировать'} placement="top" arrow>
+                  <Tooltip title={copied ? 'Copied!' : 'Copy'} placement="top" arrow>
                     <IconButton
                       size="small"
                       hasBorder={false}

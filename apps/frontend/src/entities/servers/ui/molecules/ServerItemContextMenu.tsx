@@ -33,19 +33,19 @@ export const ServerItemContextMenu = memo(
           <ListItemIcon>
             <PersonAddIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Пригласить</ListItemText>
+          <ListItemText>Invite</ListItemText>
         </MenuItem>
         <MenuItem onClick={onUpdate}>
           <ListItemIcon>
             <SettingsIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Настройки</ListItemText>
+          <ListItemText>Settings</ListItemText>
         </MenuItem>
         <MenuItem onClick={onDelete}>
           <ListItemIcon>
             <DeleteIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Удалить сервер</ListItemText>
+          <ListItemText>Delete server</ListItemText>
         </MenuItem>
       </Menu>
     );

@@ -44,7 +44,7 @@ export const RegisterForm: React.FC = () => {
         required
         fullWidth
         id="username"
-        label="Имя пользователя"
+        label="Username"
         name="username"
         autoComplete="username"
         value={username}
@@ -57,7 +57,7 @@ export const RegisterForm: React.FC = () => {
         required
         fullWidth
         name="password"
-        label="Пароль"
+        label="Password"
         type="password"
         id="password"
         autoComplete="new-password"
@@ -87,7 +87,7 @@ export const RegisterForm: React.FC = () => {
         {isPending ? (
           <CircularProgress size={24} color="inherit" />
         ) : (
-          'Зарегистрироваться'
+          'Sign up'
         )}
       </Button>
     </Box>

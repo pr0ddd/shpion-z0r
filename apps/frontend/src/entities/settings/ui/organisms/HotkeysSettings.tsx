@@ -33,32 +33,32 @@ interface Item {
 const ITEMS: Item[] = [
   {
     action: 'toggle-mic',
-    title: 'Включить/выключить микрофон',
-    subtitle: 'Быстрое отключение звука микрофона',
+    title: 'Toggle microphone',
+    subtitle: 'Quickly mute/unmute the mic',
     icon: <MicIcon fontSize="small" />,
   },
   {
     action: 'toggle-camera',
-    title: 'Включить/выключить камеру',
-    subtitle: 'Включение и выключение видеопотока',
+    title: 'Toggle camera',
+    subtitle: 'Start or stop video feed',
     icon: <VideocamIcon fontSize="small" />,
   },
   {
     action: 'toggle-screen',
-    title: 'Демонстрация экрана',
-    subtitle: 'Начать или остановить показ экрана',
+    title: 'Screen share',
+    subtitle: 'Start or stop sharing the screen',
     icon: <ScreenShareIcon fontSize="small" />,
   },
   {
     action: 'toggle-speaker',
-    title: 'Включить/выключить звук',
-    subtitle: 'Отключение входящего звука',
+    title: 'Toggle speaker',
+    subtitle: 'Mute incoming audio',
     icon: <VolumeUpIcon fontSize="small" />,
   },
   {
     action: 'stop-streams',
-    title: 'Остановить все стримы',
-    subtitle: 'Прекратить все демонстрации экрана',
+    title: 'Stop all streams',
+    subtitle: 'End all screen shares',
     icon: <ScreenShareIcon fontSize="small" />,
   },
 ];
@@ -78,7 +78,7 @@ export const HotkeysSettings: React.FC = () => {
   const startCapture = (action: HotkeyAction) => {
     setCapturing(action);
     setGlobalCapture(true);
-    setSnack('Нажмите желаемую комбинацию…');
+    setSnack('Press desired key combination…');
 
     const activeMods = new Set<string>();
     const isModifierCode = (code: string) =>
@@ -119,14 +119,14 @@ export const HotkeysSettings: React.FC = () => {
       uniqueParts.push(keyPart);
 
       if (uniqueParts.length > 3) {
-        setSnack('Максимум 3 клавиши в комбинации');
+        setSnack('Maximum 3 keys allowed');
         activeMods.clear();
         return;
       }
 
       const combo = uniqueParts.join('+');
       setDraft((prev) => ({ ...prev, [action]: combo }));
-      setSnack(`Назначено: ${combo}`);
+      setSnack(`Assigned: ${combo}`);
       setCapturing(null);
       setGlobalCapture(false);
       window.removeEventListener('keydown', keydownHandler, true);
@@ -144,7 +144,7 @@ export const HotkeysSettings: React.FC = () => {
 
   const save = () => {
     store.setAllHotkeys(draft);
-    setSnack('Горячие клавиши сохранены');
+    setSnack('Hotkeys saved');
   };
 
   /*────────────── UI ──────────────*/
@@ -152,13 +152,13 @@ export const HotkeysSettings: React.FC = () => {
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 3 }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6">Горячие клавиши</Typography>
+        <Typography variant="h6">Hotkeys</Typography>
         <Button startIcon={<RefreshIcon />} onClick={resetAll}>
-          Сбросить все
+          Reset all
         </Button>
       </Box>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        Настройте сочетания клавиш для быстрого управления
+        Configure shortcut keys for quick actions
       </Typography>
 
       {/* List */}
@@ -183,7 +183,7 @@ export const HotkeysSettings: React.FC = () => {
 
             {/* Shortcut chip */}
             <Chip
-              label={draft[item.action] ?? 'Не назначено'}
+              label={draft[item.action] ?? 'Not set'}
               sx={{ fontFamily: 'monospace' }}
               variant="outlined"
             />
@@ -197,7 +197,7 @@ export const HotkeysSettings: React.FC = () => {
                 onClick={() => startCapture(item.action)}
                 disabled={capturing !== null}
               >
-                Изменить
+                Edit
               </Button>
               <MuiIconButton onClick={() => resetOne(item.action)} size="small">
                 <RefreshIcon fontSize="small" />
@@ -210,7 +210,7 @@ export const HotkeysSettings: React.FC = () => {
       {/* Footer */}
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
         <Button variant="contained" color="primary" onClick={save}>
-          Сохранить горячие клавиши
+          Save hotkeys
         </Button>
       </Box>
 

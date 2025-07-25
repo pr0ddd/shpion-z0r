@@ -75,7 +75,7 @@ const CreateServerDialog: React.FC<CreateServerDialogProps> = ({
       }}
     >
       <DialogTitle sx={{ m: 0, p: 2, borderBottom: '1px solid', borderColor: 'new.border' }}>
-        Создание сервера
+        Create server
       </DialogTitle>
       <Box
         component="form"
@@ -86,7 +86,7 @@ const CreateServerDialog: React.FC<CreateServerDialogProps> = ({
             <TextField
               autoFocus
               margin="dense"
-              label="Название сервера"
+              label="Server name"
               fullWidth
               variant="standard"
               value={values.name}
@@ -96,7 +96,7 @@ const CreateServerDialog: React.FC<CreateServerDialogProps> = ({
             />
             <TextField
               margin="dense"
-              label="Описание"
+              label="Description"
               fullWidth
               variant="standard"
               value={values.description}

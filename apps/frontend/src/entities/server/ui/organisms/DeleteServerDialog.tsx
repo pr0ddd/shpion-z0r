@@ -30,14 +30,14 @@ const DeleteServerDialog: React.FC<DeleteServerDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={onClose}>
-      <DialogTitle>Удалить сервер</DialogTitle>
+      <DialogTitle>Delete server</DialogTitle>
       <DialogContent>
-        Вы уверены, что хотите безвозвратно удалить сервер «{server.name}»?
+        Are you sure you want to permanently delete server "{server.name}"?
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Отмена</Button>
+        <Button onClick={onClose}>Cancel</Button>
         <Button color="error" onClick={handleSubmit}>
-          {isPending ? <CircularProgress size={20} /> : 'Удалить'}
+          {isPending ? <CircularProgress size={20} /> : 'Delete'}
         </Button>
       </DialogActions>
     </Dialog>
