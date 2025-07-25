@@ -35,6 +35,7 @@ const App: React.FC = () => {
 
   // Ранняя предзагрузка модели шумоподавления с индикатором
   const modelLoading = useDeepFilterModelStore((s) => s.loading);
+  const modelLoaded = useDeepFilterModelStore((s)=>s.loaded);
   const setModelLoading = useDeepFilterModelStore((s) => s.setLoading);
   const setModelLoaded = useDeepFilterModelStore((s) => s.setLoaded);
 
@@ -72,7 +73,7 @@ const App: React.FC = () => {
             </SocketProvider>
           </BrowserRouter>
           {/* Model loading dialog */}
-          <Dialog open={modelLoading} hideBackdrop>
+          <Dialog open={modelLoading || !modelLoaded} hideBackdrop>
             <DialogTitle>Preparing audio processing</DialogTitle>
             <DialogContent sx={{ minWidth: 300 }}>
               Downloading required files. This may take a few seconds…
