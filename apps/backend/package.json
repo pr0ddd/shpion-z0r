@@ -37,7 +37,6 @@
     "livekit-server-sdk": "^2.13.0",
     "morgan": "^1.10.0",
     "socket.io": "^4.8.1",
-    "tcp-ping": "^0.1.1",
     "ts-node": "^10.9.2",
     "tslib": "^2.7.0",
     "uuid": "^11.1.0"

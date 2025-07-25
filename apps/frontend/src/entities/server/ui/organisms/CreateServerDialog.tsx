@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -45,35 +45,6 @@ const CreateServerDialog: React.FC<CreateServerDialogProps> = ({
     if (open) reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
-
-  // ---------------- Ping measurement ----------------
-  const [latencies, setLatencies] = useState<Record<string, number | null>>({});
-
-  // Simple ping via HEAD request to /health endpoint (adjust if needed)
-  const pingServer = async (sfuUrl: string, timeout = 3000): Promise<number | null> => {
-    try {
-      const { hostname } = new URL(sfuUrl.replace(/^ws/, 'http'));
-      const target = `https://${hostname}/`;
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeout);
-      const start = performance.now();
-      await fetch(target, { method: 'HEAD', mode: 'no-cors', cache: 'no-store', signal: controller.signal });
-      clearTimeout(timer);
-      return Math.round(performance.now() - start);
-    } catch {
-      return null;
-    }
-  };
-
-  useEffect(() => {
-    if (!sfuList?.length) return;
-    (async () => {
-      const pairs: [string, number | null][] = await Promise.all(
-        sfuList.map(async (s) => [s.id, await pingServer((s as any).url)])
-      );
-      setLatencies(Object.fromEntries(pairs));
-    })();
-  }, [sfuList]);
 
   const handleClose = () => {
     onClose();
@@ -187,16 +158,7 @@ const CreateServerDialog: React.FC<CreateServerDialogProps> = ({
               >
                 {sfuList?.map((preset) => (
                   <MenuItem key={preset.id} value={preset.id}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                      {preset.name}
-                      {latencies[preset.id] === undefined ? (
-                        <CircularProgress size={12} sx={{ color: 'text.secondary' }} />
-                      ) : latencies[preset.id] === null ? (
-                        <Box component="span" sx={{ color: 'text.secondary' }}>n/a</Box>
-                      ) : (
-                        <Box component="span" sx={{ color: 'text.secondary' }}>{latencies[preset.id]} ms</Box>
-                      )}
-                    </Box>
+                    {preset.name}
                   </MenuItem>
                 ))}
               </Select>

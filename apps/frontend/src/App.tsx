@@ -6,8 +6,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { SocketProvider } from '@libs/socket';
 import { useEffect } from 'react';
-import { modelLoader, isDeepFilterModelLoaded } from '@libs/deepFilterNet/modelLoader';
 import { useDeepFilterModelStore } from '@libs/deepFilterNet/modelLoad.store';
+import { loadDeepFilterAssets } from '@libs/deepFilterNet/loadAssets';
 import { createGlobalAudioContext } from '@libs/audioContext';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
@@ -42,14 +42,11 @@ const App: React.FC = () => {
   useEffect(() => {
     audioCtxRef.current = createGlobalAudioContext();
 
-    if (isDeepFilterModelLoaded('DeepFilterNet3_ll')) {
-      setModelLoaded();
-    } else {
-      setModelLoading(true);
-      modelLoader.loadModel('DeepFilterNet3_ll')
-        .catch(() => {/* ignore */})
-        .finally(() => setModelLoaded());
-    }
+    // Always trigger asset loading – if they are already in cache it will resolve instantly.
+    setModelLoading(true);
+    loadDeepFilterAssets()
+      .catch(() => {/* ignore errors, stay on loading screen */})
+      .finally(() => setModelLoaded());
   }, []);
 
   // Show unlock dialog once we actually joined a server and still need gesture

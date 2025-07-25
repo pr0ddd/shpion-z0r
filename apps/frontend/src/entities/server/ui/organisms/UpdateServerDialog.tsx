@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -33,32 +33,6 @@ const UpdateServerDialog: React.FC<UpdateServerDialogProps> = ({
   onClose,
 }) => {
   const { data: sfuList } = useSfuServersQuery();
-  const [latencies, setLatencies] = useState<Record<string, number | null>>({});
-
-  const pingServer = async (sfuUrl: string, timeout = 3000): Promise<number | null> => {
-    try {
-      const { hostname } = new URL(sfuUrl.replace(/^ws/, 'http'));
-      const target = `https://${hostname}/`;
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeout);
-      const start = performance.now();
-      await fetch(target, { method: 'HEAD', mode: 'no-cors', cache: 'no-store', signal: controller.signal });
-      clearTimeout(timer);
-      return Math.round(performance.now() - start);
-    } catch {
-      return null;
-    }
-  };
-
-  useEffect(() => {
-    if (!sfuList?.length) return;
-    (async () => {
-      const pairs = await Promise.all(
-        sfuList.map(async (s) => [s.id, await pingServer((s as any).url)])
-      );
-      setLatencies(Object.fromEntries(pairs));
-    })();
-  }, [sfuList]);
 
   const { values, errors, serverError, isPending, handleChange, handleSubmit } =
     useUpdateServerDialog(server);
@@ -164,21 +138,14 @@ const UpdateServerDialog: React.FC<UpdateServerDialogProps> = ({
               >
                 {sfuList?.map((preset) => (
                   <MenuItem key={preset.id} value={preset.id}>
-                    <Box sx={{ display:'flex', justifyContent:'space-between', width:'100%' }}>
-                      {preset.name}
-                      {latencies[preset.id] != null ? (
-                        <Box component="span" sx={{ color: 'text.secondary' }}>{latencies[preset.id]} ms</Box>
-                      ) : (
-                        <Box component="span" sx={{ color: 'text.secondary' }}>n/a</Box>
-                      )}
-                    </Box>
+                    {preset.name}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
           </Stack>
           {/* TODO: handle all error messages */}
-          {serverError && (
+          {typeof serverError === 'string' && (
             <Alert severity="error" sx={{ mt: 2 }}>
               {serverError}
             </Alert>

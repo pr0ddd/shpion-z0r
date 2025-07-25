@@ -11,6 +11,7 @@ import ServerPage from './pages/ServerPage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { useSystemSettingsQuery } from '@entities/systemSettings/api/systemSettings.query';
 import { useSystemSettingsStore } from '@entities/systemSettings';
+import { useDeepFilterModelStore } from '@libs/deepFilterNet/modelLoad.store';
 
 const RequireAuth = () => {
   const { data, isFetching } = useUserQuery();
@@ -41,6 +42,12 @@ const RequireSystemSettings = () => {
   return <Outlet />;
 };
 
+const RequireDeepFilter: React.FC = () => {
+  const loaded = useDeepFilterModelStore((s)=>s.loaded);
+  if(!loaded) return null;
+  return <Outlet />;
+};
+
 const AppRouter: React.FC = () => {
   return (
     <>
@@ -52,7 +59,9 @@ const AppRouter: React.FC = () => {
 
         <Route element={<RequireAuth />}>
           <Route element={<RequireSystemSettings />}>
-            <Route path="/" element={<ServerPage />} />
+            <Route element={<RequireDeepFilter />}>
+              <Route path="/" element={<ServerPage />} />
+            </Route>
           </Route>
           <Route path="/invite/:inviteCode" element={<InvitePage />} />
           <Route path="*" element={<Navigate to="/" />} />
