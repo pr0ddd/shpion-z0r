@@ -130,7 +130,7 @@ const CreateServerDialog: React.FC<CreateServerDialogProps> = ({
                 variant="outlined"
                 size="small"
               >
-                Загрузить иконку
+                Upload icon
                 <input
                   type="file"
                   accept="image/*"
@@ -148,7 +148,7 @@ const CreateServerDialog: React.FC<CreateServerDialogProps> = ({
               </Button>
             </Stack>
             <FormControl fullWidth variant="standard">
-              <InputLabel>SFU сервер</InputLabel>
+              <InputLabel>SFU server</InputLabel>
               <Select
                 value={values.sfuId}
                 onChange={(e) =>
@@ -173,10 +173,10 @@ const CreateServerDialog: React.FC<CreateServerDialogProps> = ({
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
           <Button onClick={handleClose} disabled={isPending}>
-            Отмена
+            Cancel
           </Button>
           <Button type="submit" disabled={isPending}>
-            {isPending ? <CircularProgress size={24} /> : 'Создать'}
+            {isPending ? <CircularProgress size={24} /> : 'Create'}
           </Button>
         </DialogActions>
       </Box>

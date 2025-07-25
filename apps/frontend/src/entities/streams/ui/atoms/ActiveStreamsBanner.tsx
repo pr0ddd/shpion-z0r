@@ -6,11 +6,14 @@ import { DotIndicator } from '@ui/atoms/DotIndicator';
 
 import { useStream } from '@entities/streams/model/useStream';
 import { useScreenShare } from '@entities/members/model/useScreenShare';
+import { useSessionStore } from '@entities/session/model/auth.store';
 
 export const ActiveStreamsBanner: React.FC = () => {
   const { streamTracks } = useStream();
+  const userId = useSessionStore((s)=>s.user?.id);
+  const myTracks = streamTracks.filter(t=>t.participant.identity===userId);
+  const count = myTracks.length;
   const { stopAll: stopAllScreenShare } = useScreenShare();
-  const count = streamTracks.length;
   if (count === 0) return null;
 
   return (

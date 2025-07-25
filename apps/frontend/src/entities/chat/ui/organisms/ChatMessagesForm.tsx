@@ -108,7 +108,7 @@ export const ChatMessagesForm: React.FC = () => {
       {replyTo && (
         <Box sx={{ display:'flex', alignItems:'center', gap:1, mb:0.5, pl:1 }}>
           <Typography variant="caption" sx={{color:'new.mutedForeground', fontWeight:600}}>
-            Ответ {replyTo.author?.username ? `@${replyTo.author.username}`:''}
+            Reply {replyTo.author?.username ? `@${replyTo.author.username}`:''}
           </Typography>
           <Typography variant="caption" sx={{color:'new.mutedForeground', maxWidth:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
             {replyTo.content}
@@ -121,7 +121,7 @@ export const ChatMessagesForm: React.FC = () => {
       {editing && (
         <Box sx={{ display:'flex', alignItems:'center', gap:1, mb:0.5, pl:1 }}>
           <Typography variant="caption" sx={{color:'new.mutedForeground', fontWeight:600}}>
-            Редактирование
+            Editing
           </Typography>
           <Typography variant="caption" sx={{color:'new.mutedForeground', maxWidth:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
             {editing.content}
@@ -153,7 +153,7 @@ export const ChatMessagesForm: React.FC = () => {
       >
         <TextField
           fullWidth
-          placeholder={'Написать сообщение...'}
+          placeholder={'Write a message...'}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e)=>{
@@ -186,7 +186,7 @@ export const ChatMessagesForm: React.FC = () => {
           icon={<AttachFile />}
           color="default"
           hasBorder={true}
-          tooltip="Прикрепить файл"
+          tooltip="Attach file"
           onClick={() => fileInputRef.current?.click()}
         />
         <IconButton
