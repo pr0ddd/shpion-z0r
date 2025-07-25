@@ -17,20 +17,33 @@ const sections: { key: SettingsSection; label: string; icon: React.ReactNode }[]
   { key: 'appearance', label: 'Внешний вид', icon: <PaletteIcon /> },
 ];
 
-export const SettingsSidebar: React.FC = () => {
+interface Props { orientation?: 'vertical' | 'horizontal'; }
+
+export const SettingsSidebar: React.FC<Props> = ({ orientation = 'vertical' }) => {
   const activeSection = useSettingsDialogStore((s) => s.activeSection);
   const setSection = useSettingsDialogStore((s) => s.setSection);
 
+  const isHorizontal = orientation === 'horizontal';
+
   return (
-    <Box sx={{ width: 200, borderRight: '1px solid', borderColor: 'new.border', p:1 }}>
-      <List disablePadding>
+    <Box
+      sx={{
+        width: isHorizontal ? '100%' : 200,
+        borderRight: isHorizontal ? 'none' : '1px solid',
+        borderBottom: isHorizontal ? '1px solid' : 'none',
+        borderColor: 'new.border',
+        p: 1,
+      }}
+    >
+      <List disablePadding sx={{ display: isHorizontal ? 'flex' : 'block' }}>
         {sections.map((sec) => (
           <SettingsSidebarItem
             key={sec.key}
             icon={sec.icon}
-            label={sec.label}
+            label={isHorizontal ? '' : sec.label}
             selected={sec.key === activeSection}
             onClick={() => setSection(sec.key)}
+            horizontal={isHorizontal}
           />
         ))}
       </List>

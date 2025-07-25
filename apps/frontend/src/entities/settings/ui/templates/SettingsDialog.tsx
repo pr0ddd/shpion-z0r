@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogTitle, IconButton, Box } from '@mui/material';
+import { Dialog, DialogContent, DialogTitle, IconButton, Box, useMediaQuery, useTheme } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useSettingsDialogStore } from '../../model/settingsDialog.store';
 import { AccountSettings } from '../organisms/AccountSettings';
@@ -29,10 +29,14 @@ export const SettingsDialog: React.FC = () => {
     }
   };
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('mobile'));
+
   return (
     <Dialog
       open={isOpen}
       onClose={close}
+      fullScreen={isMobile}
       fullWidth
       maxWidth="lg"
       PaperProps={{
@@ -60,8 +64,18 @@ export const SettingsDialog: React.FC = () => {
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-      <DialogContent dividers sx={{ p: 0, display: 'flex', height: 600 }}>
-        <SettingsSidebar />
+      <DialogContent
+        dividers
+        sx={{
+          p: 0,
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          height: isMobile ? '100%' : 600,
+        }}
+      >
+        <Box sx={{ width: isMobile ? '100%' : 260, borderRight: isMobile ? 'none' : '1px solid', borderBottom: isMobile ? '1px solid' : 'none', borderColor: 'new.border' }}>
+          <SettingsSidebar />
+        </Box>
         <Box sx={{ flex: 1, p: 3, overflowY: 'auto' }}>{renderContent(activeSection)}</Box>
       </DialogContent>
     </Dialog>

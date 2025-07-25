@@ -1,8 +1,12 @@
 import React, { useMemo, useEffect, useState } from 'react';
-import { Box, Typography, Chip } from '@mui/material';
+    import { Box, Typography, Chip, Tooltip } from '@mui/material';
+import SettingsIcon from '@mui/icons-material/Settings';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { ConfirmDialog } from '@ui/molecules/ConfirmDialog';
 import { useSessionStore } from '@entities/session';
 import { useServerStore } from '@entities/server/model';
 import { useSettingsDialogStore } from '@entities/settings';
+import { SectionAction, SectionActionBar } from '@ui/molecules/SectionActionBar';
 import { useLocalParticipant, useRoomContext, useConnectionState, ConnectionState as LKConnectionState } from '@livekit/components-react';
 import { useSelectedServerName } from '@hooks/useSelectedServerName';
 import { MediaControls, PlaceholderControls } from '@ui/molecules/MediaControls';
@@ -13,9 +17,12 @@ export const UnifiedMediaControlPanel: React.FC = () => {
   /* ------------ hooks ------------- */
   const user = useSessionStore((s) => s.user);
   const connectionState = useConnectionState();
-  const serverName = useSelectedServerName();
+  const rawServerName = useSelectedServerName();
+  const isNameLong = rawServerName ? rawServerName.length > 20 : false;
+  const serverName = isNameLong ? `${rawServerName!.slice(0, 16)}…` : rawServerName;
   const toggleSettings = useSettingsDialogStore((s) => s.toggle);
-  const { setSelectedServerId } = useServerStore();
+  const { selectedServerId, setSelectedServerId } = useServerStore();
+  const [leaveOpen, setLeaveOpen] = useState(false);
 
   const { localParticipant } = useLocalParticipant();
   const room = useRoomContext(); // needed for status only maybe
@@ -46,7 +53,25 @@ export const UnifiedMediaControlPanel: React.FC = () => {
       setElapsed('00:00');
     }
   }, [isConnected]);
+
+  /* ------------ server actions (invite/settings/leave) ------------- */
+  const serverActions: SectionAction[] = [
+    {
+      key: 'settings',
+      icon: <SettingsIcon fontSize="small" />,
+      tooltip: 'Settings',
+      onClick: () => toggleSettings(),
+    },
+    {
+      key: 'leave',
+      icon: <LogoutIcon fontSize="small" />,
+      tooltip: 'Leave server',
+      danger: true,
+      onClick: () => setLeaveOpen(true),
+    },
+  ];
   return (
+    <>
     <Box sx={{
       display: 'flex',
       flexDirection: 'column',
@@ -57,7 +82,9 @@ export const UnifiedMediaControlPanel: React.FC = () => {
       borderRadius: 2,
       border: '1px solid',
       borderColor: 'new.border',
-      width: '100%',
+      width: { xs: 'auto', md: '100%' },
+      maxWidth: 480,
+      alignSelf: 'center',
       boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
     }}>
 
@@ -81,9 +108,25 @@ export const UnifiedMediaControlPanel: React.FC = () => {
           {/* second line – server name and connection status */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25, minWidth: 0 }}>
             {serverName && (
-              <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
-                {serverName}
-              </Typography>
+              <Tooltip
+                title={isNameLong ? rawServerName : ''}
+                disableHoverListener={!isNameLong}
+                placement="top-start"
+                arrow
+                PopperProps={{
+                  modifiers: [
+                    {
+                      name: 'offset',
+                      options: { offset: [0, -8] },
+                    },
+                  ],
+                }}
+                disableInteractive
+              >
+                <Typography component="span" variant="caption" noWrap sx={{ color: 'text.secondary', display: 'inline-block' }}>
+                  {serverName}
+                </Typography>
+              </Tooltip>
             )}
             <Chip
               label={<LKConnectionState />}
@@ -93,14 +136,40 @@ export const UnifiedMediaControlPanel: React.FC = () => {
             />
           </Box>
         </Box>
+        {/* Action buttons inline */}
+        <Box sx={{ ml: 'auto' }}>
+          <SectionActionBar actions={serverActions} />
+        </Box>
       </Box>
 
-      {/* Controls row – reserve space even while not connected to prevent layout shift */}
-      {isConnected ? (
-        <MediaControls userId={user?.id} onOpenSettings={toggleSettings} onLeave={() => setSelectedServerId(null)} />
-      ) : (
-        <PlaceholderControls />
-      )}
+      {/* Controls row */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {isConnected ? (
+          <MediaControls
+            userId={user?.id}
+            onOpenSettings={toggleSettings}
+            onLeave={() => setSelectedServerId(null)}
+          />
+        ) : (
+          <PlaceholderControls />
+        )}
+      </Box>
     </Box>
+
+    {/* Leave confirmation dialog */}
+    <ConfirmDialog
+      open={leaveOpen}
+      title="Leave server?"
+      description="Are you sure you want to leave this server?"
+      confirmLabel="Leave"
+      cancelLabel="Cancel"
+      danger
+      onClose={() => setLeaveOpen(false)}
+      onConfirm={() => {
+        setLeaveOpen(false);
+        setSelectedServerId(null);
+      }}
+    />
+    </>
   );
 };

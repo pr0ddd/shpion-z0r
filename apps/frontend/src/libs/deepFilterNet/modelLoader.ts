@@ -4,6 +4,7 @@
 class DeepFilterModelLoader {
   private static instance: DeepFilterModelLoader;
   private loadingPromises: Map<string, Promise<Uint8Array>> = new Map();
+  private loadedModels: Map<string, Uint8Array> = new Map();
 
   static getInstance(): DeepFilterModelLoader {
     if (!DeepFilterModelLoader.instance) {
@@ -18,6 +19,11 @@ class DeepFilterModelLoader {
    * @returns Promise с байтами модели
    */
   async loadModel(modelName: string = 'DeepFilterNet3_ll'): Promise<Uint8Array> {
+    // Уже загружено – сразу возвращаем.
+    if (this.loadedModels.has(modelName)) {
+      return this.loadedModels.get(modelName)!;
+    }
+
     // Если уже есть активная загрузка этой модели — дождёмся её, чтобы не
     // создавать несколько параллельных запросов.
     if (this.loadingPromises.has(modelName)) {
@@ -26,6 +32,10 @@ class DeepFilterModelLoader {
 
     // Запускаем загрузку
     const loadingPromise = this.fetchModel(modelName)
+      .then((bytes)=>{
+        this.loadedModels.set(modelName, bytes);
+        return bytes;
+      })
       .finally(() => this.loadingPromises.delete(modelName));
 
     this.loadingPromises.set(modelName, loadingPromise);
@@ -66,10 +76,19 @@ class DeepFilterModelLoader {
       // log removed
     }
   }
+
+  /** Проверка, загружена ли модель полностью */
+  isLoaded(modelName: string = 'DeepFilterNet3_ll'): boolean {
+    return this.loadedModels.has(modelName);
+  }
 }
 
 // Экспортируем singleton instance
 export const modelLoader = DeepFilterModelLoader.getInstance();
+
+export function isDeepFilterModelLoaded(modelName: string = 'DeepFilterNet3_ll') {
+  return modelLoader.isLoaded(modelName);
+}
 
 // Вспомогательная функция для быстрого доступа
 export async function loadDeepFilterModel(modelName?: string): Promise<Uint8Array> {

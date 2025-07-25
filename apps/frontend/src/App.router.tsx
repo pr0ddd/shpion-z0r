@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import './App.css';
 
-import { AuthTemplate, SessionLoader, useUserQuery } from '@entities/session';
+import { AuthTemplate, useUserQuery } from '@entities/session';
 
 import InvitePage from './pages/InvitePage';
 import LoginPage from './pages/LoginPage';
@@ -16,7 +16,7 @@ const RequireAuth = () => {
   const { data, isFetching } = useUserQuery();
   const location = useLocation();
 
-  if (isFetching) return <SessionLoader />;
+  if (isFetching) return null;
 
   return data ? (
     <Outlet />
@@ -36,7 +36,7 @@ const RequireSystemSettings = () => {
     }
   }, [systemSettings]);
 
-  if (!isReady) return <SessionLoader />;
+  if (!isReady) return null;
 
   return <Outlet />;
 };

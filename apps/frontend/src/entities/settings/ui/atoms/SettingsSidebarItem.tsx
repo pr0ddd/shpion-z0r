@@ -6,6 +6,7 @@ interface SettingsSidebarItemProps {
   label: string;
   selected: boolean;
   onClick: () => void;
+  horizontal?: boolean;
 }
 
 export const SettingsSidebarItem: React.FC<SettingsSidebarItemProps> = ({
@@ -13,6 +14,7 @@ export const SettingsSidebarItem: React.FC<SettingsSidebarItemProps> = ({
   label,
   selected,
   onClick,
+  horizontal = false,
 }) => {
   return (
     <ListItemButton
@@ -21,6 +23,7 @@ export const SettingsSidebarItem: React.FC<SettingsSidebarItemProps> = ({
       sx={{
         borderRadius: 1,
         my: 0.5,
+        flexDirection: horizontal ? 'column' : 'row',
         '&.Mui-selected': {
           backgroundColor: 'new.sidebarAccent',
           '&:hover': {
@@ -30,7 +33,7 @@ export const SettingsSidebarItem: React.FC<SettingsSidebarItemProps> = ({
       }}
     >
       <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>{icon}</ListItemIcon>
-      <ListItemText primary={<Typography variant="body2">{label}</Typography>} />
+      {label && <ListItemText primary={<Typography variant="body2">{label}</Typography>} />}
     </ListItemButton>
   );
 }; 

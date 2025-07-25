@@ -16,6 +16,9 @@ import { useLocalParticipantMic } from '@entities/members/model/useLocalParticip
 import { useLocalParticipantVolume } from '@entities/members/model/useLocalParticipantVolume';
 import { useLocalParticipant, useRoomContext } from '@livekit/components-react';
 import { Track } from 'livekit-client';
+import { useMediaQuery, useTheme, SwipeableDrawer } from '@mui/material';
+import { StreamsTemplate } from '@entities/streams/ui';
+import { CameraPIP } from '@ui/molecules/CameraPIP';
 
 /* --------------------------------------------------
  * MediaControls – buttons enabled only when connected
@@ -27,17 +30,44 @@ export interface MediaControlsProps {
 }
 
 export const MediaControls: React.FC<MediaControlsProps> = ({ userId, onLeave, onOpenSettings }) => {
-  const { startNew: startScreenShare, stopAll: stopAllScreenShare, enabled: isScreenShareActive } =
-    useScreenShare();
+  const {
+    startNew: startScreenShare,
+    stopAll: stopAllScreenShare,
+    enabled: isScreenShareActive,
+  } = useScreenShare();
   const { toggleCameraEnabled, isCameraEnabled } = useLocalParticipantCamera();
   const { isMicEnabled, toggleMicEnabled } = useLocalParticipantMic();
   const { isVolumeEnabled, toggleVolumeEnabled } = useLocalParticipantVolume();
   const { localParticipant } = useLocalParticipant();
   const room = useRoomContext();
 
-  const handleStartScreenShare = () => startScreenShare(userId ?? 'unknown');
-  const handleStartCamera = () => {
-    if (!isCameraEnabled) toggleCameraEnabled();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('mobile'));
+  const [streamsDrawer, setStreamsDrawer] = React.useState(false);
+
+  const handleStartScreenShare = () => {
+    if (isMobile) {
+      setStreamsDrawer(true);
+    } else {
+      startScreenShare(userId ?? 'unknown');
+    }
+  };
+
+  const handleCameraClick = () => {
+    if (isCameraEnabled) {
+      // Stop camera publication
+      if (room && localParticipant) {
+        localParticipant.trackPublications.forEach((pub) => {
+          if (pub.source === Track.Source.Camera && pub.track) {
+            room.localParticipant.unpublishTrack(pub.track);
+            pub.track.stop();
+          }
+        });
+      }
+      toggleCameraEnabled();
+    } else {
+      toggleCameraEnabled();
+    }
   };
   const handleStopAll = () => {
     stopAllScreenShare();
@@ -69,6 +99,8 @@ export const MediaControls: React.FC<MediaControlsProps> = ({ userId, onLeave, o
       fontSize: '1.2rem',
     },
   } as const;
+
+  const stopAllDisabled = isMobile || (!isScreenShareActive && !isCameraEnabled);
 
   return (
     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
@@ -109,7 +141,7 @@ export const MediaControls: React.FC<MediaControlsProps> = ({ userId, onLeave, o
       <Box sx={{ width: '1px', height: 24, backgroundColor: 'new.border', mx: 0.5 }} />
 
       {/* Screen share */}
-      <Tooltip title="Share Screen" placement="top" arrow>
+      <Tooltip title={isMobile ? 'View Streams' : 'Share Screen'} placement="top" arrow>
         <IconButton
           onClick={handleStartScreenShare}
           sx={{
@@ -126,17 +158,27 @@ export const MediaControls: React.FC<MediaControlsProps> = ({ userId, onLeave, o
       {/* Camera */}
       <Tooltip title={isCameraEnabled ? 'Turn Off Camera' : 'Turn On Camera'} placement="top" arrow>
         <IconButton
-          onClick={handleStartCamera}
+          onClick={handleCameraClick}
           sx={{
             ...buttonBaseStyle,
-            backgroundColor: isCameraEnabled ? 'new.primary' : 'new.muted',
+            backgroundColor: isCameraEnabled ? 'new.green' : 'new.muted',
             color: isCameraEnabled ? 'new.primaryForeground' : 'new.mutedForeground',
             '&:hover': {
-              backgroundColor: isCameraEnabled ? 'new.primary' : 'new.hover',
+              backgroundColor: isCameraEnabled ? 'new.redLight' : 'new.hover',
             },
+            '& .camera-icon-off': { display: 'none' },
+            '&:hover .camera-icon-on': { display: 'none' },
+            '&:hover .camera-icon-off': { display: 'block' },
           }}
         >
-          {isCameraEnabled ? <VideocamIcon /> : <VideocamOffIcon />}
+          {isCameraEnabled ? (
+            <>
+              <VideocamIcon className="camera-icon-on" />
+              <VideocamOffIcon className="camera-icon-off" />
+            </>
+          ) : (
+            <VideocamOffIcon />
+          )}
         </IconButton>
       </Tooltip>
 
@@ -150,10 +192,25 @@ export const MediaControls: React.FC<MediaControlsProps> = ({ userId, onLeave, o
             color: 'new.mutedForeground',
             '&:hover': { backgroundColor: 'new.redLight', color: 'new.primaryForeground' },
           }}
+          disabled={stopAllDisabled}
         >
           <DesktopAccessDisabledIcon />
         </IconButton>
       </Tooltip>
+      {isMobile && (
+        <SwipeableDrawer
+          anchor="bottom"
+          open={streamsDrawer}
+          onOpen={() => setStreamsDrawer(true)}
+          onClose={() => setStreamsDrawer(false)}
+          swipeAreaWidth={20}
+          ModalProps={{ keepMounted: true }}
+          sx={{ '& .MuiDrawer-paper': { height: '80vh', backgroundColor: 'new.background' } }}
+        >
+          <StreamsTemplate />
+        </SwipeableDrawer>
+      )}
+      {isMobile && isCameraEnabled && <CameraPIP />}
     </Box>
   );
 };

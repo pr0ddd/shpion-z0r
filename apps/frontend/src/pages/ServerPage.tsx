@@ -17,18 +17,19 @@ import { AccordionPanel } from '@ui/molecules/AccordionPanel';
 import Badge from '@mui/material/Badge';
 import { useUnreadStore } from '@entities/chat/model/unread.store';
 import { useUnreadSocketSync } from '@entities/chat/model/useUnreadSocketSync';
+import SwipeableDrawer from '@mui/material/SwipeableDrawer';
 import { useMembersQuery } from '@entities/members/api/members.query';
 import InviteDialog from '@entities/server/ui/organisms/InviteDialog';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import { IconButton } from '@ui/atoms/IconButton';
-import { MobileBottomBar } from '@ui/organisms/MobileBottomBar';
 import { ServerHeader } from '@entities/server/ui/organisms/ServerHeader';
 
 const ServerPage: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery('(max-width:767.95px)'); // <768
-  const isCollapsedSidebar = useMediaQuery(theme.breakpoints.down(1280)); // <1280
-  const isNarrowRight = useMediaQuery('(max-width:1023.95px)'); // <1024
+  const isMobile = useMediaQuery(theme.breakpoints.down('mobile'));
+  const isVeryNarrow = useMediaQuery(theme.breakpoints.down('narrowMobile'));
+  const isCollapsedSidebar = useMediaQuery(theme.breakpoints.down('sidebarCollapse'));
+  const isNarrowRight = useMediaQuery(theme.breakpoints.down('narrowRight'));
   const { selectedServerId, setSelectedServerId } = useServerStore();
   // sync unread counts via socket regardless of chat panel mount
   useUnreadSocketSync(selectedServerId!);
@@ -36,7 +37,8 @@ const ServerPage: React.FC = () => {
   const { data: members } = useMembersQuery(selectedServerId!);
 
   const [showInviteDialog, setShowInviteDialog] = useState(false);
-  // mobile bottom bar handled in MobileBottomBar component inside LiveKit context
+  const [mobileChatOpen, setMobileChatOpen] = useState(false);
+  // Mobile bottom bar removed; unified control panel used on all sizes
 
   const selectedServer = useMemo(() => {
     if (!servers || !selectedServerId) return null;
@@ -55,6 +57,7 @@ const ServerPage: React.FC = () => {
       }}
     >
       {selectedServerId ? (
+        <>
         <LiveKitRoom
           serverId={selectedServerId!}
           isLoadingServer={!selectedServer}
@@ -70,7 +73,7 @@ const ServerPage: React.FC = () => {
 
             <Box sx={{ display: 'flex', flex: 1, minWidth: 0, minHeight:0 }}>
             {/* Sidebars (left + right) with shared media controls */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', flexShrink: 0, minHeight:0, borderRight:'1px solid', borderColor:'new.border', backgroundColor:'new.card' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight:0, borderRight:'1px solid', borderColor:'new.border', backgroundColor:'new.card', flex: isVeryNarrow ? 1 : '0 0 auto', }}>
               {/* Row with both sidebars */}
               <Box sx={{ display: 'flex', flexDirection: 'row', flex: 1, minHeight:0 }}>
                 <ServersTemplate collapsed={isCollapsedSidebar} />
@@ -98,21 +101,14 @@ const ServerPage: React.FC = () => {
               </Box>
 
               {/* Shared media controls row */}
-              {!isMobile && (
-                <Box sx={{ mt: 'auto', px: 1, pb: 1 }}>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <MediaControlsSection />
-                  </Box>
+              <Box sx={{ mt: 'auto', px: 1, pb: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <MediaControlsSection />
                 </Box>
-              )}
+              </Box>
             </Box>
 
-            {!isMobile && (
+            {!isVeryNarrow && (
               <Box
                 sx={{
                   display: 'flex',
@@ -134,10 +130,30 @@ const ServerPage: React.FC = () => {
               />
             )}
 
+            {/* Mobile Chat Drawer moved outside */}
+ 
             </Box>{/* end inner row */}
           </Box>{/* end column */}
-          {isMobile && <MobileBottomBar />}
+
         </LiveKitRoom>
+        {isMobile && (
+        <SwipeableDrawer
+          anchor="right"
+          open={mobileChatOpen}
+          onClose={() => setMobileChatOpen(false)}
+          onOpen={() => setMobileChatOpen(true)}
+          sx={{
+            '& .MuiDrawer-paper': {
+              width: '100vw',
+              maxWidth: '100vw',
+              backgroundColor: 'new.background',
+            },
+          }}
+        >
+          <ChatMessages />
+        </SwipeableDrawer>
+        )}
+        </>
       ) : (
         <>
           <ServersTemplate />

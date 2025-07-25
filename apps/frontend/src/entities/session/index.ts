@@ -4,7 +4,6 @@ export * from './api/register.mutation';
 export * from './api/invite.query';
 export * from './api/acceptInvite.mutation';
 export * from './model/auth.store';
-export * from './ui/atoms/SessionLoader';
 export * from './ui/templates/LoginForm';
 export * from './ui/templates/RegisterForm';
 export * from './ui/templates/AuthTemplate';

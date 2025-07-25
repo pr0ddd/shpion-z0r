@@ -6,13 +6,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { SocketProvider } from '@libs/socket';
 import { useEffect } from 'react';
-import { modelLoader } from '@libs/deepFilterNet/modelLoader';
+import { modelLoader, isDeepFilterModelLoaded } from '@libs/deepFilterNet/modelLoader';
+import { useDeepFilterModelStore } from '@libs/deepFilterNet/modelLoad.store';
 import { createGlobalAudioContext } from '@libs/audioContext';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
+import LinearProgress from '@mui/material/LinearProgress';
 
 import './App.css';
 import { createAppTheme } from './App.theme';
@@ -31,11 +33,22 @@ const App: React.FC = () => {
   const [needsUnlock, setNeedsUnlock] = React.useState(false);
   const audioCtxRef = React.useRef<AudioContext | null>(null);
 
-  // Ранняя предзагрузка модели шумоподавления (не блокирует UI)
+  // Ранняя предзагрузка модели шумоподавления с индикатором
+  const modelLoading = useDeepFilterModelStore((s) => s.loading);
+  const setModelLoading = useDeepFilterModelStore((s) => s.setLoading);
+  const setModelLoaded = useDeepFilterModelStore((s) => s.setLoaded);
+
   useEffect(() => {
     audioCtxRef.current = createGlobalAudioContext();
 
-    modelLoader.preloadModel('DeepFilterNet3_ll');
+    if (isDeepFilterModelLoaded('DeepFilterNet3_ll')) {
+      setModelLoaded();
+    } else {
+      setModelLoading(true);
+      modelLoader.loadModel('DeepFilterNet3_ll')
+        .catch(() => {/* ignore */})
+        .finally(() => setModelLoaded());
+    }
   }, []);
 
   // Show unlock dialog once we actually joined a server and still need gesture
@@ -58,6 +71,17 @@ const App: React.FC = () => {
               <AppRouter />
             </SocketProvider>
           </BrowserRouter>
+          {/* Model loading dialog */}
+          <Dialog open={modelLoading} hideBackdrop>
+            <DialogTitle>Preparing audio processing</DialogTitle>
+            <DialogContent sx={{ minWidth: 300 }}>
+              Downloading required files. This may take a few seconds…
+              <Box sx={{ mt: 2 }}>
+                <LinearProgress />
+              </Box>
+            </DialogContent>
+          </Dialog>
+
           {/* Audio unlock dialog */}
           <Dialog open={needsUnlock} disableEscapeKeyDown>
             <DialogTitle>Action Required</DialogTitle>

@@ -8,6 +8,7 @@ export interface SectionAction {
   tooltip: string;
   onClick: () => void;
   disabled?: boolean;
+  danger?: boolean; // if true, hover turns red
 }
 
 interface Props {
@@ -18,7 +19,16 @@ export const SectionActionBar: React.FC<Props> = ({ actions }) => (
   <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
     {actions.map((a) => (
       <Tooltip key={a.key} title={a.tooltip} arrow placement="top">
-        <SmallIconButton onClick={a.onClick} disabled={a.disabled}>
+        <SmallIconButton
+          onClick={a.onClick}
+          disabled={a.disabled}
+          sx={a.danger ? {
+            '&:hover': {
+              backgroundColor: 'new.redLight',
+              color: 'new.primaryForeground',
+            },
+          } : undefined}
+        >
           {a.icon}
         </SmallIconButton>
       </Tooltip>

@@ -5,14 +5,13 @@ import { useServerStore } from '@entities/server/model';
 
 import { useLiveKitTokenQuery } from '../../model/liveKitToken.query';
 
-import { LiveKitRoomLoading } from '../atoms/LiveKitRoomLoading';
-import { LivekitVirtualMic } from '../organisms/LivekitVirtualMic';
 import { LiveKitRoomAudioRenderer } from '../organisms/LiveKitRoomAudioRenderer';
 import { SpeakingSync } from '../organisms/SpeakingSync';
 import { AudioProcessorOptions, Track, TrackProcessor } from 'livekit-client';
 import { createDeepFilterProcessorSAB } from '@libs/deepFilterNet/createDeepFilterProcessor';
 import { createGlobalAudioContext } from '@libs/audioContext';
 import { useSystemSettingsStore } from '@entities/systemSettings';
+import { LivekitVirtualMic } from '../organisms/LivekitVirtualMic';
 
 interface LiveKitRoomProps {
   serverId: string;
@@ -71,16 +70,13 @@ export const LiveKitRoom: React.FC<LiveKitRoomProps> = ({
 
   if (isLoadingServer || isLoadingLiveKitToken || !isReady) {
     return (
-      <>
-        <button
-          style={{ display: 'none' }}
-          id="start-button"
-          onClick={() => setIsReady(true)}
-        >
-          Start
-        </button>
-        <LiveKitRoomLoading />
-      </>
+      <button
+        style={{ display: 'none' }}
+        id="start-button"
+        onClick={() => setIsReady(true)}
+      >
+        Start
+      </button>
     );
   }
 

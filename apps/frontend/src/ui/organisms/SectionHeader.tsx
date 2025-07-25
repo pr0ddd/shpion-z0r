@@ -5,7 +5,7 @@ import { SectionAction, SectionActionBar } from '@ui/molecules/SectionActionBar'
 interface Props {
   icon?: React.ReactNode;
   onIconClick?: () => void;
-  title?: string;
+  title?: React.ReactNode;
   subtitle?: string;
   actions?: SectionAction[];
 }

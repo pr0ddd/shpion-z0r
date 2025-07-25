@@ -37,6 +37,21 @@ declare module '@mui/material/styles' {
   }
 }
 
+// Extend MUI breakpoints with custom labels
+declare module '@mui/material/styles' {
+  interface BreakpointOverrides {
+    xs: true;
+    sm: true;
+    narrowMobile: true;  // 0–720px
+    mobile: true;        // 0–768px
+    md: true;
+    lg: true;
+    xl: true;
+    sidebarCollapse: true;
+    narrowRight: true;
+  }
+}
+
 export const createAppTheme = (mode: 'dark' | 'light' = 'dark') => {
   const darkNew = {
       background: 'hsl(220, 13%, 7%)',
@@ -120,12 +135,16 @@ export const createAppTheme = (mode: 'dark' | 'light' = 'dark') => {
     // but having them in the theme object makes intent clear and enables easy tweaks.
     breakpoints: {
       values: {
-        xs: 0,       // mobile
-        sm: 600,     // ≥600px – small tablets / landscape phones
-        md: 900,     // ≥900px – tablets / small laptops
-        lg: 1200,    // ≥1200px – desktops
-        xl: 1536,    // ≥1536px – large screens
-      },
+        xs: 0,
+        sm: 600,
+        narrowMobile: 720,
+        mobile: 768,
+        md: 900,
+        lg: 1200,
+        xl: 1536,
+        narrowRight: 1024,
+        sidebarCollapse: 1280,
+      } as any,
     },
   };
 
