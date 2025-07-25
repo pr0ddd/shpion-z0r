@@ -147,7 +147,7 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
                 fontSize: '0.875rem',
               }}
             >
-              {message.author?.username || 'Неизвестный'}
+              {message.author?.username || 'Unknown'}
             </Typography>
             {/* time is now shown inside bubble */}
           </Box>
@@ -182,7 +182,7 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
               }}
             >
               <Typography variant="caption" sx={{ color: 'new.foreground', fontWeight: 600 }}>
-                {message.replyTo.author?.username || 'Автор'}
+                {message.replyTo.author?.username || 'Author'}
               </Typography>
               <Typography
                 variant="caption"
@@ -205,7 +205,7 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
           {message.status==='uploading' && message.type==='FILE' && (
             <Box sx={{ width:220 }}>
               <Typography variant="body2" sx={{ fontSize:'0.8rem', color:'new.foreground', mb:0.5 }}>
-                Файл: {message.content || 'загрузка...'}
+                File: {message.content || 'loading...'}
               </Typography>
               <Typography variant="caption" sx={{ color: prefixColor, mb:0.5 }}>
                 {(message.uploadLoaded!/1048576).toFixed(1)} MB / {(message.uploadTotal!/1048576).toFixed(1)} MB
@@ -230,9 +230,9 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
               />
             ) : (
               <Typography variant="body2" sx={{ fontSize:'0.875rem' }}>
-                <Box component="span" sx={{ color: prefixColor }}>Файл: </Box>
+                <Box component="span" sx={{ color: prefixColor }}>File: </Box>
                 <Box component="a" href={fullWithParam} target="_blank" rel="noreferrer" download sx={{ color: linkColor, textDecoration:'underline' }}>
-                  {message.content || 'скачать'}
+                  {message.content || 'download'}
                 </Box>
               </Typography>
             );
@@ -346,9 +346,9 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
           anchorReference="anchorPosition"
           anchorPosition={context ? { top: context.mouseY, left: context.mouseX } : undefined}
         >
-            <MenuItem onClick={handleReply}>Ответить</MenuItem>
-          {isMine && <MenuItem onClick={()=>{handleClose();useEditStore.getState().setEdit(message);}}>Изменить</MenuItem>}
-          {isMine && <MenuItem onClick={handleDelete}>Удалить</MenuItem>}
+            <MenuItem onClick={handleReply}>Reply</MenuItem>
+          {isMine && <MenuItem onClick={()=>{handleClose();useEditStore.getState().setEdit(message);}}>Edit</MenuItem>}
+          {isMine && <MenuItem onClick={handleDelete}>Delete</MenuItem>}
         </Menu>
       )}
     </ListItem>

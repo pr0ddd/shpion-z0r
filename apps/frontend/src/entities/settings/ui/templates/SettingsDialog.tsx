@@ -50,7 +50,7 @@ export const SettingsDialog: React.FC = () => {
       <DialogTitle
         sx={{ m: 0, p: 2, borderBottom: '1px solid', borderColor: 'new.border' }}
       >
-        Настройки
+        Settings
         <IconButton
           aria-label="close"
           onClick={close}

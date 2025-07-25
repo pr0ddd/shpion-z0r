@@ -11,10 +11,10 @@ import {
 import { SettingsSidebarItem } from '../atoms/SettingsSidebarItem';
 
 const sections: { key: SettingsSection; label: string; icon: React.ReactNode }[] = [
-  { key: 'account', label: 'Учётная запись', icon: <PersonIcon /> },
-  { key: 'equipment', label: 'Оборудование', icon: <HeadsetIcon /> },
-  { key: 'hotkeys', label: 'Горячие клавиши', icon: <KeyboardIcon /> },
-  { key: 'appearance', label: 'Внешний вид', icon: <PaletteIcon /> },
+  { key: 'account', label: 'Account', icon: <PersonIcon /> },
+  { key: 'equipment', label: 'Equipment', icon: <HeadsetIcon /> },
+  { key: 'hotkeys', label: 'Hotkeys', icon: <KeyboardIcon /> },
+  { key: 'appearance', label: 'Appearance', icon: <PaletteIcon /> },
 ];
 
 interface Props { orientation?: 'vertical' | 'horizontal'; }

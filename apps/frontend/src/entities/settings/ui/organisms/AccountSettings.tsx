@@ -79,21 +79,21 @@ export const AccountSettings: React.FC = () => {
 
     Promise.all(promises)
       .then(() => {
-        showSnackbar('Изменения сохранены');
+        showSnackbar('Changes saved');
         setPendingAvatar(null);
       })
       .catch((err) => {
         console.error(err);
-        showSnackbar('Не удалось сохранить изменения', 'error');
+        showSnackbar('Failed to save changes', 'error');
       });
   };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <Box>
-        <Typography variant="h6">Профиль пользователя</Typography>
+        <Typography variant="h6">User Profile</Typography>
         <Typography variant="body2" color="new.mutedForeground">
-          Настройте отображаемое имя и аватар для вашего профиля
+          Set display name and avatar for your profile
         </Typography>
       </Box>
 
@@ -104,14 +104,14 @@ export const AccountSettings: React.FC = () => {
           borderColor: 'new.border',
         }}
       >
-        <CardHeader title={<Typography variant="subtitle1">Основная информация</Typography>} />
+        <CardHeader title={<Typography variant="subtitle1">Basic information</Typography>} />
         <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {/* Аватар */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Avatar src={avatarPreview || ''} sx={{ width: 80, height: 80 }} />
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <Button variant="outlined" size="small" onClick={handleAvatarButtonClick} disabled={isUpdating}>
-                {isUpdating ? 'Загрузка...' : 'Загрузить аватар'}
+                {isUpdating ? 'Uploading...' : 'Upload avatar'}
               </Button>
               <input
                 type="file"
@@ -121,33 +121,33 @@ export const AccountSettings: React.FC = () => {
                 onChange={handleFileChange}
               />
               <Typography variant="caption" color="new.mutedForeground">
-                Рекомендуемый размер: 128x128px. Максимум 2MB.
+                Recommended size: 128x128px. Max 2MB.
               </Typography>
             </Box>
           </Box>
 
           {/* Имя */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Typography variant="subtitle2">Отображаемое имя</Typography>
+            <Typography variant="subtitle2">Display name</Typography>
             <TextField
               size="small"
               variant="filled"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Введите ваше имя"
+              placeholder="Enter your name"
               inputProps={{ maxLength: 32 }}
             />
             <Typography variant="caption" color="new.mutedForeground">
-              Это имя будет видно другим пользователям
+              This name will be visible to other users
             </Typography>
           </Box>
 
           {/* Статус */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Typography variant="subtitle2">Статус аккаунта</Typography>
+            <Typography variant="subtitle2">Account status</Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Box sx={{ width: 8, height: 8, bgcolor: 'new.green', borderRadius: '50%' }} />
-              <Typography variant="body2">Активен</Typography>
+              <Typography variant="body2">Active</Typography>
             </Box>
           </Box>
         </CardContent>
@@ -159,7 +159,7 @@ export const AccountSettings: React.FC = () => {
           onClick={handleSave}
           disabled={isSaving || (!pendingAvatar && displayName === user?.username)}
         >
-          {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
+          {isSaving ? 'Saving...' : 'Save changes'}
         </Button>
       </Box>
 

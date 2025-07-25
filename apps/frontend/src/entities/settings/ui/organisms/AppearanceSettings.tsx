@@ -9,13 +9,13 @@ export const AppearanceSettings: React.FC = () => {
   return (
     <Box sx={{ maxWidth: 300 }}>
       <FormControl component="fieldset">
-        <FormLabel component="legend">Тема интерфейса</FormLabel>
+        <FormLabel component="legend">Theme</FormLabel>
         <RadioGroup
           value={mode}
           onChange={(e) => setMode(e.target.value as 'light' | 'dark')}
         >
-          <FormControlLabel value="dark" control={<Radio />} label="Тёмная" />
-          <FormControlLabel value="light" control={<Radio />} label="Светлая" />
+          <FormControlLabel value="dark" control={<Radio />} label="Dark" />
+          <FormControlLabel value="light" control={<Radio />} label="Light" />
         </RadioGroup>
       </FormControl>
     </Box>

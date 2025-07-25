@@ -344,7 +344,7 @@ export const StreamActiveInner: React.FC<StreamActiveProps> = memo(
           {/* Exit / Close button overlay */}
           {tracks.length > 0 && controlsVisible && (
             <Button
-              variant="contained"
+              variant="outlined"
               color="error"
               onClick={onExit}
               sx={{
@@ -360,7 +360,7 @@ export const StreamActiveInner: React.FC<StreamActiveProps> = memo(
                 '&:hover': { backgroundColor: 'rgba(248, 12, 12, 0.8)' },
               }}
             >
-              Прекратить просмотр
+              Stop watching
             </Button>
           )}
 

@@ -8,7 +8,7 @@ export const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated) return;
-    const password = prompt('Enter the password');
+    const password = prompt('Enter admin password');
     if (password === ADMIN_DASHBOARD_PASS) {
       setIsAuthenticated(true);
     }
@@ -25,7 +25,7 @@ export const AdminDashboard: React.FC = () => {
           fontSize: '24px',
         }}
       >
-        Вводи пароль или иди НАХУЙ!
+        Please enter the password to access the admin dashboard.
       </Box>
     );
   }

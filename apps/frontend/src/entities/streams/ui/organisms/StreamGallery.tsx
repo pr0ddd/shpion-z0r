@@ -85,7 +85,7 @@ export const StreamGallery: React.FC<StreamGalleryProps> = ({
               textAlign: 'center',
             }}
           >
-            Нет активных трансляций
+            No active streams
           </Typography>
         ) : (
           tracks.map((track) => (

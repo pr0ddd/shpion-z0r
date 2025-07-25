@@ -57,7 +57,7 @@ export const EquipmentSettings: React.FC = () => {
         setTestingMic(false);
       }, 4000);
     } catch {
-      showErr('Не удалось открыть выбранный микрофон');
+      showErr('Unable to open selected microphone');
       setTestingMic(false);
     }
   };
@@ -91,7 +91,7 @@ export const EquipmentSettings: React.FC = () => {
         } catch {}
       }, 1200);
     } catch {
-      showErr('Не удалось воспроизвести звук');
+      showErr('Unable to play test sound');
     }
   };
 
@@ -107,7 +107,7 @@ export const EquipmentSettings: React.FC = () => {
         vidRef.current.onloadedmetadata = () => vidRef.current?.play();
       }
     } catch {
-      showErr('Не удалось открыть камеру');
+      showErr('Unable to open camera');
     }
   };
   const closePreview = () => {
@@ -144,39 +144,39 @@ export const EquipmentSettings: React.FC = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <Typography variant="h6">Настройки оборудования</Typography>
+      <Typography variant="h6">Equipment Settings</Typography>
 
       {/* Mic */}
       <Card sx={{ backgroundColor: 'new.card', border: '1px solid', borderColor: 'new.border' }}>
-        <CardHeader avatar={<MicIcon />} title="Микрофон" />
+        <CardHeader avatar={<MicIcon />} title="Microphone" />
         <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {renderSelect(micSel.devices, micSel.activeDeviceId, (id) => handleSelect('mic', id))}
           <Button variant="outlined" onClick={startMicTest} disabled={testingMic}>
-            {testingMic ? '...' : 'Тест микрофона'}
+            {testingMic ? '...' : 'Test microphone'}
           </Button>
         </CardContent>
       </Card>
 
       {/* Speaker */}
       <Card sx={{ backgroundColor: 'new.card', border: '1px solid', borderColor: 'new.border' }}>
-        <CardHeader avatar={<HeadsetIcon />} title="Динамики / Наушники" />
+        <CardHeader avatar={<HeadsetIcon />} title="Speakers / Headphones" />
         <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {renderSelect(spkSel.devices, spkSel.activeDeviceId, (id) => handleSelect('spk', id))}
-          <Button variant="outlined" onClick={playTestSound}>Тестовый звук</Button>
+          <Button variant="outlined" onClick={playTestSound}>Test sound</Button>
         </CardContent>
       </Card>
 
       {/* Camera */}
       <Card sx={{ backgroundColor: 'new.card', border: '1px solid', borderColor: 'new.border' }}>
-        <CardHeader avatar={<VideocamIcon />} title="Камера" />
+        <CardHeader avatar={<VideocamIcon />} title="Camera" />
         <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {renderSelect(camSel.devices, camSel.activeDeviceId, (id) => handleSelect('cam', id))}
-          <Button variant="outlined" onClick={openPreview}>Тест веб-камеры</Button>
+          <Button variant="outlined" onClick={openPreview}>Test webcam</Button>
         </CardContent>
       </Card>
 
       <Dialog open={previewOpen} onClose={closePreview} maxWidth="sm" fullWidth>
-        <DialogTitle>Предпросмотр камеры</DialogTitle>
+        <DialogTitle>Camera preview</DialogTitle>
         <DialogContent>
           <video ref={vidRef} style={{ width: '100%' }} />
         </DialogContent>

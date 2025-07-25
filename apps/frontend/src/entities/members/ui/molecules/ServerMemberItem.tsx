@@ -84,7 +84,7 @@ export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
             variant="caption"
             sx={{ color: 'text.secondary' }}
           >
-            {displayStreamCount} стрим{displayStreamCount > 1 ? 'а' : ''}
+            {displayStreamCount} stream{displayStreamCount > 1 ? 's' : ''}
           </Typography>
         )}
       </Box>

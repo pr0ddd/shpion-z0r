@@ -122,7 +122,7 @@ export const ChatMessagesList: React.FC = () => {
 
   const typingUsers = Object.values(typingState).filter(t=>t.typing).map(t=>t.username).filter(n=>!!n && n!==user?.username);
   const selfTyping = typingState[user?.id ?? '']?.typing;
-  const typingDisplay = typingUsers.length > 0 ? `${typingUsers.join(', ')} печатает…` : '';
+  const typingDisplay = typingUsers.length > 0 ? `${typingUsers.join(', ')} typing…` : '';
 
   const [atBottom,setAtBottom] = useState(true);
   useListening(serverId!, atBottom);
@@ -197,7 +197,7 @@ export const ChatMessagesList: React.FC = () => {
                 {!isMine && (
                   <Box sx={{ display:'flex',alignItems:'center',gap:1, mb:0.5 }}>
                     <Typography variant="body2" sx={{color:'new.foreground',fontWeight:600,fontSize:'0.875rem'}}>
-                      {first.author?.username || 'Неизвестный'}
+                      {first.author?.username || 'Unknown'}
                     </Typography>
                     <Typography variant="caption" sx={{color:'new.mutedForeground',fontSize:'0.75rem'}}>
                       {time}

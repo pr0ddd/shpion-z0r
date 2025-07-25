@@ -105,7 +105,7 @@ export const UnifiedMediaControlPanel: React.FC = () => {
           {/* first line – username + quality */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
             <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
-              {user?.username || 'Пользователь'}
+              {user?.username || 'User'}
             </Typography>
             {isConnected && localParticipant && (
               <QualityIndicator participant={localParticipant} />
