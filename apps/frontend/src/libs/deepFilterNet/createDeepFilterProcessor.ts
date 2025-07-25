@@ -164,6 +164,7 @@ export const createDeepFilterProcessorSAB = async (
     attenLim: deepFilterOptions.attenLim,
     postFilterBeta: deepFilterOptions.postFilterBeta,
   });
+  // Live logs removed per user request
   await audioContext.audioWorklet.addModule(`/deepfilter-sab-processor.js?v=${Date.now()}`);
   const node = new AudioWorkletNode(audioContext, 'deepfilter-sab', {
     numberOfInputs: 1,
@@ -174,15 +175,26 @@ export const createDeepFilterProcessorSAB = async (
     processorOptions: { sabIn, sabOut, frameLen }
   });
 
-  // log removed
-
   // Output gain applied AFTER noise suppression
+  // ----- Dynamics Compressor -----
+  // Apply dynamic range compression after noise suppression to make
+  // quiet sounds louder and loud sounds softer for more consistent
+  // perceived volume. Parameters come from system settings.
+  const compressorNode = audioContext.createDynamicsCompressor();
+  compressorNode.threshold.value = compressorOptions.threshold;
+  compressorNode.knee.value = compressorOptions.knee;
+  compressorNode.ratio.value = compressorOptions.ratio;
+  compressorNode.attack.value = compressorOptions.attack;
+  compressorNode.release.value = compressorOptions.release;
+
+  // ----- Output gain -----
   const gainNode = audioContext.createGain();
   gainNode.gain.value = deepFilterOptions.outputGain;
 
   // Upmix mono -> stereo so that downstream MediaStreamTrack has 2 channels
   const merger = audioContext.createChannelMerger(2);
-  node.connect(gainNode);
+  node.connect(compressorNode);
+  compressorNode.connect(gainNode);
   gainNode.connect(merger, 0, 0);
   gainNode.connect(merger, 0, 1);
 
@@ -204,10 +216,12 @@ export const createDeepFilterProcessorSAB = async (
     destroy: async () => {
       worker.postMessage({ type: 'dispose' });
       srcNode?.disconnect();
-      // compressor removed
+      // disconnect nodes
       node.disconnect();
+      compressorNode.disconnect();
       gainNode.disconnect();
       dstNode?.disconnect();
+      // Live logs removed per user request
     }
   };
   return proc;
