@@ -34,6 +34,8 @@ model User {
   servers      Member[]
   ownedServers Server[]   @relation("ServerOwner")
   messages     Message[]
+  volumePrefs        VolumePreference[] @relation("VolumePrefOwner")
+  targetVolumePrefs  VolumePreference[] @relation("VolumePrefTarget")
 
   @@map("users")
 }
@@ -109,6 +111,21 @@ model SystemSetting {
   code_name String
   description String?
   value       String
+}
+
+model VolumePreference {
+  id            String   @id @default(cuid())
+  ownerId       String
+  targetUserId  String
+  volume        Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  owner   User @relation("VolumePrefOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  target  User @relation("VolumePrefTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, targetUserId])
+  @@map("volume_preferences")
 }
 
  

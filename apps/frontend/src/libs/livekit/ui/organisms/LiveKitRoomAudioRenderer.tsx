@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 import { getGlobalAudioContext } from '@libs/audioContext';
 
 import { useParticipantMetadata } from '@entities/members/model/useLocalParticipantMetadata';
+import { useVolumeStore } from '@libs/livekit/hooks/useVolumeStore';
 
 interface LiveKitRoomAudioRendererProps {}
 
@@ -19,6 +20,7 @@ export const LiveKitRoomAudioRenderer: React.FC<
   const tracks = useTracks([Track.Source.Microphone]);
   const { getMetadata } = useParticipantMetadata(localParticipant);
   const isVolumeOn = getMetadata('volumeOn') ?? true;
+  const volumeMap = useVolumeStore((s) => s.map);
 
   /* --- Ensure audio context & room playback are resumed after a user gesture --- */
   const room = useRoomContext();
@@ -60,7 +62,7 @@ export const LiveKitRoomAudioRenderer: React.FC<
           <AudioTrack
             key={track.participant.sid}
             trackRef={track}
-            volume={isVolumeOn ? 1 : 0}
+            volume={isVolumeOn ? (volumeMap[track.participant.identity] ?? 0.5) : 0}
           />
         ) : null
       )}

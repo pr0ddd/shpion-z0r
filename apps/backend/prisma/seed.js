@@ -39,7 +39,7 @@ async function seedSystemSettings() {
       id: 3,
       code_name: 'DEEPFILTER_OUTPUT_GAIN',
       description: 'Linear gain applied AFTER noise suppression (1 = 0 dB)',
-      value: '1.2',
+      value: '3',
     },
     {
       id: 4,

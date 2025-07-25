@@ -27,4 +27,5 @@ export * from './livekitAPI';
 export * from './sfuAPI';
 export * from './userAPI';
 export * from './adminAPI';
+export * from './volumeAPI';
 export default http;

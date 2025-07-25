@@ -20,6 +20,7 @@ import sfuRoutes from './routes/sfu';
 import previewRouter from './routes/preview';
 import systemSettingsRoutes from './routes/systemSettings';
 import uploadRoutes from './routes/upload';
+import volumePreferencesRoutes from './routes/volumePreferences';
 import { getFile } from './controllers/UploadController';
 
 // Middleware
@@ -127,6 +128,7 @@ app.use('/api/sfu', sfuRoutes);
 app.get('/api/upload/file/:key', getFile);
 
 app.use('/api/upload', authMiddleware, uploadRoutes);
+app.use('/api/volumes', authMiddleware, volumePreferencesRoutes);
 app.use('/api/preview', previewRouter);
 app.use('/api/system-settings', systemSettingsRoutes);
 

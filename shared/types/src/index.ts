@@ -148,4 +148,14 @@ export interface SystemSetting {
   value: string;
 }
 
+// Volume Preference
+export interface VolumePreference {
+  id: string;
+  ownerId: string;
+  targetUserId: string;
+  volume: number; // 0..1
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type SystemSettingsPayload = Pick<SystemSetting, 'id' | 'value'>[];

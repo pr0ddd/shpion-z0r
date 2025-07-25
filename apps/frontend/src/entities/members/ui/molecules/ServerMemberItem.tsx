@@ -11,7 +11,12 @@ import { DotIndicator } from '@ui/atoms/DotIndicator';
 import { LocalParticipant, RemoteParticipant, Track } from 'livekit-client';
 import { useIsMuted } from '@livekit/components-react';
 import { useFastIsSpeaking } from '@libs/livekit/hooks/useFastIsSpeaking';
+import { useVolumeStore } from '@libs/livekit/hooks/useVolumeStore';
+import { VolumeMenu } from '@entities/volumes/ui/VolumeMenu';
 import { useParticipantMetadata } from '@entities/members/model/useLocalParticipantMetadata';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { volumeAPI } from '@shared/data';
+import { useMutation } from '@tanstack/react-query';
 
 interface ServerMemberItemProps {
   member: Member | undefined;
@@ -28,11 +33,61 @@ export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
 }) => {
   const isSpeaking = useFastIsSpeaking(participant);
   const isMuted = useIsMuted({ source: Track.Source.Microphone, participant });
+  const volume = useVolumeStore((s) => s.map[participant.identity] ?? 0.5);
+  const setVolume = useVolumeStore((s) => s.setVolume);
+  const isSelf = participant.isLocal;
+
   const { getMetadata } = useParticipantMetadata(participant);
   const isVolumeOn = getMetadata('volumeOn') ?? true;
   const displayStreamCount = totalStreamCount;
   const isOwner = member?.role === 'ADMIN';
   const displayName = member?.user.username || participant.name;
+
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+
+  const handleClick = (e: React.MouseEvent<HTMLElement>) => {
+    if (isSelf) return; // disable for self
+    if (anchorEl) {
+      setAnchorEl(null);
+    } else {
+      setAnchorEl(e.currentTarget);
+    }
+  };
+
+  const handleClose = () => setAnchorEl(null);
+
+  const { mutate: persistVolume } = useMutation({
+    mutationFn: async (v: number) => {
+      return await volumeAPI.setPreference(participant.identity, v);
+    },
+  });
+
+  // --- Debounce persistence ---
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const persistDebounced = useCallback(
+    (v: number) => {
+      if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+      debounceTimeout.current = setTimeout(() => {
+        persistVolume(v);
+      }, 300);
+    },
+    [persistVolume]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+    };
+  }, []);
+
+  const handleSliderChange = (val: number | number[]) => {
+    if (isSelf) return; // prevent self-change
+    const v = Array.isArray(val) ? val[0] : val;
+    const internal = (v as number);
+    setVolume(participant.identity, internal);
+    persistDebounced(internal);
+  };
 
   return (
     <Box
@@ -43,11 +98,12 @@ export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
         p: 1,
         borderRadius: 1,
         overflow: 'hidden',
-        cursor: 'pointer',
+        cursor: isSelf ? 'default' : 'pointer',
         '&:hover': {
-          backgroundColor: 'action.hover',
+          backgroundColor: isSelf ? 'transparent' : 'action.hover',
         },
       }}
+      onClick={handleClick}
     >
       {/* Avatar with streaming indicator */}
       <Box sx={{ position: 'relative'}}>
@@ -103,6 +159,13 @@ export const ServerMemberItem: React.FC<ServerMemberItemProps> = ({
           <VolumeOffIcon fontSize="small" sx={{ color: 'error.main' }} />
         )}
       </Box>
+      <VolumeMenu
+        open={!isSelf && Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={handleClose}
+        volume={volume}
+        onVolumeChange={handleSliderChange as any}
+      />
     </Box>
   );
 };
